@@ -1,0 +1,16 @@
+My idea involves three servers:
+
+Server A:
+Randomness server. For my experiments, /dev/random will do, but we'll need atmospheric randomness for the real thing
+This server just needs to be queried for random data. Data can be transmitted in plain text
+
+Server B:
+Server server. The server in the Diffie-Hellman handshake encryption scheme
+Server will query Randomness server for data, performing operation to create pad
+
+Server C:
+Server client. The client in the Diffie-Hellman handshake scheme
+client will also query RA server, asking for same time frame of randomness as server
+client performs same operation as server with key
+
+
