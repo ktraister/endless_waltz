@@ -21,14 +21,20 @@ def signal_handler(signal, frame):
 
 def rasample(SMPL):
     with open("/dev/random", 'rb') as f:
-        print(repr(f.read(SMPL)))
+        #print(repr(f.read(SMPL)))
         data = repr(f.read(SMPL))
     f.close
     return data
 
 def test():
-    threading.Timer(5.0, test).start()
-    print("working")
+    threading.Timer(10.0, test).start()
+    print("overwriting random file...")
+    f = open("randomfile","a+")
+    for i in range(100):
+        raline = rasample(100)
+        f.write(raline)
+        i = i + 1
+
 
 
 
