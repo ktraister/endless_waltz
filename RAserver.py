@@ -15,10 +15,14 @@ def signal_handler(signal, frame):
     serversocket.close()
     sys.exit(0)
 
+def rasample():
+
+
+
 
 while 1:
-    #signal_handler(signal.SIGINT, signal_handler)
-    #signal_handler(signal.SIGTERM, signal_handler)
+    signal_handler(signal.SIGINT, signal_handler)
+    signal_handler(signal.SIGTERM, signal_handler)
 
     (clientsocket, address) = serversocket.accept()
     print("Client Connected!")
