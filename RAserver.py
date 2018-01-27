@@ -29,11 +29,13 @@ def rasample(SMPL):
 def test():
     threading.Timer(10.0, test).start()
     print("overwriting random file...")
+    os.remove("randomfile")
     f = open("randomfile","a+")
     for i in range(100):
         raline = rasample(100)
         f.write(raline)
         i = i + 1
+    f.close
 
 
 
