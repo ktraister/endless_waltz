@@ -8,6 +8,7 @@ host = socket.gethostbyname(socket.gethostname())
 port = 8000
 
 serversocket.bind((host, port))
+serversocket.listen(5)
 
 def signal_handler(signal, frame):
     print("Exiting Gracefully!")
