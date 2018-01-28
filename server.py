@@ -8,6 +8,8 @@ import random
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = socket.gethostbyname(socket.gethostname())
 port = 8000
+rahost = "192.168.1.100"
+raport = 8005
 
 serversocket.bind((host, port))
 serversocket.listen(5)
@@ -16,6 +18,13 @@ def signal_handler(signal, frame):
     print("Exiting Gracefully!")
     serversocket.close()
     sys.exit(0)
+
+def operate(INPUT, DH):
+    result = ''
+    rstr = str(INPUT)
+    for i in range(0, len(rstr)):
+        result = result + chr(ord(rstr[i]) - DH)
+    return result
 
 def is_prime(n):
   if n == 2 or n == 3: return True
@@ -42,8 +51,8 @@ def mkprime():
 def mksec(PRIME, BASE):
     srvsec = random.randint(1,100)
     srvmod = (BASE ** srvsec) % PRIME
-    print("srvsec:", srvsec)
-    print("srvmod:", srvmod)
+    #print("srvsec:", srvsec)
+    #print("srvmod:", srvmod)
     return srvmod, srvsec
 
 def dh_est1():
@@ -51,11 +60,11 @@ def dh_est1():
     sharepm = mkprime()
     servermod, serversec = mksec(sharepm, sharebs)
     response = str(servermod) + "," + str(sharebs) + "," + str(sharepm)
-    print("sharebs:", sharebs)
-    print("sharepm:", sharepm)
-    print("servermod:", servermod)
-    print("serversec:", serversec)
-    print("response:", response)
+    #print("sharebs:", sharebs)
+    #print("sharepm:", sharepm)
+    #print("servermod:", servermod)
+    #print("serversec:", serversec)
+    #print("response:", response)
     return response, servermod, sharepm, serversec
 
 def dh_estf(CLIMOD, SRVSC, SPM):
@@ -63,28 +72,65 @@ def dh_estf(CLIMOD, SRVSC, SPM):
     SRVSC = int(SRVSC)
     SPM = int(SPM)
     sharsec = (CLIMOD ** SRVSC) % SPM
-    print("sharprime:", SPM)
-    print("srvsc:", SRVSC)
-    print("climod:", CLIMOD)
-    print("FINALLY:", sharsec)
+    #print("sharprime:", SPM)
+    #print("srvsc:", SRVSC)
+    #print("climod:", CLIMOD)
+    #print("FINALLY:", sharsec)
+    return sharsec
 
 
 while 1:
     #signal_handler(signal.SIGINT, signal_handler)
     #signal_handler(signal.SIGTERM, signal_handler)
 
+    #code for clients connecting
     (clientsocket, address) = serversocket.accept()
     print("Client Connected!")
 
     try:
-        recd = clientsocket.recv(1024).decode()
-        recd = int(recd)
+        #code to receive string from connecting clients
+        #recd = clientsocket.recv(1024).decode()
+        #recd = int(recd)
         print("Connection from %s" % str(address))
-        print("Received string: %s" % recd)
+        #print("Received string: %s" % recd)
+
+        #code to perform DH handshake
         r, sm, sp, sc = dh_est1()
         clientsocket.send(r.encode())
         climod = clientsocket.recv(1024).decode()
-        print("climod:", climod)
-        dh_estf(climod, sc, sp)
+        #print("climod:", climod)
+        ssec = dh_estf(climod, sc, sp)
+        print(ssec)
     except Exception as csr:
+        print("dh error")
         print(csr)
+
+    #builds a new socket and connects to get pad
+    try:
+        rasocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        rasocket.connect((rahost, raport))
+        msg = "100"
+        rasocket.send(msg.encode())
+        ppad = rasocket.recv(1024).decode()
+        print(ppad)
+
+        after = operate(ppad, ssec)
+        print(after)
+
+    except Exception as rsr:
+        print("rasocket error")
+        print(rsr)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
