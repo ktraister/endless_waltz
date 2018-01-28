@@ -11,12 +11,47 @@ rahost = "192.168.1.100"
 raport = 8005
 #msg = sys.argv[2]
 
+def encryptstr(MSG, KEY):
+    finstr = ''
+    for i in range(0, len(MSG)):
+        charnum = ord(MSG[i])
+        #print("\nmessage[i]:", message[i])
+        #print("charnum:", charnum)
+        keynum  = ord(KEY[i])
+        #print("\nkeychar[i]", otp[i])
+        #print("keynum[i]:", keynum)
+        #the 128 bit key is working for now, may be a problem in the future
+        resnum = (charnum + keynum) % 128
+        #print("\nresnum:", resnum)
+        reschar = chr(resnum)
+        #print("reschar:", reschar)
+        finstr = finstr + reschar
+    print("Final String:", finstr)
+    return finstr
+
+def decryptstr(MSG, KEY):
+    finstr = ''
+    for i in range(0, len(MSG)):
+        charnum = ord(MSG[i])
+        #print("\nmessage[i]:", message[i])
+        #print("charnum:", charnum)
+        keynum  = ord(KEY[i])
+        #print("\nkeychar[i]", otp[i])
+        #print("keynum[i]:", keynum)
+        #reference above comment for 128 modulus
+        resnum = (charnum - keynum) % 128
+        #print("\nresnum:", resnum)
+        reschar = chr(resnum)
+        #print("reschar:", reschar)
+        finstr = finstr + reschar
+    print("Final String:", finstr)
+    return finstr
+
 def operate(INPUT, DH):
     result = ''
     rstr = str(INPUT)
     for i in range(0, len(rstr)):
         result = result + chr(ord(rstr[i]) - DH)
-        if
     return result
 
 def dh_est1(DATA, SECRET):
@@ -67,7 +102,12 @@ rasocket.send(msg.encode())
 ppad = rasocket.recv(1024).decode()
 print(ppad)
 
-after = operate(ppad, ssec)
-print(after)
+#after = operate(ppad, ssec)
+#print(after)
+
+emsg = clientsocket.recv(1024).decode()
+print("EMessage:", emsg)
+msg = decryptstr(msg, ppad)
+print("Message:", msg)
 
 clientsocket.close

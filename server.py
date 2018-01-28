@@ -19,6 +19,41 @@ def signal_handler(signal, frame):
     serversocket.close()
     sys.exit(0)
 
+def encryptstr(MSG, KEY):
+    finstr = ''
+    for i in range(0, len(MSG)):
+        charnum = ord(MSG[i])
+        #print("\nmessage[i]:", message[i])
+        #print("charnum:", charnum)
+        keynum  = ord(KEY[i])
+        #print("\nkeychar[i]", otp[i])
+        #print("keynum[i]:", keynum)
+        #the 128 bit key is working for now, may be a problem in the future
+        resnum = (charnum + keynum) % 128
+        #print("\nresnum:", resnum)
+        reschar = chr(resnum)
+        #print("reschar:", reschar)
+        finstr = finstr + reschar
+    print("Final String:", finstr)
+    return finstr
+
+def decryptstr(MSG, KEY):
+    finstr = ''
+    for i in range(0, len(MSG)):
+        charnum = ord(MSG[i])
+        #print("\nmessage[i]:", message[i])
+        #print("charnum:", charnum)
+        keynum  = ord(KEY[i])
+        #print("\nkeychar[i]", otp[i])
+        #print("keynum[i]:", keynum)
+        resnum = (charnum - keynum) % 128
+        #print("\nresnum:", resnum)
+        reschar = chr(resnum)
+        #print("reschar:", reschar)
+        finstr = finstr + reschar
+    print("Final String:", finstr)
+    return finstr
+
 def operate(INPUT, DH):
     result = ''
     rstr = str(INPUT)
@@ -114,8 +149,17 @@ while 1:
         ppad = rasocket.recv(1024).decode()
         print(ppad)
 
-        after = operate(ppad, ssec)
-        print(after)
+        #after = operate(ppad, ssec)
+        #print(after)
+
+        msg = "Hello client!"
+        print("Message:", msg)
+        emsg = encryptstr(msg, ppad)
+        print("EMessage:", emsg)
+        clientsocket.send(emsg.encode())
+
+        dmsg = decryptstr(msg, ppad)
+        print("Did I decrypt this correctly?:", dmsg)
 
     except Exception as rsr:
         print("rasocket error")
