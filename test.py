@@ -3,11 +3,11 @@
 from __future__ import print_function
 
 # Variables Used
-sharedPrime = 23    # p
-sharedBase = 5      # g
+sharedPrime = 89    # p
+sharedBase = 13      # g
 
-aliceSecret = 6     # a
-bobSecret = 15      # b
+aliceSecret = 74     # a
+bobSecret = 33      # b
 
 # Begin
 print( "Publicly Shared Variables:")
