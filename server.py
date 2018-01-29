@@ -152,13 +152,14 @@ while 1:
         #after = operate(ppad, ssec)
         #print(after)
 
-        msg = "Hello client!"
+        msg = "Hello client! This is a test string! I am testing my encryption/decryption"
+        #msg = "shit"
         print("Message:", msg)
         emsg = encryptstr(msg, ppad)
         print("EMessage:", emsg)
         clientsocket.send(emsg.encode())
 
-        dmsg = decryptstr(msg, ppad)
+        dmsg = decryptstr(emsg, ppad)
         print("Did I decrypt this correctly?:", dmsg)
 
     except Exception as rsr:

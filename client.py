@@ -107,7 +107,7 @@ print(ppad)
 
 emsg = clientsocket.recv(1024).decode()
 print("EMessage:", emsg)
-msg = decryptstr(msg, ppad)
+msg = decryptstr(emsg, ppad)
 print("Message:", msg)
 
 clientsocket.close

@@ -4,6 +4,7 @@ import sys
 import os
 import time
 import threading
+import pycurl
 
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = socket.gethostbyname(socket.gethostname())
@@ -20,7 +21,7 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 def rasample(SMPL):
-    with open("/dev/random", 'rb') as f:
+    with open("/dev/urandom", 'r') as f:
         data = f.read(SMPL)
     f.close
     return data
@@ -38,11 +39,20 @@ def test():
         os.remove("randomfile")
     except Exception as rf:
         print(rf)
+
     f = open("randomfile","a+")
+    c = pycurl.Curl()
+    c.setopt(pycurl.URL, "https://www.random.org/integers/?num=500&min=1&max=255&col=1&base=10&format=plain&rnd=new")
+    ran = str(c.perform())
+    print("len:", len(ran))
+    f.write(ran)
+    f.readline(1)
+    """
     for i in range(100):
         raline = rasample(100)
         f.write(raline)
         i = i + 1
+    """
     f.close
 
 
@@ -50,7 +60,7 @@ while 1:
     #signal_handler(signal.SIGINT, signal_handler)
     #signal_handler(signal.SIGTERM, signal_handler)
 
-    #test()
+    test()
 
     (clientsocket, address) = serversocket.accept()
     print("Client Connected!")
