@@ -2,3 +2,11 @@ Endless Waltz, referring to Gundam Wing and the endless cycle of war, peace, and
 
 This git repo will be a python implementation of my idea to get the kinks out and prove fesability. 
 
+Theory of operation:
+
+the server/client function as a typcial TLS server/client, connecting and performing diffie-hellman handshake. However, upon connection they calculate a second shared secret value from the DH secret
+They then perform a second DH negotiation/ TLS connection to a random number server (RAserver) which reads from actual atmosperic random data. The client/server both pass the second shared secret value to the RAserver,
+which responds with the one-time pad to be used for further encryption. Both TLS connections are then closed, and the client/server use the one-time pad for only that transaction. 
+Each client connection will result in one connection to the RAserver. This could probably be improved by moving the atmospheric randomness collection onto a daemonized thread operating on the server side, 
+reducing the need for the server to initiate a second costly TLS connection. 
+
