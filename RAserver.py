@@ -4,7 +4,7 @@ import sys
 import os
 import time
 import threading
-import pycurl
+#import pycurl
 
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = socket.gethostbyname(socket.gethostname())

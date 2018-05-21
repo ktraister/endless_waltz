@@ -8,7 +8,7 @@ import random
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = socket.gethostbyname(socket.gethostname())
 port = 8000
-rahost = "192.168.1.100"
+rahost = "127.0.0.1"
 raport = 8005
 
 serversocket.bind((host, port))
@@ -165,17 +165,5 @@ while 1:
     except Exception as rsr:
         print("rasocket error")
         print(rsr)
-
-
-
-
-
-
-
-
-
-
-
-
 
 

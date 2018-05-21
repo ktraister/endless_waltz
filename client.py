@@ -7,7 +7,7 @@ clientsocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 #host = socket.gethostbyname(socket.gethostname())
 port = 8000
 host = sys.argv[1]
-rahost = "192.168.1.100"
+rahost = "127.0.0.1"
 raport = 8005
 #msg = sys.argv[2]
 
