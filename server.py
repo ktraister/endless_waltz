@@ -2,6 +2,7 @@ import socket
 import signal
 import sys
 import os
+#import threading
 import datetime
 import random
 
@@ -90,6 +91,36 @@ def mksec(PRIME, BASE):
     #print("srvmod:", srvmod)
     return srvmod, srvsec
 
+"""
+def rafsample(SMPL):
+    with open("randomfile", 'r') as f:
+        data = str(f.read(SMPL))
+    f.close
+    return data
+
+def raservice():
+    #threading.Timer(10.0, test).start()
+    sleep(10)
+    print("overwriting random file...")
+    try:
+        os.remove("randomfile")
+    except Exception as rf:
+        print(rf)
+
+    f = open("randomfile","a+")
+    c = pycurl.Curl()
+    c.setopt(pycurl.URL, "https://www.random.org/integers/?num=500&min=1&max=255&col=1&base=10&format=plain&rnd=new")
+    ran = str(c.perform())
+    print("len:", len(ran))
+    f.write(ran)
+    f.readline(1)
+    for i in range(100):
+        raline = rasample(100)
+        f.write(raline)
+        i = i + 1
+    f.close
+"""
+
 def dh_est1():
     sharebs = random.randint(1,100)
     sharepm = mkprime()
@@ -113,6 +144,10 @@ def dh_estf(CLIMOD, SRVSC, SPM):
     #print("FINALLY:", sharsec)
     return sharsec
 
+#brush up on threading syntax, check this for errors
+#t = threading.Thread(raservice,)
+#t = threading.daemon
+#t.start()
 
 while 1:
     #signal_handler(signal.SIGINT, signal_handler)
@@ -123,11 +158,11 @@ while 1:
     print("Client Connected!")
 
     try:
-        #code to receive string from connecting clients
-        #recd = clientsocket.recv(1024).decode()
-        #recd = int(recd)
+        code to receive string from connecting clients
+        recd = clientsocket.recv(1024).decode()
+        recd = int(recd)
         print("Connection from %s" % str(address))
-        #print("Received string: %s" % recd)
+        print("Received string: %s" % recd)
 
         #code to perform DH handshake
         r, sm, sp, sc = dh_est1()
@@ -149,8 +184,8 @@ while 1:
         ppad = rasocket.recv(1024).decode()
         print(ppad)
 
-        #after = operate(ppad, ssec)
-        #print(after)
+        after = operate(ppad, ssec)
+        print(after)
 
         msg = "Hello client! This is a test string! I am testing my encryption/decryption"
         #msg = "shit"
