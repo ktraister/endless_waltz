@@ -157,10 +157,10 @@ while 1:
 
     try:
         #code to receive string from connecting clients
-        recd = clientsocket.recv(1024).decode()
-        recd = int(recd)
+        #recd = clientsocket.recv(1024).decode()
+        #recd = int(recd)
         print("Connection from %s" % str(address))
-        print("Received string: %s" % recd)
+        #print("Received string: %s" % recd)
 
         #code to perform DH handshake
         r, sm, sp, sc = dh_est1()
