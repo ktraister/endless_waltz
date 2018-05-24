@@ -2,7 +2,7 @@ import socket
 import signal
 import sys
 import os
-#import threading
+import threading
 import datetime
 import random
 
@@ -91,7 +91,6 @@ def mksec(PRIME, BASE):
     #print("srvmod:", srvmod)
     return srvmod, srvsec
 
-"""
 def rafsample(SMPL):
     with open("randomfile", 'r') as f:
         data = str(f.read(SMPL))
@@ -119,7 +118,6 @@ def raservice():
         f.write(raline)
         i = i + 1
     f.close
-"""
 
 def dh_est1():
     sharebs = random.randint(1,100)
@@ -158,7 +156,7 @@ while 1:
     print("Client Connected!")
 
     try:
-        code to receive string from connecting clients
+        #code to receive string from connecting clients
         recd = clientsocket.recv(1024).decode()
         recd = int(recd)
         print("Connection from %s" % str(address))
