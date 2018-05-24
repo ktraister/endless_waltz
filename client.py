@@ -84,8 +84,9 @@ clientsocket.connect((host, port))
 #clientsocket.send(msg.encode())
 
 #code to receive DH handshake details
+print("Connected!")
 data = clientsocket.recv(1024).decode()
-#print(data)
+print(data)
 clisec = random.randint(1, 100)
 climod = dh_est1(data, clisec)
 climod = str(climod)

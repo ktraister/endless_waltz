@@ -22,6 +22,7 @@ def signal_handler(signal, frame):
 
 def encryptstr(MSG, KEY):
     finstr = ''
+    #we need to check our input for strings longer than 128 chars, breaking them into that for transport
     for i in range(0, len(MSG)):
         charnum = ord(MSG[i])
         #print("\nmessage[i]:", message[i])
@@ -142,10 +143,6 @@ def dh_estf(CLIMOD, SRVSC, SPM):
     #print("FINALLY:", sharsec)
     return sharsec
 
-#brush up on threading syntax, check this for errors
-#t = threading.Thread(raservice,)
-#t = threading.daemon
-#t.start()
 
 while 1:
     #signal_handler(signal.SIGINT, signal_handler)
@@ -185,7 +182,7 @@ while 1:
         after = operate(ppad, ssec)
         print(after)
 
-        msg = "Hello client! This is a test string! I am testing my encryption/decryption"
+        msg = "Hello client! This is a test string! I am testing my encryption/decryption. I am going to try to break my program by making my input reeeeeeeeeeeeeeaaaaaaaaaaaaaaaaaaaaaaaaallllllllllllllllllllllllllyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy llooonnnngggg"
         #msg = "shit"
         print("Message:", msg)
         emsg = encryptstr(msg, ppad)

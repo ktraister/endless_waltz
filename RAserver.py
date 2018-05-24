@@ -72,6 +72,11 @@ while 1:
         print("Received string: %s" % recd)
         rand = rafsample(recd)
         print("sending string:", rand)
+        #dont mind this, it's an early attempt to prevent crashing from sending blank pads.
+        #it is crashing it now though :)
+        while 1:
+            if rand != '':
+                break
         clientsocket.send(rand.encode())
     except Exception as csr:
         print(csr)
