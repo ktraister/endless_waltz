@@ -1,0 +1,3 @@
+server:
+  MongoURI: "mongodb://localhost:27017"
+  UploadAPIKey: "4bc34af2eb32bcbeee79f7a650129af6"

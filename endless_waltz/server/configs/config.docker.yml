@@ -1,0 +1,5 @@
+server:
+  key: "/src/server.key"
+  cert: "/src/server.crt"
+  randomURL: "http://host.docker.internal:8090/"
+

@@ -1,0 +1,24 @@
+services:
+  random:
+    image: "python:3.12.0a1-bullseye"
+    volumes:
+      - type: bind
+        source: ./random
+        target: /src/random
+    ports:
+      - 8000:8000
+    command: python3 /src/random/api.py
+  server:
+    image: "python:3.12.0a1-bullseye"
+    volumes:
+      - type: bind
+        source: ./server
+        target: /src/server
+    ports:
+      - 6000:6000
+    command: pip3 install -r /src/server/requirements.txt && ls /src/server && python3 /src/server/server.py
+  redis:
+    image: "redis:latest"
+    ports:
+      - 6379:6379
+

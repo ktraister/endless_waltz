@@ -1,0 +1,4 @@
+server:
+  key: "./certs/server.key"
+  cert: "./certs/server.crt"
+  randomURL: "http://localhost:8090/api/otp"

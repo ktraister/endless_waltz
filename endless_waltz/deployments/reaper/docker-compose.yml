@@ -1,0 +1,14 @@
+services:
+  reaper:
+    image: ghcr.io/kayleigh-traister/reaper:v0.1.2
+    volumes:
+      - randpass:/tmp
+  rtl-entropy:
+    image: ghcr.io/kayleigh-traister/ew-rtl-entropy:v0.1.2
+    volumes:
+      - randpass:/tmp
+    devices:
+      - "/dev/bus/usb/001/004:/dev/bus/usb/001/004"
+volumes:
+  randpass:
+
