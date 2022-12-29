@@ -42,8 +42,6 @@ func fromString(INPUT string) []int {
 }
 
 func pad_encrypt(MSG string, PAD string) string {
-        fmt.Println("MSG: ", MSG)
-	fmt.Println("PAD: ", PAD)
 	chars := []rune(MSG)
 	pad := []rune(PAD)
 	asc_chars := make([]int, 0)
@@ -72,8 +70,6 @@ func pad_encrypt(MSG string, PAD string) string {
 }
 
 func pad_decrypt(INPUT_MSG string, PAD string) string {
-        fmt.Println("MSG: ", INPUT_MSG)
-	fmt.Println("PAD: ", PAD)
 	pad := []rune(PAD)
 	asc_pad := make([]int, 0)
 	dec_msg := make([]int, 0)
@@ -88,7 +84,7 @@ func pad_decrypt(INPUT_MSG string, PAD string) string {
 
 	//decrypt message
 	for i := 0; i < len(ENC_MSG); i++ {
-		if ENC_MSG[i] > asc_pad[i] {
+		if ENC_MSG[i] < asc_pad[i] {
 			ENC_MSG[i] = ENC_MSG[i] - 255
 		}
 		dec_msg = append(dec_msg, ENC_MSG[i]+asc_pad[i])
