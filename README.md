@@ -53,6 +53,8 @@ At this point, the project needs a performant re-write. A highly performant lang
    - I wont be looking at the logs for messages, and wont want them decrypted until I'm ready
    - add a flag, localdev is good as is
 - [ ] setup automation for CI/CD
+   - GitHub Actions is the easiest and closest, and I'm already paying for pro - try this first
+   - need to choose a provider -- CircleCI provides most free build minutes per month
 - [ ] Create K8s helm charts for services
 - [ ] further logging improvements
 - [ ] create infrastructure for project in AWS
