@@ -161,7 +161,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 				log.Fatal(err)
 			}
 
-			otp := fmt.Sprintf("%v", dbResult[0]["otp"])
+			otp := fmt.Sprintf("%v", dbResult[0]["Pad"])
 			client_resp := Client_Resp{
 				Pad: otp,
 			}
