@@ -84,7 +84,7 @@ func upload_handler(w http.ResponseWriter, req *http.Request) {
 
 	//uuid create and send to db
 	id := uuid.New().String()
-	_, err = otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"otp", jsonMap["Pad"]}})
+	_, err = otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"Pad", jsonMap["Pad"]}})
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -120,20 +120,24 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 
 		if jsonMap["Host"] == "server" {
 			//this should happen inside the api to prevent servers from setting UUIDs for attacks
-			//generate uuids for server and write to redis
-			id := uuid.New().String()
-			pad := random_pad()
 
-			//here's where we write the pad and UUID to mongo
-			_, err := otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"otp", pad}})
+			/*
+				//here's where we write the pad and UUID to mongo
+				_, err := otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"otp", pad}})
+				if err != nil {
+					fmt.Println(err)
+				}
+			*/
+
+			//instead of the above solution, lets move to using the db to pull an item
+			server_resp := Server_Resp{}
+			err := otp_db.FindOne(ctx, bson.M{}).Decode(&server_resp)
 			if err != nil {
-				fmt.Println(err)
+				log.Fatal(err)
 			}
 
-			server_resp := Server_Resp{
-				UUID: id,
-				Pad:  pad,
-			}
+			fmt.Println(server_resp)
+
 			resp, _ := json.Marshal(server_resp)
 			if err != nil {
 				fmt.Println(err)
