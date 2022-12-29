@@ -29,14 +29,18 @@ At this point, the project needs a performant re-write. A highly performant lang
 - [x] fix conn.close on server/client transaction
 - [x] add flags to send message to client
 - [x] Remove Redis and update to use Mongo
-- [ ] Add API route to upload pads -- make the service cloud agnostic!!!
+- [x] Add API route to upload pads -- make the service cloud agnostic!!!
    - Mongo should be used to store pads as well (!!!)
-   - [ ] move upload api to seperate port
 - [ ] start padding the message with random data to prevent length attacks
    - pad should be random, use delimeter like "###" to signify padding
 - [ ] add DH handshake!!
    - dh handshake with rediculous values will be used for pad transformation and message signing
    - two different values will need to be calculated
+- [ ] **CODE CLEANUP** 
+   - BEFORE PROCEEDING:
+   - [ ] ensure all dead code is removed
+   - [ ] make sure server/api/client do not quit prematurely
+   - [ ] 
 
 ## Phase III
 ### get something working with hardware to deploy to cloud
@@ -47,11 +51,7 @@ At this point, the project needs a performant re-write. A highly performant lang
    - reaper will depend on a C executable for RNG using an SDR for randomness
    - [x] Make a pipe inside a volume and mount it on `/dev/urandom` where the Go lib reads -- dont fight it lol
    - reaper and ew-rtl-entropy are working together in docker -- compose file works
-- [ ] update docker build to respect any env (API, Server)
-   - a dockerfile with VARIABLE references to config files should be sufficient
-- [ ] setup server to interact with cloud/prod env
-   - I wont be looking at the logs for messages, and wont want them decrypted until I'm ready
-   - add a flag, localdev is good as is
+- [ ] move upload api to seperate port
 - [ ] setup automation for CI/CD
    - GitHub Actions is the easiest and closest, and I'm already paying for pro - try this first
    - need to choose a provider -- CircleCI provides most free build minutes per month
@@ -59,6 +59,11 @@ At this point, the project needs a performant re-write. A highly performant lang
 - [ ] further logging improvements
 - [ ] create infrastructure for project in AWS
    - terraform IAC
+- [ ] update docker build to respect any env (API, Server)
+   - a dockerfile with VARIABLE references to config files should be sufficient
+- [ ] setup server to interact with cloud/prod env
+   - I wont be looking at the logs for messages, and wont want them decrypted until I'm ready
+   - add a flag, localdev is good as is
 
 ### At this point, we're ready for the deepweb and linux users
 

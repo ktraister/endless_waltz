@@ -119,17 +119,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		otp_db := client.Database("otp").Collection("otp")
 
 		if jsonMap["Host"] == "server" {
-			//this should happen inside the api to prevent servers from setting UUIDs for attacks
-
-			/*
-				//here's where we write the pad and UUID to mongo
-				_, err := otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"otp", pad}})
-				if err != nil {
-					fmt.Println(err)
-				}
-			*/
-
-			//instead of the above solution, lets move to using the db to pull an item
+			//lets move to using the db to pull an item
 			server_resp := Server_Resp{}
 			err := otp_db.FindOne(ctx, bson.M{}).Decode(&server_resp)
 			if err != nil {
@@ -155,6 +145,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 
 			//mongo
 			//https://www.mongodb.com/blog/post/quick-start-golang--mongodb--how-to-read-documents
+			//use above solution to "readOne" of the entries
 			UUID := fmt.Sprintf("%v", jsonMap["UUID"])
 			filterCursor, err := otp_db.Find(ctx, bson.M{"UUID": UUID})
 			if err != nil {
@@ -170,8 +161,6 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 				log.Fatal(err)
 			}
 
-			//add deletion of mongo pad here
-
 			otp := fmt.Sprintf("%v", dbResult[0]["otp"])
 			client_resp := Client_Resp{
 				Pad: otp,
@@ -184,6 +173,10 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			//this is where we respond to the connection
 			w.Write(resp)
 
+			//add deletion of mongo pad here
+			if _, err = otp_db.DeleteOne(ctx, bson.M{"UUID": UUID}); err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 }
