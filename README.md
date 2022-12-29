@@ -39,7 +39,7 @@ POC in python, working code in go
    - BEFORE PROCEEDING:
    - [ ] ensure all dead code is removed
    - [ ] make sure server/api/client do not quit prematurely
-   - [ ] 
+   - [ ] implement at least basic unit test coverage -- run on commit
 
 ## Phase III
 ### get something working with hardware to deploy to cloud
