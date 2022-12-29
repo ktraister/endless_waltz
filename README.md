@@ -13,7 +13,6 @@ POC in python, working code in go
 ## Phase II
 ### get basic functionality working in GoLang
 ***80% Complete***
-At this point, the project needs a performant re-write. A highly performant language like Go is perfect
 - [x] rewrite API in Go
    - moved UUID generation for connection from server into API
 - [x] implement xor library
