@@ -5,12 +5,14 @@ POC in python, working code in go
 
 ## Phase I
 ### just create something
+***Complete :)***
 - [x] implement api, server, and client
 - [x] implement xor and pad code
 - [x] implement redis for caching
 
 ## Phase II
 ### get basic functionality working in GoLang
+***80% Complete***
 At this point, the project needs a performant re-write. A highly performant language like Go is perfect
 - [x] rewrite API in Go
    - moved UUID generation for connection from server into API
@@ -31,8 +33,6 @@ At this point, the project needs a performant re-write. A highly performant lang
 - [x] Remove Redis and update to use Mongo
 - [x] Add API route to upload pads -- make the service cloud agnostic!!!
    - Mongo should be used to store pads as well (!!!)
-- [ ] start padding the message with random data to prevent length attacks
-   - pad should be random, use delimeter like "###" to signify padding
 - [ ] add DH handshake!!
    - dh handshake with rediculous values will be used for pad transformation and message signing
    - two different values will need to be calculated
@@ -44,6 +44,7 @@ At this point, the project needs a performant re-write. A highly performant lang
 
 ## Phase III
 ### get something working with hardware to deploy to cloud
+***10% Complete***
 - [x] order hardware
 - [x] confirm operation of ew-rtl-entropy binary and containerize
    - need to make sure this binary will work, output works, containerize
@@ -61,6 +62,8 @@ At this point, the project needs a performant re-write. A highly performant lang
    - terraform IAC
 - [ ] update docker build to respect any env (API, Server)
    - a dockerfile with VARIABLE references to config files should be sufficient
+- [ ] start padding the message with random data to prevent length attacks
+   - pad should be random, use delimeter like "###" to signify padding
 - [ ] setup server to interact with cloud/prod env
    - I wont be looking at the logs for messages, and wont want them decrypted until I'm ready
    - add a flag, localdev is good as is
