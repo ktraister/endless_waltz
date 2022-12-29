@@ -31,7 +31,7 @@ At this point, the project needs a performant re-write. A highly performant lang
 - [x] Remove Redis and update to use Mongo
 - [ ] Add API route to upload pads -- make the service cloud agnostic!!!
    - Mongo should be used to store pads as well (!!!)
-   - update http handler -- https://www.section.io/engineering-education/build-a-rest-api-application-using-golang-and-postgresql-database/
+   - [ ] move upload api to seperate port
 - [ ] start padding the message with random data to prevent length attacks
    - pad should be random, use delimeter like "###" to signify padding
 - [ ] add DH handshake!!
