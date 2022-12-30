@@ -60,11 +60,12 @@ func pad_encrypt(MSG string, PAD string) string {
 
 	//encode the message
 	for i := 0; i < len(asc_chars); i++ {
-	        //if chars - pad < 255
-		if asc_chars[i] < asc_pad[i] {
-			asc_chars[i] = asc_chars[i] + 255
+		//if chars - pad < 255
+		val := asc_chars[i] - asc_pad[i]
+		if val < 0 {
+			val = val + 255
 		}
-		enc_msg = append(enc_msg, asc_chars[i]-asc_pad[i])
+		enc_msg = append(enc_msg, val)
 	}
 
 	return toString(enc_msg)
@@ -85,11 +86,12 @@ func pad_decrypt(INPUT_MSG string, PAD string) string {
 
 	//decrypt message
 	for i := 0; i < len(ENC_MSG); i++ {
-	        //if msg + pad > 255
-		if ENC_MSG[i] < asc_pad[i] {
-			ENC_MSG[i] = ENC_MSG[i] - 255
+		//if msg + pad > 255
+		val := ENC_MSG[i] + asc_pad[i]
+		if val > 255 {
+			val = val - 255
 		}
-		dec_msg = append(dec_msg, ENC_MSG[i]+asc_pad[i])
+		dec_msg = append(dec_msg, val)
 	}
 
 	//change ascii_chars to chars and stringify
@@ -105,11 +107,11 @@ func pad_decrypt(INPUT_MSG string, PAD string) string {
 }
 
 /*
-	 main() {
+func main() {
 	enc_msg := pad_encrypt("foo", "abcdefg")
 	fmt.Println(enc_msg)
 	fmt.Println("-------------------------------------")
 	dec_msg := pad_decrypt(enc_msg, "abcdefg")
-    fmt.Println(dec_msg)
+	fmt.Println(dec_msg)
 }
 */
