@@ -1,5 +1,10 @@
 package main
 
+import (
+	"crypto/rand"
+	"fmt"
+)
+
 /*
 Great RedHat docs on this subject:
 https://www.redhat.com/en/blog/understanding-and-verifying-security-diffie-hellman-parameters
@@ -17,8 +22,13 @@ keyb = A^B mod p = 1004 mod 541 = 478
 
 */
 
-func dh_handshake(conn *Net.connection) int {
-	//calculate my prime
+func dh_handshake(conn *Net.connection, conn_type string) int {
+
+	//calculate my prime and shared prime
+	prime, err := rand.Prime(rand.Reader, 2048)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	//calculate shared int
 
