@@ -60,6 +60,7 @@ func pad_encrypt(MSG string, PAD string) string {
 
 	//encode the message
 	for i := 0; i < len(asc_chars); i++ {
+	        //if chars - pad < 255
 		if asc_chars[i] < asc_pad[i] {
 			asc_chars[i] = asc_chars[i] + 255
 		}
@@ -84,6 +85,7 @@ func pad_decrypt(INPUT_MSG string, PAD string) string {
 
 	//decrypt message
 	for i := 0; i < len(ENC_MSG); i++ {
+	        //if msg + pad > 255
 		if ENC_MSG[i] < asc_pad[i] {
 			ENC_MSG[i] = ENC_MSG[i] - 255
 		}
