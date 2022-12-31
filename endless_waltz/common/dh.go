@@ -61,7 +61,8 @@ func checkPrimeNumber(num int) bool {
 }
 
 func makeGenerator(num int) int {
-	return 0
+        //add some logic to this
+	return 2
 }
 
 func checkGenerator(num int) bool {
@@ -130,7 +131,7 @@ func dh_handshake(conn net.Conn, conn_type string) int {
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
-	pubkey := int(math.Pow(float64(generator), myint)) % prime
+	pubkey := strconv.Itoa(int(math.Pow(float64(generator), float64(myint.Int64()))) % prime)
 
 	if conn_type == "server" {
 		//send the pubkey across the conn
@@ -146,8 +147,11 @@ func dh_handshake(conn net.Conn, conn_type string) int {
 			return 0
 		}
 
-		tempkey := int(buf[:n])
-
+		tempkey, err = strconv.Atoi(string(buf[:n]))
+		if err != nil {
+			log.Println(n, err)
+			return 0
+		}
 	} else {
 
 		n, err := conn.Read(buf)
@@ -163,14 +167,19 @@ func dh_handshake(conn net.Conn, conn_type string) int {
 			return 0
 		}
 
-		tempkey := int(buf[:n])
+		tempkey, err = strconv.Atoi(string(buf[:n]))
+		if err != nil {
+			log.Println(n, err)
+			return 0
+		}
 	}
 
 	//mod pubkey again E.X.) keya = B^a mod p : 2622 mod 541 = 478
-	privkey := int(math.Pow(tempkey, myint)) % prime
+	privkey := int(math.Pow(float64(tempkey), float64(myint.Int64()))) % prime
 
 	if checkPrivKey(privkey) == false {
 		// bounce the conn
+		return 0
 	}
 
 	//return common secret

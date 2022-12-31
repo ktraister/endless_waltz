@@ -32,6 +32,12 @@ func handleConnection(conn net.Conn, random_host string) {
 		return
 	}
 
+	private_key := dh_handshake(conn, "server") 
+	if private_key == 0 {
+	    fmt.Println("Private Key Error!")
+	    return
+	} 
+
 	//reach out to the api and get our key and pad
 	data := []byte(`{"Host": "server"}`)
 
