@@ -60,16 +60,16 @@ func checkPrimeNumber(num int) bool {
 	return true
 }
 
-func makeGenerator(num int) int {
+func makeGenerator(prime int) int {
         //add some logic to this
 	return 2
 }
 
-func checkGenerator(num int) bool {
+func checkGenerator(prime int, generator int) bool {
 	return true
 }
 
-func checkPrivKey(num int) bool {
+func checkPrivKey(key int) bool {
 	return true
 }
 
@@ -80,13 +80,14 @@ func dh_handshake(conn net.Conn, conn_type string) int {
 
 	if conn_type == "server" {
 		//possible gen values 2047,3071,4095, 6143, 7679, 8191
-		prime, err := rand.Prime(rand.Reader, 2047)
+		tmpprime, err := rand.Prime(rand.Reader, 2047)
 		if err != nil {
 			fmt.Println(err)
 		}
+                prime = int(tmpprime.Int64())
 
 		//calculate generator
-		generator = makeGenerator(int(prime.Int64()))
+		generator = makeGenerator(prime)
 		fmt.Println(generator)
 
 		//send the values across the conn
@@ -109,15 +110,15 @@ func dh_handshake(conn net.Conn, conn_type string) int {
 			log.Println(n, err)
 			return 0
 		}
-		generator, err = strconv.Atoi(values[1])
+		generator, err = strconv.Atoi(strings.Trim(values[1], "\n"))
 		if err != nil {
 			log.Println(n, err)
 			return 0
 		}
 
 		//approve the values or bounce the conn
-		if checkPrimeNumber(prime) == false || checkGenerator(generator) == false {
-			//bounce the conn
+		if checkPrimeNumber(prime) == false || checkGenerator(prime, generator) == false {
+		        return 0
 		}
 	}
 
