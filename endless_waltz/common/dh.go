@@ -1,12 +1,14 @@
 package main
 
 import (
+	"crypto/rand"
 	"fmt"
 	"log"
 	"math"
+	"math/big"
 	"net"
+	"strconv"
 	"strings"
-	"crypto/rand"
 )
 
 /*
@@ -72,7 +74,7 @@ func checkPrivKey(num int) bool {
 
 func dh_handshake(conn net.Conn, conn_type string) int {
 
-        var prime, generator int
+	var prime, generator, tempkey int
 	buf := make([]byte, 100)
 
 	if conn_type == "server" {
@@ -83,7 +85,7 @@ func dh_handshake(conn net.Conn, conn_type string) int {
 		}
 
 		//calculate generator
-		generator = makeGenerator(prime)
+		generator = makeGenerator(int(prime.Int64()))
 		fmt.Println(generator)
 
 		//send the values across the conn
@@ -94,11 +96,23 @@ func dh_handshake(conn net.Conn, conn_type string) int {
 		}
 	} else {
 		//wait to receive values
-		conn.Read(buf)
+		n, err := conn.Read(buf)
+		if err != nil {
+			log.Println(n, err)
+			return 0
+		}
 		values := strings.Split(string(buf[:n]), ":")
 
-		prime = int(values[0])
-		generator = (values[1])
+		prime, err = strconv.Atoi(values[0])
+		if err != nil {
+			log.Println(n, err)
+			return 0
+		}
+		generator, err = strconv.Atoi(values[1])
+		if err != nil {
+			log.Println(n, err)
+			return 0
+		}
 
 		//approve the values or bounce the conn
 		if checkPrimeNumber(prime) == false || checkGenerator(generator) == false {
@@ -107,12 +121,16 @@ func dh_handshake(conn net.Conn, conn_type string) int {
 	}
 
 	//myint is private, < p, > 0
-	myint := rand.Int(rand.Reader, prime-1)
+	myint, err := rand.Int(rand.Reader, big.NewInt(int64(prime)))
+	if err != nil {
+		log.Println(err)
+		return 0
+	}
 	fmt.Println(myint)
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
-	pubkey := int(math.Pow(generator, myint)) % prime
+	pubkey := int(math.Pow(float64(generator), myint)) % prime
 
 	if conn_type == "server" {
 		//send the pubkey across the conn
@@ -122,21 +140,34 @@ func dh_handshake(conn net.Conn, conn_type string) int {
 			return 0
 		}
 
-		conn.Read(buf)
-	} else {
-
-		conn.Read(buf)
-
-		//send the pubkey across the conn
-		n, err := conn.Write([]byte(pubkey))
+		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(n, err)
 			return 0
 		}
+
+		tempkey := int(buf[:n])
+
+	} else {
+
+		n, err := conn.Read(buf)
+		if err != nil {
+			log.Println(n, err)
+			return 0
+		}
+
+		//send the pubkey across the conn
+		n, err = conn.Write([]byte(pubkey))
+		if err != nil {
+			log.Println(n, err)
+			return 0
+		}
+
+		tempkey := int(buf[:n])
 	}
 
 	//mod pubkey again E.X.) keya = B^a mod p : 2622 mod 541 = 478
-	privkey := int(math.Pow(string(buf[:n]), myint)) % prime
+	privkey := int(math.Pow(tempkey, myint)) % prime
 
 	if checkPrivKey(privkey) == false {
 		// bounce the conn
