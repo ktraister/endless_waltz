@@ -43,146 +43,151 @@ keyb = A^B mod p : 1004 mod 541 = 478
  * server should also have urandom seeded to garuntee more true randomness :)
  */
 
-func checkPrimeNumber(num int) bool {
+func checkPrimeNumber(num *big.Int) bool {
 	//extend to check above artificial "floor" value
-	if num < 2 {
-		fmt.Println("Number must be greater than 2.")
-		return false
-	}
-	sq_root := int(math.Sqrt(float64(num)))
-	for i := 2; i <= sq_root; i++ {
-		if num%i == 0 {
-			fmt.Println("Non Prime Number")
-			return false
-		}
-	}
-	fmt.Println("Prime Number")
-	return true
+	//perform 20 tests to see if a value is prime or not
+	if num.ProbablyPrime(20) {
+		fmt.Println("Number is probably prime")
+		return true
+	} else {
+	    fmt.Println("Number is probably not prime...")
+	    return false
+        }
 }
 
-func makeGenerator(prime int) int {
+func makeGenerator(prime *big.Int) int {
         //add some logic to this
 	return 2
 }
 
-func checkGenerator(prime int, generator int) bool {
+func checkGenerator(prime *big.Int, generator int) bool {
 	return true
 }
 
-func checkPrivKey(key int) bool {
+func checkPrivKey(key string) bool {
 	return true
 }
 
-func dh_handshake(conn net.Conn, conn_type string) int {
+func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
-	var prime, generator, tempkey int
+        var prime *big.Int
+	var generator, tempkey int
+	var err error
+	var ok bool
 	buf := make([]byte, 100)
 
 	if conn_type == "server" {
+	        //prime will need to be *big.Int, int cant store the number 
 		//possible gen values 2047,3071,4095, 6143, 7679, 8191
-		tmpprime, err := rand.Prime(rand.Reader, 2047)
+		prime, err = rand.Prime(rand.Reader, 2047)
 		if err != nil {
 			fmt.Println(err)
 		}
-                prime = int(tmpprime.Int64())
 
 		//calculate generator
 		generator = makeGenerator(prime)
-		fmt.Println(generator)
+
+		fmt.Println("Server DH Prime: ", prime)
+                fmt.Println("Server DH Generator: ", generator)
 
 		//send the values across the conn
 		n, err := conn.Write([]byte(fmt.Sprintf("%d:%d\n", prime, generator)))
 		if err != nil {
 			log.Println(n, err)
-			return 0
+			return "", err
 		}
 	} else {
 		//wait to receive values
 		n, err := conn.Read(buf)
 		if err != nil {
 			log.Println(n, err)
-			return 0
+			return "", err
 		}
 		values := strings.Split(string(buf[:n]), ":")
 
-		prime, err = strconv.Atoi(values[0])
-		if err != nil {
-			log.Println(n, err)
-			return 0
+		prime, ok = prime.SetString(values[0], 10)
+		if !ok {
+			log.Println("Couldn't convert response prime to int")
+			return "", err
 		}
 		generator, err = strconv.Atoi(strings.Trim(values[1], "\n"))
 		if err != nil {
 			log.Println(n, err)
-			return 0
+			return "", err
 		}
+
+		fmt.Println("Client DH Prime: ", prime)
+                fmt.Println("Client DH Generator: ", generator)
 
 		//approve the values or bounce the conn
 		if checkPrimeNumber(prime) == false || checkGenerator(prime, generator) == false {
-		        return 0
+		        return "", err
 		}
 	}
 
 	//myint is private, < p, > 0
-	myint, err := rand.Int(rand.Reader, big.NewInt(int64(prime)))
+	myint, err := rand.Int(rand.Reader, prime)
 	if err != nil {
 		log.Println(err)
-		return 0
+		return "", err
 	}
-	fmt.Println(myint)
+	fmt.Println("Private integer: ", myint)
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
-	pubkey := strconv.Itoa(int(math.Pow(float64(generator), float64(myint.Int64()))) % prime)
+	gofa := math.Pow(float64(generator), float64(myint.Int64()))
+	pubkey := fmt.Sprintf("%f", math.Mod(gofa, float64(prime.Int64())))
 
 	if conn_type == "server" {
 		//send the pubkey across the conn
 		n, err := conn.Write([]byte(pubkey))
 		if err != nil {
 			log.Println(n, err)
-			return 0
+			return "", err
 		}
 
 		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(n, err)
-			return 0
+			return "", err
 		}
 
 		tempkey, err = strconv.Atoi(string(buf[:n]))
 		if err != nil {
 			log.Println(n, err)
-			return 0
+			return "", err
 		}
 	} else {
 
 		n, err := conn.Read(buf)
 		if err != nil {
 			log.Println(n, err)
-			return 0
+			return "", err
 		}
 
 		//send the pubkey across the conn
 		n, err = conn.Write([]byte(pubkey))
 		if err != nil {
 			log.Println(n, err)
-			return 0
+			return "", err
 		}
 
 		tempkey, err = strconv.Atoi(string(buf[:n]))
 		if err != nil {
 			log.Println(n, err)
-			return 0
+			return "", err
 		}
 	}
 
 	//mod pubkey again E.X.) keya = B^a mod p : 2622 mod 541 = 478
-	privkey := int(math.Pow(float64(tempkey), float64(myint.Int64()))) % prime
+	bofp := math.Pow(float64(tempkey), float64(myint.Int64()))
+	privkey := fmt.Sprintf("%f", math.Mod(bofp, float64(prime.Int64())))
 
 	if checkPrivKey(privkey) == false {
 		// bounce the conn
-		return 0
+		return "", err
 	}
 
 	//return common secret
-	return privkey
+	return privkey, nil
 }
