@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
-	"math"
 	"math/big"
 	"net"
 	"strconv"
@@ -74,8 +73,7 @@ func checkPrivKey(key string) bool {
 func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 	prime := new(big.Int)
-	tempkey := new(big.Float)
-        tempfloat := new(big.Float)
+	tempkey := new(big.Int)
 
 	var generator int
 	var err error
@@ -138,49 +136,19 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		log.Println(err)
 		return "", err
 	}
-        tempfloat, ok = tempfloat.SetString(fmt.Sprintf("%s",myint))
-		if !ok {
-			log.Println("Couldn't convert response tempPubKey to int")
-			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
-			return "", err
-		}
-        myfloat, accuracy := tempfloat.Float64()
-	fmt.Println(accuracy)
-	fmt.Println("Private Float: ", myfloat)
-
-        tempfloat, ok = tempfloat.SetString(fmt.Sprintf("%s",prime))
-		if !ok {
-			log.Println("Couldn't convert response tempPubKey to int")
-			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
-			return "", err
-		}
-	primefloat, accuracy := tempfloat.Float64()
-	fmt.Println(accuracy)
-	fmt.Println("Prime Float: ", primefloat)
-
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
-	//pubkey is busted because math.Pow returns a float64!
-	//math.Mod is prolly also a culprit...
-	//FIx it with this: https://stackoverflow.com/questions/29912249/what-is-the-equivalent-for-bigint-powa-in-go
-	/*
-	gofa := math.Pow(float64(generator), myfloat)
-	fmt.Println("DEBUG gofa: ", gofa)
-	//*** the pubkey we're sending is currently busted***
-	pubkey := fmt.Sprintf("%f", math.Mod(gofa, primefloat))
-	*/
-	
-	//oh fuck... i've been adding complication using floats b/c of these functions, but int has the Exp I need....
-	//we can use Exp and Mod, properties of math/big.Int *facepalm*
+        tempkey.Exp(big.NewInt(int64(generator)), myint, nil)
+	tempkey.Mod(tempkey, prime)
 
 	//clear the buffer
         buf = make([]byte, 10000)
 
 	if conn_type == "server" {
 		//send the pubkey across the conn
-		fmt.Println("Sending pubkey to client: ", pubkey)
-		n, err := conn.Write([]byte(pubkey))
+		fmt.Println("Sending pubkey to client: ", tempkey)
+		n, err := conn.Write([]byte(tempkey.String()))
 		if err != nil {
 			log.Println(n, err)
 			return "", err
@@ -202,7 +170,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		*/
 
 		fmt.Println("Server TempKey: ", string(buf[:n]))
-		tempkey, ok = tempkey.SetString(string(buf[:n]))
+		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
 		if !ok {
 			log.Println("Couldn't convert response tempPubKey to int")
                         err = fmt.Errorf("Couldn't convert response tempPubKey to int")
@@ -217,8 +185,8 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 
-		//send the pubkey across the conn
-		n, err = conn.Write([]byte(pubkey))
+		//send the tempkey across the conn
+		n, err = conn.Write([]byte(tempkey.String()))
 		if err != nil {
 			log.Println(n, err)
 			return "", err
@@ -232,7 +200,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 		*/
-                tempkey, ok = tempkey.SetString(string(buf[:n]))
+                tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
 		if !ok {
 			log.Println("Couldn't convert response tempPubKey to int")
 			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
@@ -240,12 +208,15 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 	}
 
-	exkey, accuracy := tempkey.Float64()
-
 	//mod pubkey again E.X.) keya = B^a mod p : 2622 mod 541 = 478
+	/*
 	bofp := math.Pow(exkey, myfloat)
         fmt.Println("DEBUG bofp: ", bofp)
 	privkey := fmt.Sprintf("%f", math.Mod(bofp, primefloat))
+	*/
+	tempkey.Exp(tempkey, myint, nil)
+	tempkey.Mod(tempkey, prime)
+	privkey := tempkey.String()
 
 	if checkPrivKey(privkey) == false {
 		// bounce the conn
