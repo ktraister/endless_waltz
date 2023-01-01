@@ -72,6 +72,8 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 	prime := new(big.Int)
 	tempkey := new(big.Int)
+        tempfloat := new(big.Float)
+
 	var generator int
 	var err error
 	var ok bool
@@ -127,16 +129,27 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	}
 
 	//myint is private, < p, > 0
+	//need to change the method we use here, too
 	myint, err := rand.Int(rand.Reader, prime)
 	if err != nil {
 		log.Println(err)
 		return "", err
 	}
-	fmt.Println("Private integer: ", myint)
+        tempfloat, ok = tempfloat.SetString(fmt.Sprintf("%s",myint))
+		if !ok {
+			log.Println("Couldn't convert response tempPubKey to int")
+			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
+			return "", err
+		}
+ 
+        myfloat, accuracy := tempfloat.Float64()
+	fmt.Println(accuracy)
+
+	fmt.Println("Private Float: ", myfloat)
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
-	gofa := math.Pow(float64(generator), myint.Int64())
+	gofa := math.Pow(float64(generator), myfloat)
 	fmt.Println("DEBUG gofa: ", gofa)
 	//*** the pubkey we're sending is currently busted***
 	pubkey := fmt.Sprintf("%f", math.Mod(gofa, float64(prime.Int64())))
@@ -208,7 +221,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	}
 
 	//mod pubkey again E.X.) keya = B^a mod p : 2622 mod 541 = 478
-	bofp := math.Pow(float64(tempkey.Int64()), float64(myint.Int64()))
+	bofp := math.Pow(float64(tempkey.Int64()), myfloat)
 	privkey := fmt.Sprintf("%f", math.Mod(bofp, float64(prime.Int64())))
 
 	if checkPrivKey(privkey) == false {
