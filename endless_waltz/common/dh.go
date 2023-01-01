@@ -14,6 +14,9 @@ import (
 /*
 Great RedHat docs on this subject:
 https://www.redhat.com/en/blog/understanding-and-verifying-security-diffie-hellman-parameters
+
+And more on the web:
+https://crypto.stackexchange.com/questions/820/how-does-one-calculate-a-primitive-root-for-diffie-hellman
 /etc/ssh/moduli is helpful too
 
 //g is a primitive root modulo, and generator of p
@@ -71,7 +74,7 @@ func checkPrivKey(key string) bool {
 func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 	prime := new(big.Int)
-	tempkey := new(big.Int)
+	tempkey := new(big.Float)
         tempfloat := new(big.Float)
 
 	var generator int
@@ -82,7 +85,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	if conn_type == "server" {
 	        //prime will need to be *big.Int, int cant store the number 
 		//possible gen values 2047,3071,4095, 6143, 7679, 8191
-		prime, err = rand.Prime(rand.Reader, 2047)
+		prime, err = rand.Prime(rand.Reader, 9)
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -141,18 +144,28 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
 			return "", err
 		}
- 
         myfloat, accuracy := tempfloat.Float64()
 	fmt.Println(accuracy)
-
 	fmt.Println("Private Float: ", myfloat)
+
+        tempfloat, ok = tempfloat.SetString(fmt.Sprintf("%s",prime))
+		if !ok {
+			log.Println("Couldn't convert response tempPubKey to int")
+			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
+			return "", err
+		}
+	primefloat, accuracy := tempfloat.Float64()
+	fmt.Println(accuracy)
+	fmt.Println("Prime Float: ", primefloat)
+
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
 	gofa := math.Pow(float64(generator), myfloat)
 	fmt.Println("DEBUG gofa: ", gofa)
 	//*** the pubkey we're sending is currently busted***
-	pubkey := fmt.Sprintf("%f", math.Mod(gofa, float64(prime.Int64())))
+	//NEED TO CREATE A PRIME THAT IS FLOAT, float64() steps on it HERE AND L232
+	pubkey := fmt.Sprintf("%f", math.Mod(gofa, primefloat))
 
 	//clear the buffer
         buf = make([]byte, 10000)
@@ -182,7 +195,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		*/
 
 		fmt.Println("Server TempKey: ", string(buf[:n]))
-		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
+		tempkey, ok = tempkey.SetString(string(buf[:n]))
 		if !ok {
 			log.Println("Couldn't convert response tempPubKey to int")
                         err = fmt.Errorf("Couldn't convert response tempPubKey to int")
@@ -212,7 +225,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 		*/
-                tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
+                tempkey, ok = tempkey.SetString(string(buf[:n]))
 		if !ok {
 			log.Println("Couldn't convert response tempPubKey to int")
 			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
@@ -220,9 +233,12 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 	}
 
+	exkey, accuracy := tempkey.Float64()
+
 	//mod pubkey again E.X.) keya = B^a mod p : 2622 mod 541 = 478
-	bofp := math.Pow(float64(tempkey.Int64()), myfloat)
-	privkey := fmt.Sprintf("%f", math.Mod(bofp, float64(prime.Int64())))
+	bofp := math.Pow(exkey, myfloat)
+        fmt.Println("DEBUG bofp: ", bofp)
+	privkey := fmt.Sprintf("%f", math.Mod(bofp, primefloat))
 
 	if checkPrivKey(privkey) == false {
 		// bounce the conn
