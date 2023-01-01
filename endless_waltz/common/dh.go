@@ -161,10 +161,11 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
+	//pubkey is busted because math.Pow returns a float64!
+	//FIx it with this: https://stackoverflow.com/questions/29912249/what-is-the-equivalent-for-bigint-powa-in-go
 	gofa := math.Pow(float64(generator), myfloat)
 	fmt.Println("DEBUG gofa: ", gofa)
 	//*** the pubkey we're sending is currently busted***
-	//NEED TO CREATE A PRIME THAT IS FLOAT, float64() steps on it HERE AND L232
 	pubkey := fmt.Sprintf("%f", math.Mod(gofa, primefloat))
 
 	//clear the buffer
