@@ -172,6 +172,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	*/
 	
 	//oh fuck... i've been adding complication using floats b/c of these functions, but int has the Exp I need....
+	//we can use Exp and Mod, properties of math/big.Int *facepalm*
 
 	//clear the buffer
         buf = make([]byte, 10000)
