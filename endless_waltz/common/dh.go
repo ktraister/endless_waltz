@@ -162,11 +162,16 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
 	//pubkey is busted because math.Pow returns a float64!
+	//math.Mod is prolly also a culprit...
 	//FIx it with this: https://stackoverflow.com/questions/29912249/what-is-the-equivalent-for-bigint-powa-in-go
+	/*
 	gofa := math.Pow(float64(generator), myfloat)
 	fmt.Println("DEBUG gofa: ", gofa)
 	//*** the pubkey we're sending is currently busted***
 	pubkey := fmt.Sprintf("%f", math.Mod(gofa, primefloat))
+	*/
+	
+	//oh fuck... i've been adding complication using floats b/c of these functions, but int has the Exp I need....
 
 	//clear the buffer
         buf = make([]byte, 10000)
