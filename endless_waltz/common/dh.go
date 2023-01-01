@@ -58,7 +58,8 @@ func checkPrimeNumber(num *big.Int) bool {
 }
 
 func makeGenerator(prime *big.Int) int {
-        //add some logic to this
+        //sample code to flesh out this logic
+        //https://www.geeksforgeeks.org/primitive-root-of-a-prime-number-n-modulo-n/
 	return 2
 }
 
