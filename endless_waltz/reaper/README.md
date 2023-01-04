@@ -16,3 +16,5 @@ https://pthree.org/2015/06/16/hardware-rng-through-an-rtl-sdr-dongle/
 Now i have a fork of the RTL-entropy software to turn my SDR into an RNG. 
 
 TEMP rancher pass: EpjAVeyzpGenotSx
+
+
