@@ -55,6 +55,11 @@ POC in python, working code in go
 - [ ] setup automation for CI/CD
    - GitHub Actions is the easiest and closest, and I'm already paying for pro - try this first
    - need to choose a provider -- CircleCI provides most free build minutes per month
+   - Setup for CI DONE! For:
+     - [x] Reaper
+     - [x] API
+     - [ ] Server
+   - CD not yet started...
 - [ ] Create K8s helm charts for services
    - API
    - Reaper
