@@ -17,9 +17,9 @@ jobs:
           password: ${{ github.token }}
 
       - name: Build and push docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: "./endless_waltz/reaper"
-          file: "./endless_waltz/reaper/Dockerfile"
-          push: true
-          tags: ew_reaper:${{ github.sha }}
+        run: | 
+          ls
+          cd ./endless_waltz/reaper
+          docker build . -t "ghcr.io/ktraister/ew-reaper:$GITHUB_SHA"
+          docker push "ghcr.io/ktraister/ew-reaper:$GITHUB_SHA"
+
