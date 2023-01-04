@@ -22,5 +22,7 @@ jobs:
       - name: Build and push docker image
         uses: docker/build-push-action@v3
         with:
+          context: endless_waltz/reaper
+          file: endless_waltz/reaper/Dockerfile
           push: true
           tags: "ghcr.io/ktraister/ew_reaper:${{ github.sha }}"

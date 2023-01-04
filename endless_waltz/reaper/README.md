@@ -17,4 +17,3 @@ Now i have a fork of the RTL-entropy software to turn my SDR into an RNG.
 
 TEMP rancher pass: EpjAVeyzpGenotSx
 
-
