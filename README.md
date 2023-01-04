@@ -56,6 +56,8 @@ POC in python, working code in go
    - GitHub Actions is the easiest and closest, and I'm already paying for pro - try this first
    - need to choose a provider -- CircleCI provides most free build minutes per month
 - [ ] Create K8s helm charts for services
+   - API
+   - Reaper
 - [ ] further logging improvements
 - [ ] create infrastructure for project in AWS
    - terraform IAC

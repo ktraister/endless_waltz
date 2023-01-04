@@ -1,2 +1,2 @@
 server:
-  UploadURLs: "localhost:8090/api/upload
+  UploadURLs: "localhost:8090/api/upload"
