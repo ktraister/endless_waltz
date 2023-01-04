@@ -57,7 +57,29 @@ func checkPrimeNumber(num *big.Int) bool {
         }
 }
 
-func findPrimeFactors(i *big.Int) []int {
+func findPrimeFactors(input *big.Int) []*big.Int {
+    var factors []*big.Int
+    zero := big.NewInt(0) 
+    one := big.NewInt(1)
+    two  := big.NewInt(2)
+    
+    for input.Mod(input, two) == zero {
+	factors = append(factors, two)
+	input = input.Div(input, two)
+    }
+
+    for i := big.NewInt(3); i.Cmp(input.Sqrt(input)) != 1; i = i.Add(i, one) {
+	for input.Mod(input, i) == zero {
+	    factors = append(factors, i)
+	    input = input.Div(input, i)
+        }
+    }
+
+    if input.Cmp(2) == -1 {
+	factors = append(factors)
+    }	
+
+    return factors
 }
 
 func makeGenerator(prime *big.Int) int {
