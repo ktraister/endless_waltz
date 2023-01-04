@@ -57,10 +57,35 @@ func checkPrimeNumber(num *big.Int) bool {
         }
 }
 
+func findPrimeFactors(i *big.Int) []int {
+}
+
 func makeGenerator(prime *big.Int) int {
         //sample code to flesh out this logic
         //https://www.geeksforgeeks.org/primitive-root-of-a-prime-number-n-modulo-n/
-	return 2
+	//read the python example to get whats up
+
+	//add this to calculate primitve roots
+	one := big.NewInt(1)
+	phi := prime.Sub(prime, one)
+	flag := false
+
+	//let's figure out our prime factors and store in a map[]
+	phiFactors := findPrimeFactors(phi)
+
+	//we'll return i if we get a hit
+	for i := big.NewInt(2); i.Cmp(phi) != 0; i.Add(i, one) {
+	    //for each i, we need to test 
+	    /*
+	    for val in phiFactors {
+		#python code
+		if power(i, phi // val, prime) == 1
+		    flag = true
+		    break
+            */
+        }
+
+	return i.Int64()
 }
 
 func checkGenerator(prime *big.Int, generator int) bool {
@@ -84,7 +109,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	if conn_type == "server" {
 	        //prime will need to be *big.Int, int cant store the number 
 		//possible gen values 2047,3071,4095, 6143, 7679, 8191
-		prime, err = rand.Prime(rand.Reader, 9)
+		prime, err = rand.Prime(rand.Reader, 19)
 		if err != nil {
 			fmt.Println(err)
 		}
