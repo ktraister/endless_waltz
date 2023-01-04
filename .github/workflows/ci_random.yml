@@ -9,6 +9,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+
+      - name: Go Build
+        run: | 
+          cd endless_waltz/random
+          go build .
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
         with:
@@ -20,5 +30,6 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: endless_waltz/random
+          file: endless_waltz/random/Dockerfile
           push: true
-          tags: ew_random:${{ github.sha }}
+          tags: "ghcr.io/ktraister/ew_random:${{ github.sha }}"
