@@ -5,14 +5,14 @@
 replicaCount: 1
 
 image:
-  repository: nginx
+  repository: ghcr.io/ktraister/ew_random
   pullPolicy: Always
   # Overrides the image tag whose default is the chart appVersion.
-  tag: "ghcr.io/ktraister/ew_random:42ab52568db14abf1751b84167e030a70e2914fc"
+  tag: "42ab52568db14abf1751b84167e030a70e2914fc"
 
 imagePullSecrets: []
-nameOverride: "ew_random"
-fullnameOverride: "ew_random"
+nameOverride: "ew-random"
+fullnameOverride: "ew-random"
 
 serviceAccount:
   # Specifies whether a service account should be created
