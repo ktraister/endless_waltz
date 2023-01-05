@@ -60,7 +60,7 @@ POC in python, working code in go
      - [x] API
      - [ ] Server
    - CD not yet started...
-- [ ] Create K8s helm charts for services
+- [ ] Create K8s helm charts for services - init files for below
    - API
    - Reaper
 - [ ] further logging improvements
