@@ -28,23 +28,18 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ .Values.reaper.name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
+          image: "{{ .Values.reaper.image.repository }}:{{ .Values.reaper.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.reaper.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+        - name: {{ .Values.entropy.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.reaper.image.repository }}:{{ .Values.reaper.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.reaper.image.pullPolicy }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
