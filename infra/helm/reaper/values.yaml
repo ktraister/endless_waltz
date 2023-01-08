@@ -5,22 +5,23 @@
 replicaCount: 1
 
 reaper:
-  name: ew_reaper
+  name: ew-reaper
   image:
     repository: ghcr.io/ktraister/ew_reaper
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
+    tag: "cfe8498e6cb158405688c57a7bee53f35e99d47d"
 
 entropy:
-  name: ew_entropy
+  name: ew-entropy
   image:
     repository: ghcr.io/ktraister/ew_entropy
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: ""
+    tag: "6e912119197ff273ae5d5e0ac66ae1550529b471"
 
-imagePullSecrets: []
+imagePullSecrets: 
+  - name: ghcrcred
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -43,6 +44,10 @@ securityContext: {}
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 12345
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

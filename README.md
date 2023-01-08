@@ -47,7 +47,7 @@ POC in python, working code in go
 - [x] order hardware
 - [x] confirm operation of ew-rtl-entropy binary and containerize
    - need to make sure this binary will work, output works, containerize
-- [ ] write reaper in Go to live on physical hardware
+- [x] write reaper in Go to live on physical hardware
    - reaper will depend on a C executable for RNG using an SDR for randomness
    - [x] Make a pipe inside a volume and mount it on `/dev/urandom` where the Go lib reads -- dont fight it lol
    - reaper and ew-rtl-entropy are working together in docker -- compose file works

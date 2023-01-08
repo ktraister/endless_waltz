@@ -38,8 +38,8 @@ spec:
         - name: {{ .Values.entropy.name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.reaper.image.repository }}:{{ .Values.reaper.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.reaper.image.pullPolicy }}
+          image: "{{ .Values.entropy.image.repository }}:{{ .Values.entropy.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.entropy.image.pullPolicy }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
