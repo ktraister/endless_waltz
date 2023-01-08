@@ -12,7 +12,7 @@ POC in python, working code in go
 
 ## Phase II
 ### get basic functionality working in GoLang
-***80% Complete***
+***70% Complete***
 - [x] rewrite API in Go
    - moved UUID generation for connection from server into API
 - [x] implement xor library
@@ -32,6 +32,13 @@ POC in python, working code in go
 - [x] Remove Redis and update to use Mongo
 - [x] Add API route to upload pads -- make the service cloud agnostic!!!
    - Mongo should be used to store pads as well (!!!)
+- [ ] API Refactor
+   - [ ] remove upload routes, this is moving to reaper
+   - [ ] move configuration to env variables 
+- [ ] Reaper refactor
+   - [ ] reaper should write directly to database (will add items to P3)
+   - [ ] reaper logging should be useful (lol)
+   - [ ] reaper should read from env variables for serversMap to upload to
 - [ ] add DH handshake!!
    - dh handshake with rediculous values will be used for pad transformation and message signing
    - two different values will need to be calculated
@@ -51,7 +58,6 @@ POC in python, working code in go
    - reaper will depend on a C executable for RNG using an SDR for randomness
    - [x] Make a pipe inside a volume and mount it on `/dev/urandom` where the Go lib reads -- dont fight it lol
    - reaper and ew-rtl-entropy are working together in docker -- compose file works
-- [ ] move upload api to seperate port
 - [ ] setup automation for CI/CD
    - GitHub Actions is the easiest and closest, and I'm already paying for pro - try this first
    - need to choose a provider -- CircleCI provides most free build minutes per month
@@ -59,10 +65,12 @@ POC in python, working code in go
      - [x] Reaper
      - [x] API
      - [ ] Server
+     - [ ] Client
    - CD not yet started...
 - [ ] Create K8s helm charts for services - init files for below
    - API
    - Reaper
+     - needs mount of usb to entropy to work
 - [ ] further logging improvements
 - [ ] create infrastructure for project in AWS
    - terraform IAC
