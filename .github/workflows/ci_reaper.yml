@@ -16,8 +16,8 @@ jobs:
 
       - name: Go Build
         run: | 
-          export GOOS=amd64
-          export GOARCH=linux
+          export GOOS=linux
+          export GOARCH=amd64
           cd endless_waltz/reaper
           go build .
 
