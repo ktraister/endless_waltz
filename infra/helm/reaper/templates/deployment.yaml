@@ -37,17 +37,17 @@ spec:
             - name: "MongoURI"
               valueFrom:
                 secretKeyRef:
-                  key:  mongo-uri
+                  key:  mongouri
                   name: {{ .Release.Name }}
             - name: "MongoUser"
               valueFrom:
                 secretKeyRef:
-                  key:  mongo-user
+                  key:  mongouser
                   name: {{ .Release.Name }}
             - name: "MongoPass"
               valueFrom:
                 secretKeyRef:
-                  key:  mongo-pass
+                  key:  mongopass
                   name: {{ .Release.Name }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
