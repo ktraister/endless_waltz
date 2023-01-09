@@ -41,6 +41,7 @@ func main() {
         return
     }
 
+    /*
     private_key, err := dh_handshake(conn, "client") 
     if err != nil { 
 	fmt.Println("Private Key Error!")
@@ -48,6 +49,7 @@ func main() {
     }  
 
     fmt.Println("Private DH Key: %s", private_key)
+    */
 
     //read in response from server
     buf := make([]byte, 100)

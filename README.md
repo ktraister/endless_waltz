@@ -33,12 +33,12 @@ POC in python, working code in go
 - [x] Add API route to upload pads -- make the service cloud agnostic!!!
    - Mongo should be used to store pads as well (!!!)
 - [ ] API Refactor
-   - [ ] remove upload routes, this is moving to reaper
+   - [x] remove upload routes, this is moving to reaper
    - [ ] move configuration to env variables 
-- [ ] Reaper refactor
-   - [ ] reaper should write directly to database (will add items to P3)
-   - [ ] reaper logging should be useful (lol)
-   - [ ] reaper should read from env variables for serversMap to upload to
+- [x] Reaper refactor
+   - [x] reaper should write directly to database (will add items to P3)
+   - [x] reaper logging should be useful (lol)
+   - [x] reaper should read from env variables for serversMap to upload to
 - [ ] add DH handshake!!
    - dh handshake with rediculous values will be used for pad transformation and message signing
    - two different values will need to be calculated
