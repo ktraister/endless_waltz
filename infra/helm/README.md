@@ -17,7 +17,7 @@ https://devopscube.com/deploy-mongodb-kubernetes/
 
 SVC SETUP:
 --------------------------
-#gotta have that coredns
+//#gotta have that coredns.... maybe ...
 $ helm repo add coredns https://coredns.github.io/helm
 $ helm --namespace=kube-system install coredns coredns/coredns
 
