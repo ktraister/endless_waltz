@@ -32,9 +32,9 @@ POC in python, working code in go
 - [x] Remove Redis and update to use Mongo
 - [x] Add API route to upload pads -- make the service cloud agnostic!!!
    - Mongo should be used to store pads as well (!!!)
-- [ ] API Refactor
+- [x] API Refactor
    - [x] remove upload routes, this is moving to reaper
-   - [ ] move configuration to env variables 
+   - [x] move configuration to env variables 
 - [x] Reaper refactor
    - [x] reaper should write directly to database (will add items to P3)
    - [x] reaper logging should be useful (lol)

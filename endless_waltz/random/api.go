@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"log"
 	"net/http"
 	"time"
@@ -14,7 +15,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/gorilla/mux"
-	"github.com/spf13/viper"
 )
 
 var jsonMap map[string]interface{}
@@ -132,23 +132,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 func main() {
 
 	fmt.Println("Random server coming online!")
-	//configuration stuff
-	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
-	viper.SetConfigType("yml")
-	var configuration Configurations
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file, %s", err)
-	}
-	err := viper.Unmarshal(&configuration)
-	if err != nil {
-		fmt.Printf("Unable to decode into struct, %v", err)
-	}
-
-	// Reading variables using the model
-	fmt.Println("Reading variables using the model..")
-	fmt.Println("MongoURI is\t\t", configuration.Server.MongoURI)
-	MongoURI = configuration.Server.MongoURI
+	MongoURI = os.Getenv("MongoURI")
 
 	router := mux.NewRouter()
 	router.HandleFunc("/api/", base_handler).Methods("GET")

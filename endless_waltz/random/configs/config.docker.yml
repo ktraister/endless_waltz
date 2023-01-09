@@ -1,2 +1,0 @@
-server:
-  MongoURI: "mongodb://host.docker.internal:27017"
