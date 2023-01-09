@@ -18,18 +18,21 @@ func main() {
         //reading in env variable for mongo conn URI
 	MongoURI := os.Getenv("MongoURI")
         fmt.Println("MongoURI: ", MongoURI)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI))
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	otp_db := client.Database("otp").Collection("otp")
-	b := make([]byte, 4096)
+	fmt.Println("Reaper finished starting up!")
 
 	for {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI))
+		if err != nil {
+			fmt.Println(err)
+		} else {
+		    fmt.Println("Database connection succesful!")
+		}
+
+		otp_db := client.Database("otp").Collection("otp")
+		b := make([]byte, 4096)
+
 		//check and see how many items are in the db
 		filter := bson.D{{}}
 		count, err := otp_db.CountDocuments(ctx, filter)
@@ -39,20 +42,22 @@ func main() {
 
 		//if count is less than threshold
 		if count < 100 {
+		    fmt.Println("Found count ", count, "writing to db...")
 			for i := 0; i < 100-int(count); i++ {
 				//read from random
-				n, err := rand.Read(b)
-				fmt.Println(n, err, b)
-
-				//uuid create and send to db
+				_, err := rand.Read(b)
 				id := uuid.New().String()
 				_, err = otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"Pad", fmt.Sprintf("%v", b)}})
 				if err != nil {
 					fmt.Println(err)
 				}
-			}
-		}
 
+                                fmt.Println("Wrote item ", i, " to DB!")
+			}
+                    fmt.Println("Done writing to DB!")
+		} 
+
+		fmt.Println("Count met threshold, sleeping...")
 		time.Sleep(10 * time.Second)
 	}
 }

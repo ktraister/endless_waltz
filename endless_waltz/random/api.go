@@ -20,7 +20,6 @@ import (
 var jsonMap map[string]interface{}
 var dbMap map[string]interface{}
 var MongoURI string
-var UploadAPIKey string
 
 type Server_Resp struct {
 	UUID string
@@ -149,9 +148,7 @@ func main() {
 	// Reading variables using the model
 	fmt.Println("Reading variables using the model..")
 	fmt.Println("MongoURI is\t\t", configuration.Server.MongoURI)
-	fmt.Println("UploadAPIKey is\t\t", configuration.Server.UploadAPIKey)
 	MongoURI = configuration.Server.MongoURI
-	UploadAPIKey = configuration.Server.UploadAPIKey
 
 	router := mux.NewRouter()
 	router.HandleFunc("/api/", base_handler).Methods("GET")
