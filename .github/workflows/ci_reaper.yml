@@ -18,8 +18,9 @@ jobs:
         run: | 
           export GOOS=linux
           export GOARCH=amd64
+          export CGO_ENABLED=0
           cd endless_waltz/reaper
-          go build .
+          go build -tags netgo -a -v .
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2

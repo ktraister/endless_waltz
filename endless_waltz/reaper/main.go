@@ -15,6 +15,7 @@ import (
 )
 
 func main() {
+
         //reading in env variable for mongo conn URI
 	MongoURI := os.Getenv("MongoURI")
 	MongoUser := os.Getenv("MongoUser")
