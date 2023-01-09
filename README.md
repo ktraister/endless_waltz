@@ -67,7 +67,7 @@ POC in python, working code in go
      - [ ] Server
      - [ ] Client
    - CD not yet started...
-- [x] Create K8s helm charts for services - init files for below
+- [0] Create K8s helm charts for services - init files for below
    - TBH... I'm not really a fan of helm :( Let's use Service/Kustomize instead
 - [ ] Create Service/Kustomize templates for services   
 - [ ] further logging improvements

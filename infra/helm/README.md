@@ -37,17 +37,10 @@ TODOs:
 
 Reaper:
 - [x] mount /dev/usb for entropy container in helm chart
-- [ ] reaper helm chart should run without shutting down
+- [x] reaper helm chart should run without shutting down
    - needs the ew-entropy container updated
 - [x] improve logging for reaper to be useful
 
 Random:
-- [ ] get Helm chart working (with mongo dep)
+- [0] get Helm chart working (with mongo dep)
 
-
-------------------
-
-current error:
-Using device 0: Generic RTL2832U OEM
-usb_claim_interface error -6
-Failed to open rtlsdr device #0.
