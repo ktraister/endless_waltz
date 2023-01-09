@@ -17,15 +17,21 @@ import (
 func main() {
         //reading in env variable for mongo conn URI
 	MongoURI := os.Getenv("MongoURI")
+	MongoUser := os.Getenv("MongoUser")
+	MongoPass := os.Getenv("MongoPass")
         fmt.Println("MongoURI: ", MongoURI)
 	fmt.Println("Reaper finished starting up!")
 
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI))
+		credential := options.Credential{
+		    Username: MongoUser,
+		    Password: MongoPass,
+		}
+		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 		if err != nil {
-			fmt.Println(err)
+			panic(err)
 		} else {
 		    fmt.Println("Database connection succesful!")
 		}

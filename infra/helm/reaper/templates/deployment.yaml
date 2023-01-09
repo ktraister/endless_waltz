@@ -39,6 +39,16 @@ spec:
                 secretKeyRef:
                   key:  mongo-uri
                   name: {{ .Release.Name }}
+            - name: "MongoUser"
+              valueFrom:
+                secretKeyRef:
+                  key:  mongo-user
+                  name: {{ .Release.Name }}
+            - name: "MongoPass"
+              valueFrom:
+                secretKeyRef:
+                  key:  mongo-pass
+                  name: {{ .Release.Name }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts: 
