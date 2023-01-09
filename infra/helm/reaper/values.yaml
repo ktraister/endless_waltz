@@ -10,7 +10,7 @@ reaper:
     repository: ghcr.io/ktraister/ew_reaper
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "08c01f837616b16380f1278916561f9d5f09cc16"
+    tag: "8a92f57dcdaf561be196c11f8b48d66b102e97d7"
 
 entropy:
   name: ew-entropy
