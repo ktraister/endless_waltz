@@ -4,15 +4,24 @@
 
 replicaCount: 1
 
-image:
-  repository: nginx
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
+reaper:
+  name: ew-reaper
+  image:
+    repository: ghcr.io/ktraister/ew_reaper
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "cfe8498e6cb158405688c57a7bee53f35e99d47d"
 
-imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
+entropy:
+  name: ew-entropy
+  image:
+    repository: ghcr.io/ktraister/ew_entropy
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: "6e912119197ff273ae5d5e0ac66ae1550529b471"
+
+imagePullSecrets: 
+  - name: ghcrcred
 
 serviceAccount:
   # Specifies whether a service account should be created
@@ -28,7 +37,8 @@ podAnnotations: {}
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
+securityContext: 
+  privileged: true
   # capabilities:
   #   drop:
   #   - ALL
@@ -38,23 +48,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 80
-
-ingress:
-  enabled: false
-  className: ""
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    - host: chart-example.local
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  port: 12345
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -80,3 +74,6 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+#my BS
+mongo-uri: "TESTINGTESTINGTESTING"

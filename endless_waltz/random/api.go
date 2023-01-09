@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"time"
 
@@ -15,8 +14,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/gorilla/mux"
-
-	"github.com/google/uuid"
 	"github.com/spf13/viper"
 )
 
@@ -24,8 +21,6 @@ var jsonMap map[string]interface{}
 var dbMap map[string]interface{}
 var MongoURI string
 var UploadAPIKey string
-
-const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 type Server_Resp struct {
 	UUID string
@@ -40,56 +35,9 @@ type Error_Resp struct {
 	Error string
 }
 
-func random_pad() string {
-	b := make([]byte, 500)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(b)
-}
-
 func base_handler(w http.ResponseWriter, req *http.Request) {
 	response := "The base route has been hit successfully!"
 	json.NewEncoder(w).Encode(response)
-}
-
-func upload_handler(w http.ResponseWriter, req *http.Request) {
-	reqBody, err := ioutil.ReadAll(req.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	//check the key and pass if we don't match
-	json.Unmarshal([]byte(reqBody), &jsonMap)
-	if jsonMap["APIKey"] != UploadAPIKey {
-		fmt.Printf("Incoming bad request: %s, %s\n", req.Header.Get("X-Forwarded-For"), reqBody)
-		w.Write([]byte("API Key did not match >:("))
-		return
-	}
-
-	//logging our header will show IP once server is in AWS
-	fmt.Printf("Incoming good request: %s, %s\n", req.Header.Get("X-Forwarded-For"), reqBody)
-
-	//connect to mongo
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI))
-	if err != nil {
-		fmt.Println(err)
-	}
-	otp_db := client.Database("otp").Collection("otp")
-
-	//check and see how many entries are in DB.
-	// if too many entries, return "pass"
-
-	//uuid create and send to db
-	id := uuid.New().String()
-	_, err = otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"Pad", jsonMap["Pad"]}})
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	w.Write([]byte("success"))
 }
 
 func otp_handler(w http.ResponseWriter, req *http.Request) {
@@ -124,7 +72,8 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			err := otp_db.FindOne(ctx, bson.M{}).Decode(&server_resp)
 			if err != nil {
 				log.Fatal(err)
-			}
+			} //else {
+			    //lock the item
 
 			fmt.Println(server_resp)
 
@@ -207,7 +156,6 @@ func main() {
 	router := mux.NewRouter()
 	router.HandleFunc("/api/", base_handler).Methods("GET")
 	router.HandleFunc("/api/otp", otp_handler).Methods("POST")
-	router.HandleFunc("/api/uploads", upload_handler).Methods("POST")
 
 	http.ListenAndServe(":8090", router)
 }

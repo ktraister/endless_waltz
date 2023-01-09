@@ -28,25 +28,39 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
-        - name: {{ .Chart.Name }}
+        - name: {{ .Values.reaper.name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
-          ports:
-            - name: http
-              containerPort: {{ .Values.service.port }}
-              protocol: TCP
-          livenessProbe:
-            httpGet:
-              path: /
-              port: http
-          readinessProbe:
-            httpGet:
-              path: /
-              port: http
+          image: "{{ .Values.reaper.image.repository }}:{{ .Values.reaper.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.reaper.image.pullPolicy }}
+          env:          
+            - name: "MongoURI"
+              valueFrom:
+                secretKeyRef:
+                  key:  mongo-uri
+                  name: {{ .Release.Name }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts: 
+          - mountPath: "/tmp"
+            name: bridge
+        - name: {{ .Values.entropy.name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.entropy.image.repository }}:{{ .Values.entropy.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.entropy.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts: 
+          - mountPath: "/tmp"
+            name: bridge
+          - mountPath: "/dev/bus/usb/001/004"
+            name: radio-mount
+      volumes:
+      - name: radio-mount
+        hostPath: 
+          path: "/dev/bus/usb/001/004"
+      - name: bridge
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
