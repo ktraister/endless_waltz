@@ -10,7 +10,7 @@ reaper:
     repository: ghcr.io/ktraister/ew_reaper
     pullPolicy: Always
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "cfe8498e6cb158405688c57a7bee53f35e99d47d"
+    tag: "08c01f837616b16380f1278916561f9d5f09cc16"
 
 entropy:
   name: ew-entropy
@@ -76,6 +76,6 @@ tolerations: []
 affinity: {}
 
 #my BS
-mongo-uri: "mongodb://mongo-nodeport-svc.default.svc.cluster.local:32000"
-mongo-user: adminuser
-mongo-pass: password123
+mongouri: "mongodb://mongo-nodeport-svc.default.svc.cluster.local:32000"
+mongouser: adminuser
+mongopass: password123
