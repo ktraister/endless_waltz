@@ -17,6 +17,10 @@ https://devopscube.com/deploy-mongodb-kubernetes/
 
 SVC SETUP:
 --------------------------
+#gotta have that coredns
+$ helm repo add coredns https://coredns.github.io/helm
+$ helm --namespace=kube-system install coredns coredns/coredns
+
 The Deployment secret is created like so at cluster creation:
 kubectl create secret docker-registry ghcrCred --docker-server=ghcr.io --docker-username=ktraister --docker-password=<your-pword> --docker-email=kayleigh.traister@gmail.com
 

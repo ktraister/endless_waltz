@@ -76,4 +76,6 @@ tolerations: []
 affinity: {}
 
 #my BS
-mongo-uri: "TESTINGTESTINGTESTING"
+mongo-uri: "mongodb://mongo-nodeport-svc.default.svc.cluster.local:32000"
+mongo-user: adminuser
+mongo-pass: password123
