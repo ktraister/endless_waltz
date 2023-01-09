@@ -46,10 +46,6 @@ securityContext:
   # runAsNonRoot: true
   # runAsUser: 1000
 
-volumes: 
-  - name: radioMount
-    path: "/dev/bus/usb/001/004"
-
 service:
   type: ClusterIP
   port: 12345
@@ -78,3 +74,6 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+#my BS
+mongo-uri: "TESTINGTESTINGTESTING"
