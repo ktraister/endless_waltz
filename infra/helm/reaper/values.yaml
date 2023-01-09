@@ -37,13 +37,18 @@ podAnnotations: {}
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
+securityContext: 
+  privileged: true
   # capabilities:
   #   drop:
   #   - ALL
   # readOnlyRootFilesystem: true
   # runAsNonRoot: true
   # runAsUser: 1000
+
+volumes: 
+  - name: radioMount
+    path: "/dev/bus/usb/001/004"
 
 service:
   type: ClusterIP

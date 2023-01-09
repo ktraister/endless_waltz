@@ -17,11 +17,12 @@ helm upgrade ew-reaper reaper
 
 TODOs:
 ------------------
+- [ ] deploy mongo to cluster
+
 Reaper:
 - [ ] mount /dev/usb for entropy container in helm chart
 - [ ] reaper helm chart should run without shutting down
 - [ ] improve logging for reaper to be useful
 
 Random:
-- [ ] deploy mongo to cluster
 - [ ] get Helm chart working (with mongo dep)

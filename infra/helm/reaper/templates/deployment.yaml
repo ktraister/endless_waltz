@@ -35,6 +35,9 @@ spec:
           imagePullPolicy: {{ .Values.reaper.image.pullPolicy }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts: 
+          - mountPath: "/tmp"
+            name: bridge
         - name: {{ .Values.entropy.name }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
@@ -42,6 +45,16 @@ spec:
           imagePullPolicy: {{ .Values.entropy.image.pullPolicy }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts: 
+          - mountPath: "/tmp"
+            name: bridge
+          - mountPath: "/dev/bus/usb/001/004"
+            name: radio-mount
+      volumes:
+      - name: radio-mount
+        hostPath: 
+          path: "/dev/bus/usb/001/004"
+      - name: bridge
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
