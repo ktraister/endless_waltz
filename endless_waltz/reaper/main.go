@@ -1,10 +1,15 @@
 package main
 
 import (
+        "context"
 	"crypto/rand"
 	"fmt"
 	"time"
 	"os"
+
+        "go.mongodb.org/mongo-driver/bson"
+        "go.mongodb.org/mongo-driver/mongo"
+        "go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/google/uuid"
 )
@@ -27,14 +32,14 @@ func main() {
 	for {
 		//check and see how many items are in the db
 		filter := bson.D{{}}
-		count, err := otp_db.CountDocuments(ctx.TODO(), filter)
+		count, err := otp_db.CountDocuments(ctx, filter)
 		if err != nil {
 			panic(err)
 		}
 
 		//if count is less than threshold
 		if count < 100 {
-			for i := 0; i < 100-count; i++ {
+			for i := 0; i < 100-int(count); i++ {
 				//read from random
 				n, err := rand.Read(b)
 				fmt.Println(n, err, b)
