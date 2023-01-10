@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ew-random
+  labels:
+    name: ew-random
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: ew-random
+  template:
+    metadata:
+      labels:
+        name: ew-random
+    spec:
+      imagePullSecrets:
+        - name: ghcrcred
+      serviceAccountName: ew-random
+      securityContext:
+        {}
+      containers:
+        - name: ew-random
+          securityContext:
+            privileged: true
+          image: "ghcr.io/ktraister/ew_random:4e3eb337be05593d5d079f8187c6d5d810d3dc81"
+          imagePullPolicy: Always
+          env:
+            - name: "MongoURI"
+              valueFrom:
+                secretKeyRef:
+                  key:  mongouri
+                  name: ew-reaper
+          resources:
+            {}
