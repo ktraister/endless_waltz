@@ -31,6 +31,19 @@ Actual upgrade:
 helm upgrade ew-reaper reaper
 
 
+Above works for helm, but I'm not continuing that paradigm.
+Need to setup local cluster load balancer service metallb
+https://metallb.universe.tf/installation/
+
+** NEED TO FIX kube-router SERVICE ON MY CLUSTER
+#metallb pre-req
+kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kube-router-all-service-daemonset.yaml
+
+#metallb install
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
+
+
+
 TODOs:
 ------------------
 - [x] deploy mongo to cluster
