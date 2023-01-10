@@ -18,7 +18,6 @@ import (
 )
 
 var jsonMap map[string]interface{}
-var dbMap map[string]interface{}
 var MongoURI string
 
 type Server_Resp struct {
