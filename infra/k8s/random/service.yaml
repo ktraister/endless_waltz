@@ -5,7 +5,6 @@ metadata:
   labels:
     app: ew-random
 spec:
-  type: ClusterIP
   ports:
     - port: 8090
       targetPort: 8090
@@ -13,4 +12,5 @@ spec:
       name: http
   selector:
     name: ew-random
-  type: LoadBalancer
+  externalIPs:
+    - 192.168.1.249

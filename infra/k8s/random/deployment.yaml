@@ -31,5 +31,7 @@ spec:
                 secretKeyRef:
                   key:  mongouri
                   name: ew-reaper
+          ports:
+            - containerPort: 8090
           resources:
             {}
