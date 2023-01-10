@@ -12,5 +12,6 @@ spec:
       name: http
   selector:
     name: ew-random
-  externalIPs:
-    - 192.168.1.249
+  type: NodePort
+      #externalIPs:
+      #- 192.168.1.249

@@ -76,6 +76,6 @@ tolerations: []
 affinity: {}
 
 #my BS
-mongouri: "mongodb://mongo-nodeport-svc:27017"
+mongouri: "mongodb://mongo-svc:27017"
 mongouser: adminuser
 mongopass: password123

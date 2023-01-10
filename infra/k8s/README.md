@@ -1,10 +1,8 @@
-charts contained here are to deploy the services contained within.
-Charts:
-  - Reaper:
-      Reaper should deploy a pod with the reaper and ETL-entropy containers
-      Should contain shared volume for passthrough
-  - Random:
-      Random should deploy the API. It will depend on a seperate Mongo Helm chart
+### K8s Infra
+
+# Purpose
+--------------
+The purpose of this is to create a set of files and scripts to build a local cluster on any physical host with k8s.
 
 MONGO SETUP:
 --------------------------
@@ -43,17 +41,4 @@ kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/m
 kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
 
 
-
-TODOs:
-------------------
-- [x] deploy mongo to cluster
-
-Reaper:
-- [x] mount /dev/usb for entropy container in helm chart
-- [x] reaper helm chart should run without shutting down
-   - needs the ew-entropy container updated
-- [x] improve logging for reaper to be useful
-
-Random:
-- [0] get Helm chart working (with mongo dep)
 
