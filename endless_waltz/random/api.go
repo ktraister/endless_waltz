@@ -35,7 +35,7 @@ type Error_Resp struct {
 
 func base_handler(w http.ResponseWriter, req *http.Request) {
 	response := "The base route has been hit successfully!"
-	json.NewEncoder(w).Encode(response)
+	//need to write the response back here
 }
 
 func otp_handler(w http.ResponseWriter, req *http.Request) {
@@ -58,6 +58,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		//connect to mongo
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
+		//mongo connection now needs auth like Reaper
 		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI))
 		if err != nil {
 			fmt.Println(err)

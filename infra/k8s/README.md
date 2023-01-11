@@ -19,15 +19,26 @@ So it turns out, I used rancher prematurely. It hurts, but it's true. A lot of t
 Instead, I want to use k3s, which will be better on small devices and bare metal. It also comes witih needed k8s components
 https://github.com/k3s-io/k3s/releases/tag/v1.26.0+k3s1
 
+#just a quick switch to k3 and it's working. Incredible :) Though I may have had it working in rancher and not realized it because of API responses not being what I expected :sweatsmile:
+#fuck it, it'll be better on a smaller k8s solution anyway.
+
 SVC SETUP:
 --------------------------
-deploy mongo
-cd kubernetes-mongo && kubectl apply -f .
+#set up pull secret
+kubectl create secret docker-registry ghcrcred \
+  --docker-server=ghcr.io \
+  --docker-username=ktraister \
+  --docker-password= \
+  --docker-email=kayleigh.traister@gmail.com
 
-Actual service deployment:
+#deploy mongo
+cd mongo && kubectl apply -f .
+
+#Actual service deployment:
 helm install ew-reaper reaper
 
-deploy random
+#deploy random
 cd random && kubectl apply -f .
 
-
+#expose random port
+kubectl expose deployment ew-random --type=LoadBalancer --name=local-ew-random
