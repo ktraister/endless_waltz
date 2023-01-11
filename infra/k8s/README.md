@@ -4,41 +4,30 @@
 --------------
 The purpose of this is to create a set of files and scripts to build a local cluster on any physical host with k8s.
 
-MONGO SETUP:
---------------------------
-//we creating a new chart to deploy to local mongo
-//I'm not crazy about it, but here's the non-helm yaml for now
-cd kubernetes-mongodb && kubectl apply -f .
+### Back to the Shack
+---------------------------------------------------------------------------------
+Should I Use Rancher?
+Rancher is a good tool to use if you have a lot of clusters to manage, with users that are in multiple projects across clusters. This allows you to manage the users in one location and apply to all the projects. It also provides a “single pane of glass” for looking at clusters and configurations.
 
-//instructions
-https://devopscube.com/deploy-mongodb-kubernetes/
+When Not to Use Rancher
+If you only have one cluster, with only a few users, or it is only managed with CLI tools, Rancher may not be an appropriate tool. It adds a little bit of complexity, in addition to at least one more node for the Rancher cluster, plus its infrastructure such as load balancers, DNS entries, backups, and others.
+
+###
+
+So it turns out, I used rancher prematurely. It hurts, but it's true. A lot of the issues i've faced on local has been due to this, and I'll experience more and limit configuration with this approach.
+
+Instead, I want to use k3s, which will be better on small devices and bare metal. It also comes witih needed k8s components
+https://github.com/k3s-io/k3s/releases/tag/v1.26.0+k3s1
 
 SVC SETUP:
 --------------------------
-//#gotta have that coredns.... maybe ...
-$ helm repo add coredns https://coredns.github.io/helm
-$ helm --namespace=kube-system install coredns coredns/coredns
-
-The Deployment secret is created like so at cluster creation:
-kubectl create secret docker-registry ghcrCred --docker-server=ghcr.io --docker-username=ktraister --docker-password=<your-pword> --docker-email=kayleigh.traister@gmail.com
+deploy mongo
+cd kubernetes-mongo && kubectl apply -f .
 
 Actual service deployment:
 helm install ew-reaper reaper
 
-Actual upgrade:
-helm upgrade ew-reaper reaper
-
-
-Above works for helm, but I'm not continuing that paradigm.
-Need to setup local cluster load balancer service metallb
-https://metallb.universe.tf/installation/
-
-** NEED TO FIX kube-router SERVICE ON MY CLUSTER
-#metallb pre-req
-kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kube-router-all-service-daemonset.yaml
-
-#metallb install
-kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.13.7/config/manifests/metallb-native.yaml
-
+deploy random
+cd random && kubectl apply -f .
 
 

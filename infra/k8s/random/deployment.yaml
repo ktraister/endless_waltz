@@ -17,8 +17,6 @@ spec:
       imagePullSecrets:
         - name: ghcrcred
       serviceAccountName: ew-random
-      securityContext:
-        {}
       containers:
         - name: ew-random
           securityContext:
@@ -33,5 +31,3 @@ spec:
                   name: ew-reaper
           ports:
             - containerPort: 8090
-          resources:
-            {}
