@@ -20,6 +20,7 @@ func main() {
     //lets setup our flags here
     msgPtr := flag.String("message", "", "a message to encrypt and send")
     hostPtr := flag.String("host", "localhost", "the server to send the message to")
+    randPtr := flag.String("random", "localhost", "the random server to use for pad")
     flag.Parse()
 
     if len(*msgPtr) > 4096 { panic("We dont support this yet!") }
@@ -69,7 +70,8 @@ func main() {
     if err != nil {
 	fmt.Println(err)
     }
-    req, err := http.NewRequest("POST", "http://localhost:8090/api/otp", bytes.NewBuffer(rapi_data))
+    randHost := fmt.Sprintf("http://%s:8090/api/otp", *randPtr) 
+    req, err := http.NewRequest("POST", randHost, bytes.NewBuffer(rapi_data))
     req.Header.Set("Content-Type", "application/json; charset=UTF-8")
     client := &http.Client{}
     resp, error := client.Do(req)

@@ -75,11 +75,14 @@ func findPrimeFactors(input *big.Int) []*big.Int {
         }
     }
 
-    if input.Cmp(2) == -1 {
+    if input.Cmp(two) == -1 {
 	factors = append(factors)
     }	
 
     return factors
+}
+
+func primRootCheck(x *big.Int, y *big.Int, p *big.Int) bool {
 }
 
 func makeGenerator(prime *big.Int) int {
@@ -90,24 +93,29 @@ func makeGenerator(prime *big.Int) int {
 	//add this to calculate primitve roots
 	one := big.NewInt(1)
 	phi := prime.Sub(prime, one)
-	flag := false
 
 	//let's figure out our prime factors and store in a map[]
 	phiFactors := findPrimeFactors(phi)
 
 	//we'll return i if we get a hit
 	for i := big.NewInt(2); i.Cmp(phi) != 0; i.Add(i, one) {
+            flag := false
+
 	    //for each i, we need to test 
-	    /*
-	    for val in phiFactors {
-		#python code
-		if power(i, phi // val, prime) == 1
+	    for _, val := range phiFactors {
+                //# Check if r^((phi)/primefactors)
+                //# mod n is 1 or not
+		//if power(i, phi // val, prime) == 1
+		if primRootCheck(i, val.Mod(phi,val), prime) {
 		    flag = true
 		    break
-            */
+		}    
+            }
+	    if flag == false {
+		return int(i.Int64())
+            }
         }
-
-	return i.Int64()
+	return -1
 }
 
 func checkGenerator(prime *big.Int, generator int) bool {
