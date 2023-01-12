@@ -39,7 +39,8 @@ POC in python, working code in go
    - [x] reaper should write directly to database (will add items to P3)
    - [x] reaper logging should be useful (lol)
    - [x] reaper should read from env variables for serversMap to upload to
-- [ ] Get API/Reaper working on local for testing!!! Consistent endpoint for API...   
+- [x] Get API/Reaper working on local for testing!!! Consistent endpoint for API...   
+   - yes, I'm taking time to celibrate :) 
 - [ ] add DH handshake!!
    - dh handshake with rediculous values will be used for pad transformation and message signing
    - two different values will need to be calculated   
@@ -67,7 +68,8 @@ POC in python, working code in go
      - [ ] Server
      - [ ] Client
    - CD not yet started...
-- [0] Create K8s helm charts for services - init files for below
+- [ ] Create K8s helm charts for services - init files for below
+   - refactor existing helm chart to be plain yaml
    - TBH... I'm not really a fan of helm :( Let's use Service/Kustomize instead
 - [x] Create Service/Kustomize templates for services   
 - [ ] further logging improvements
@@ -75,9 +77,11 @@ POC in python, working code in go
    - terraform IAC for non-k8s resources
 - [ ] start padding the message with random data to prevent length attacks
    - pad should be random, use delimeter like "###" to signify padding
-- [ ] setup server to interact with cloud/prod env
-   - I wont be looking at the logs for messages, and wont want them decrypted until I'm ready
-   - add a flag, localdev is good as is
+- [ ] Write Desktop application for client and server
+- [ ] setup API keys for random server to be used for pad persistance
+   - API keys will be optional, but old pads will be cleaned up without the key being used
+   - thats some primo encryption
+
 
 ### At this point, we're ready for the deepweb and linux users
 
@@ -87,6 +91,7 @@ POC in python, working code in go
 
 ## Phase IV
 ### needed to make the tech accesible
+- [ ] Write Desktop application for client
 - [ ] setup website
 - [ ] need Android client
    - ugh. This is gonna be intense
