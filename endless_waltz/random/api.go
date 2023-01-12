@@ -19,6 +19,9 @@ import (
 
 var jsonMap map[string]interface{}
 var MongoURI string
+var MongoUser string
+var MongoPass string
+
 
 type Server_Resp struct {
 	UUID string
@@ -34,8 +37,7 @@ type Error_Resp struct {
 }
 
 func base_handler(w http.ResponseWriter, req *http.Request) {
-	response := "The base route has been hit successfully!"
-	//need to write the response back here
+	w.Write([]byte("The base route has been hit successfully!"))
 }
 
 func otp_handler(w http.ResponseWriter, req *http.Request) {
@@ -58,8 +60,11 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		//connect to mongo
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		//mongo connection now needs auth like Reaper
-		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI))
+                credential := options.Credential{
+                    Username: MongoUser,
+                    Password: MongoPass,
+                }
+                client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -133,6 +138,8 @@ func main() {
 
 	fmt.Println("Random server coming online!")
 	MongoURI = os.Getenv("MongoURI")
+	MongoUser = os.Getenv("MongoUser")
+        MongoPass = os.Getenv("MongoPass")
 
 	router := mux.NewRouter()
 	router.HandleFunc("/api/", base_handler).Methods("GET")
