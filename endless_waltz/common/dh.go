@@ -57,6 +57,7 @@ func checkPrimeNumber(num *big.Int) bool {
         }
 }
 
+//https://stackoverflow.com/questions/35568334/appending-big-int-in-loop-to-slice-unexpected-result
 func AppendIfMissing(slice []*big.Int, i *big.Int) []*big.Int {
     for _, ele := range slice {
         if ele.Cmp(i) == 0 {
