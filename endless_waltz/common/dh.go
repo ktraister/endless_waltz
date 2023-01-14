@@ -62,14 +62,18 @@ func findPrimeFactors(input *big.Int) []*big.Int {
     zero := big.NewInt(0) 
     one := big.NewInt(1)
     two  := big.NewInt(2)
+    tmpint := big.NewInt(1)
     
-    for input.Mod(input, two) == zero {
+    //Print the number of 2s that divide n
+    for zero.Cmp(tmpint.Mod(input, two)) == 0 {
+	fmt.Println("Adding 2")
 	factors = append(factors, two)
-	input = input.Div(input, two)
+	input.Div(input, two)
     }
 
-    for i := big.NewInt(3); i.Cmp(input.Sqrt(input)) != 1; i = i.Add(i, one) {
-	for input.Mod(input, i) == zero {
+    //skip one element (Note i = i +2)
+    for i := big.NewInt(3); i.Cmp(tmpint.Sqrt(input)) != 1; i.Add(i, one) {
+	for tmpint.Mod(input, i) == zero {
 	    factors = append(factors, i)
 	    input = input.Div(input, i)
         }
