@@ -77,7 +77,7 @@ func handleConnection(conn net.Conn, random_host string) {
 	}
 	fmt.Println("Incoming msg: ", msg)
 	println("decrypted msg")
-	println(pad_decrypt(msg, pad))
+	println(pad_decrypt(msg, pad, private_key))
 
 	conn.Close()
 }

@@ -79,7 +79,7 @@ func main() {
     var res map[string]interface{}
     json.NewDecoder(resp.Body).Decode(&res)
     raw_pad := fmt.Sprintf("%v", res["Pad"])
-    cipherText := pad_encrypt(*msgPtr, raw_pad)
+    cipherText := pad_encrypt(*msgPtr, raw_pad, private_key)
     println(fmt.Sprintf("Ciphertext: %v\n", cipherText))
 
     n, err = conn.Write([]byte(fmt.Sprintf("%v\n", cipherText)))

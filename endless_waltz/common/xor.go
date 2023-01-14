@@ -41,7 +41,7 @@ func fromString(INPUT string) []int {
 	return mySlice
 }
 
-func pad_encrypt(MSG string, PAD string) string {
+func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 	chars := []rune(MSG)
 	pad := []rune(PAD)
 	asc_chars := make([]int, 0)
@@ -68,10 +68,12 @@ func pad_encrypt(MSG string, PAD string) string {
 		enc_msg = append(enc_msg, val)
 	}
 
+	//operate on the message with PRIVKEY
+
 	return toString(enc_msg)
 }
 
-func pad_decrypt(INPUT_MSG string, PAD string) string {
+func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 	pad := []rune(PAD)
 	asc_pad := make([]int, 0)
 	dec_msg := make([]int, 0)
@@ -91,6 +93,7 @@ func pad_decrypt(INPUT_MSG string, PAD string) string {
 		if val > 255 {
 			val = val - 255
 		}
+		//operate on the message with PRIVKEY
 		dec_msg = append(dec_msg, val)
 	}
 

@@ -163,7 +163,7 @@ func makeGenerator(prime *big.Int) int {
             }
 	    if flag == false {
 		fmt.Println("returning flagFalse")
-		return -1
+		return int(i.Int64())
             }
         }
 	return -1
