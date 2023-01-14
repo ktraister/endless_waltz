@@ -179,8 +179,8 @@ func checkPrivKey(key string) bool {
 
 func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
-	//prime := big.NewInt(1)
-	prime := big.NewInt(424889)
+	prime := big.NewInt(1)
+	//prime := big.NewInt(424889)
 	tempkey := big.NewInt(1)
 
 	var generator int
@@ -191,12 +191,10 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	if conn_type == "server" {
 	        //prime will need to be *big.Int, int cant store the number 
 		//possible gen values 2047,3071,4095, 6143, 7679, 8191
-		/*
 		prime, err = rand.Prime(rand.Reader, 19)
 		if err != nil {
 			fmt.Println(err)
 		}
-		*/
 
                 fmt.Println("Server DH Prime:", prime)
 
