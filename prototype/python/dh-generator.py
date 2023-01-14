@@ -86,6 +86,7 @@ def findPrimitive( n) :
  
     # Find prime factors of phi and store in a set
     findPrimefactors(s, phi)
+    print("phiFactors: ", str(s))
  
     # Check for every number from 2 to phi
     for r in range(2, phi + 1):
@@ -104,6 +105,7 @@ def findPrimitive( n) :
                 flag = True
                 break
              
+        print("falseFlag: " + str(flag))
         # If there was no power with value 1.
         if (flag == False):
             print("returning flagFalse")

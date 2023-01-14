@@ -125,6 +125,7 @@ func makeGenerator(prime *big.Int) int {
 
 	//let's figure out our prime factors and store in a map[]
 	phiFactors := findPrimeFactors(phi)
+	fmt.Println("phiFactors: ", phiFactors)
 
 	//we'll return i if we get a hit
 	for i := big.NewInt(2); i.Cmp(phi) != 0; i.Add(i, one) {
