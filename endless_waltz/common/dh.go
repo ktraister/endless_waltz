@@ -57,24 +57,38 @@ func checkPrimeNumber(num *big.Int) bool {
         }
 }
 
+func AppendIfMissing(slice []*big.Int, i *big.Int) []*big.Int {
+    for _, ele := range slice {
+        if ele.Cmp(i) == 0 {
+	    fmt.Println("returning slice")
+            return slice
+        }
+    }
+    fmt.Println("appending slice ", i)
+    return append(slice, i)
+}
+
 func findPrimeFactors(input *big.Int) []*big.Int {
     var factors []*big.Int
     zero := big.NewInt(0) 
-    one := big.NewInt(1)
+    //one := big.NewInt(1)
     two  := big.NewInt(2)
     tmpint := big.NewInt(1)
     
     //Print the number of 2s that divide n
     for zero.Cmp(tmpint.Mod(input, two)) == 0 {
 	fmt.Println("Adding 2")
-	factors = append(factors, two)
+	factors = AppendIfMissing(factors, two)
 	input.Div(input, two)
     }
 
     //skip one element (Note i = i +2)
-    for i := big.NewInt(3); i.Cmp(tmpint.Sqrt(input)) != 1; i.Add(i, one) {
-	for tmpint.Mod(input, i) == zero {
-	    factors = append(factors, i)
+    for i := big.NewInt(3); i.Cmp(tmpint.Sqrt(input)) != 1; i.Add(i, two) {
+        fmt.Println("in prime factors for...")
+	fmt.Println(tmpint.Mod(input, i))
+	for zero.Cmp(tmpint.Mod(input, i)) == 0 {
+	    fmt.Println("Append in prime ", i)
+	    factors = AppendIfMissing(factors, i)
 	    input = input.Div(input, i)
         }
     }
@@ -97,10 +111,7 @@ func primRootCheck(x *big.Int, y *big.Int, p *big.Int) bool {
 	 for y.Cmp(zero) == 1 { 
 	     //if y is odd, multiply x with result 
                if y.Bit(0) != 0 {
-		  fmt.Println("odd")
 		  result.Mod(result.Mul(result, x), p)
-	       } else {
-		  fmt.Println("even")
 	       }
              
              //y must be even now
@@ -144,7 +155,7 @@ func makeGenerator(prime *big.Int) int {
                 //# Check if r^((phi)/primefactors)
                 //# mod n is 1 or not
 		//if power(i, phi // val, prime) == 1
-		if primRootCheck(i, val.Mod(phi,val), prime) {
+		if primRootCheck(i, val.Mod(phi, val), prime) {
 		    fmt.Println("breaking")
 		    flag = true
 		    break
@@ -168,7 +179,8 @@ func checkPrivKey(key string) bool {
 
 func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
-	prime := big.NewInt(1)
+	//prime := big.NewInt(1)
+	prime := big.NewInt(424889)
 	tempkey := big.NewInt(1)
 
 	var generator int
@@ -179,10 +191,12 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	if conn_type == "server" {
 	        //prime will need to be *big.Int, int cant store the number 
 		//possible gen values 2047,3071,4095, 6143, 7679, 8191
+		/*
 		prime, err = rand.Prime(rand.Reader, 19)
 		if err != nil {
 			fmt.Println(err)
 		}
+		*/
 
                 fmt.Println("Server DH Prime:", prime)
 
