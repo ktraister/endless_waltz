@@ -83,6 +83,33 @@ func findPrimeFactors(input *big.Int) []*big.Int {
 }
 
 func primRootCheck(x *big.Int, y *big.Int, p *big.Int) bool {
+	 zero := big.NewInt(0)
+	 one := big.NewInt(1)
+         result := big.NewInt(1)
+
+	 //x = x % p : x should be less than/equal to p
+         x.Mod(x, p)
+	 
+	 for y.Cmp(zero) == 1 { 
+	     //if y is odd, multiply x with result 
+               if y.Bit(0) != 0 {
+		  fmt.Println("odd")
+		  result.Mod(result.Mul(result, x), p)
+	       } else {
+		  fmt.Println("even")
+	       }
+             
+             //y must be even now
+	     //shift y one bit right
+	     y.Rsh(y, 1)
+	     x.Mod(x.Mul(x, x), p)
+         }
+
+	 if one.Cmp(result) == 0 {
+	     return true
+	 } else {
+	     return false
+         }
 }
 
 func makeGenerator(prime *big.Int) int {
@@ -92,7 +119,9 @@ func makeGenerator(prime *big.Int) int {
 
 	//add this to calculate primitve roots
 	one := big.NewInt(1)
-	phi := prime.Sub(prime, one)
+	phi := big.NewInt(1)
+	phi.Sub(prime, one)
+	fmt.Println("Prime inside makegen func: ", prime)
 
 	//let's figure out our prime factors and store in a map[]
 	phiFactors := findPrimeFactors(phi)
@@ -103,16 +132,22 @@ func makeGenerator(prime *big.Int) int {
 
 	    //for each i, we need to test 
 	    for _, val := range phiFactors {
+                //debug
+		fmt.Println("it: ", val)
+		fmt.Println("r: ", i)
+
                 //# Check if r^((phi)/primefactors)
                 //# mod n is 1 or not
 		//if power(i, phi // val, prime) == 1
 		if primRootCheck(i, val.Mod(phi,val), prime) {
+		    fmt.Println("breaking")
 		    flag = true
 		    break
 		}    
             }
 	    if flag == false {
-		return int(i.Int64())
+		fmt.Println("returning flagFalse")
+		return -1
             }
         }
 	return -1
@@ -128,8 +163,8 @@ func checkPrivKey(key string) bool {
 
 func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
-	prime := new(big.Int)
-	tempkey := new(big.Int)
+	prime := big.NewInt(1)
+	tempkey := big.NewInt(1)
 
 	var generator int
 	var err error
@@ -144,10 +179,15 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			fmt.Println(err)
 		}
 
+                fmt.Println("Server DH Prime:", prime)
+
 		//calculate generator
 		generator = makeGenerator(prime)
-
-		fmt.Println("Server DH Prime: ", prime)
+		if generator == -1 {
+                    fmt.Println("Couldn't create a generator for prime ", prime)
+                    err = fmt.Errorf("Couldn't create a generator for prime ", prime)
+		    return "", err
+                }
                 fmt.Println("Server DH Generator: ", generator)
 
 		//send the values across the conn
