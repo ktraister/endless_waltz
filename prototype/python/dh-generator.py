@@ -116,6 +116,6 @@ def findPrimitive( n) :
     return -1
  
 # Driver Code
-n = 467171
+n = 437279
 print("Smallest primitive root of",
          n, "is", findPrimitive(n))

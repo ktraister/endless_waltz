@@ -104,21 +104,22 @@ func findPrimeFactors(input *big.Int) []string {
 func primRootCheck(x *big.Int, y *big.Int, p *big.Int) bool {
 	 zero := big.NewInt(0)
 	 one := big.NewInt(1)
+	 tmpint := big.NewInt(1)
          result := big.NewInt(1)
 
 	 //x = x % p : x should be less than/equal to p
-         x.Mod(x, p)
+         tmpint.Mod(x, p)
 	 
 	 for y.Cmp(zero) == 1 { 
 	     //if y is odd, multiply x with result 
                if y.Bit(0) != 0 {
-		  result.Mod(result.Mul(result, x), p)
+		  result.Mod(result.Mul(result, tmpint), p)
 	       }
              
              //y must be even now
 	     //shift y one bit right
 	     y.Rsh(y, 1)
-	     x.Mod(x.Mul(x, x), p)
+	     tmpint.Mod(tmpint.Mul(tmpint, tmpint), p)
          }
 
 	 if one.Cmp(result) == 0 {
@@ -163,6 +164,7 @@ func makeGenerator(prime *big.Int) int {
 		    flag = true
 		    break
 		}    
+		fmt.Println("r after primRootCheck: ", i)
             }
 	    if flag == false {
 		fmt.Println("returning flagFalse")
