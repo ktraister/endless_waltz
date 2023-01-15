@@ -58,9 +58,9 @@ func checkPrimeNumber(num *big.Int) bool {
 }
 
 //https://stackoverflow.com/questions/35568334/appending-big-int-in-loop-to-slice-unexpected-result
-func AppendIfMissing(slice []*big.Int, i *big.Int) []*big.Int {
+func AppendIfMissing(slice []big.Int, i big.Int) []big.Int {
     for _, ele := range slice {
-        if ele.Cmp(i) == 0 {
+        if ele.Cmp(&i) == 0 {
 	    fmt.Println("returning slice")
             return slice
         }
@@ -69,17 +69,18 @@ func AppendIfMissing(slice []*big.Int, i *big.Int) []*big.Int {
     return append(slice, i)
 }
 
-func findPrimeFactors(input *big.Int) []*big.Int {
-    var factors []*big.Int
+func findPrimeFactors(input *big.Int) []big.Int {
+    var factors []big.Int
+    var sliceint big.Int
     zero := big.NewInt(0) 
-    //one := big.NewInt(1)
     two  := big.NewInt(2)
     tmpint := big.NewInt(1)
     
     //Print the number of 2s that divide n
     for zero.Cmp(tmpint.Mod(input, two)) == 0 {
 	fmt.Println("Adding 2")
-	factors = AppendIfMissing(factors, two)
+        sliceint.SetInt64(2)
+	factors = AppendIfMissing(factors, sliceint)
 	input.Div(input, two)
     }
 
@@ -89,7 +90,8 @@ func findPrimeFactors(input *big.Int) []*big.Int {
 	fmt.Println(tmpint.Mod(input, i))
 	for zero.Cmp(tmpint.Mod(input, i)) == 0 {
 	    fmt.Println("Append in prime ", i)
-	    factors = AppendIfMissing(factors, i)
+            sliceint.SetInt64(i.Int64())
+	    factors = AppendIfMissing(factors, sliceint)
 	    input = input.Div(input, i)
         }
     }
@@ -139,7 +141,7 @@ func makeGenerator(prime *big.Int) int {
 	phi.Sub(prime, one)
 	fmt.Println("Prime inside makegen func: ", prime)
 
-	//let's figure out our prime factors and store in a map[]
+	//let's figure out our prime factors and store in a slice
 	phiFactors := findPrimeFactors(phi)
 	fmt.Println("phiFactors: ", phiFactors)
 
@@ -156,7 +158,7 @@ func makeGenerator(prime *big.Int) int {
                 //# Check if r^((phi)/primefactors)
                 //# mod n is 1 or not
 		//if power(i, phi // val, prime) == 1
-		if primRootCheck(i, val.Mod(phi, val), prime) {
+		if primRootCheck(i, val.Mod(phi, &val), prime) {
 		    fmt.Println("breaking")
 		    flag = true
 		    break
