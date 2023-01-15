@@ -65,7 +65,8 @@ func AppendIfMissing(slice []big.Int, i big.Int) []big.Int {
             return slice
         }
     }
-    fmt.Println("appending slice ", i)
+
+    fmt.Println("appending value ". i, "to slice ", slice)
     return append(slice, i)
 }
 
@@ -79,7 +80,7 @@ func findPrimeFactors(input *big.Int) []big.Int {
     //Print the number of 2s that divide n
     for zero.Cmp(tmpint.Mod(input, two)) == 0 {
 	fmt.Println("Adding 2")
-        sliceint.SetInt64(2)
+        sliceint.Set(2)
 	factors = AppendIfMissing(factors, sliceint)
 	input.Div(input, two)
     }
