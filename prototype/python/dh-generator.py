@@ -57,7 +57,7 @@ def findPrimefactors(s, n) :
     # n must be odd at this point. So we can 
     # skip one element (Note i = i +2)
     for i in range(3, int(sqrt(n)), 2):
-        print("in prime factors for...") 
+        print("in prime factors for ", i) 
         # While i divides n, print i and divide n
         while (n % i == 0) :
             print("Append in prime ", i) 
@@ -116,6 +116,6 @@ def findPrimitive( n) :
     return -1
  
 # Driver Code
-n = 437279
+n = 474127
 print("Smallest primitive root of",
          n, "is", findPrimitive(n))

@@ -85,7 +85,7 @@ func findPrimeFactors(input *big.Int) []string {
 
     //skip one element (Note i = i +2)
     for i := big.NewInt(3); i.Cmp(tmpint.Sqrt(input)) != 1; i.Add(i, two) {
-        fmt.Println("in prime factors for...")
+        fmt.Println("in prime factors for ", i)
 	fmt.Println(tmpint.Mod(input, i))
 	for zero.Cmp(tmpint.Mod(input, i)) == 0 {
 	    fmt.Println("Append in prime ", i.String())
