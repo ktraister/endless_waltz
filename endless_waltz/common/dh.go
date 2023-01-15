@@ -58,21 +58,20 @@ func checkPrimeNumber(num *big.Int) bool {
 }
 
 //https://stackoverflow.com/questions/35568334/appending-big-int-in-loop-to-slice-unexpected-result
-func AppendIfMissing(slice []big.Int, i big.Int) []big.Int {
+func AppendIfMissing(slice []string, i *big.Int) []string {
     for _, ele := range slice {
-        if ele.Cmp(&i) == 0 {
+        if ele == i.String() {
 	    fmt.Println("returning slice")
             return slice
         }
     }
 
-    fmt.Println("appending value ". i, "to slice ", slice)
-    return append(slice, i)
+    fmt.Println("appending value ", i.String(), "to slice ", slice)
+    return append(slice, i.String())
 }
 
-func findPrimeFactors(input *big.Int) []big.Int {
-    var factors []big.Int
-    var sliceint big.Int
+func findPrimeFactors(input *big.Int) []string {
+    var factors []string
     zero := big.NewInt(0) 
     two  := big.NewInt(2)
     tmpint := big.NewInt(1)
@@ -80,8 +79,7 @@ func findPrimeFactors(input *big.Int) []big.Int {
     //Print the number of 2s that divide n
     for zero.Cmp(tmpint.Mod(input, two)) == 0 {
 	fmt.Println("Adding 2")
-        sliceint.Set(2)
-	factors = AppendIfMissing(factors, sliceint)
+	factors = AppendIfMissing(factors, two)
 	input.Div(input, two)
     }
 
@@ -90,9 +88,8 @@ func findPrimeFactors(input *big.Int) []big.Int {
         fmt.Println("in prime factors for...")
 	fmt.Println(tmpint.Mod(input, i))
 	for zero.Cmp(tmpint.Mod(input, i)) == 0 {
-	    fmt.Println("Append in prime ", i)
-            sliceint.SetInt64(i.Int64())
-	    factors = AppendIfMissing(factors, sliceint)
+	    fmt.Println("Append in prime ", i.String())
+	    factors = AppendIfMissing(factors, i)
 	    input = input.Div(input, i)
         }
     }
@@ -138,6 +135,7 @@ func makeGenerator(prime *big.Int) int {
 
 	//add this to calculate primitve roots
 	one := big.NewInt(1)
+	val := big.NewInt(1)
 	phi := big.NewInt(1)
 	phi.Sub(prime, one)
 	fmt.Println("Prime inside makegen func: ", prime)
@@ -151,7 +149,8 @@ func makeGenerator(prime *big.Int) int {
             flag := false
 
 	    //for each i, we need to test 
-	    for _, val := range phiFactors {
+	    for _, phiString := range phiFactors {
+		val.SetString(phiString, 10)
                 //debug
 		fmt.Println("it: ", val)
 		fmt.Println("r: ", i)
@@ -159,7 +158,7 @@ func makeGenerator(prime *big.Int) int {
                 //# Check if r^((phi)/primefactors)
                 //# mod n is 1 or not
 		//if power(i, phi // val, prime) == 1
-		if primRootCheck(i, val.Mod(phi, &val), prime) {
+		if primRootCheck(i, val.Mod(phi, val), prime) {
 		    fmt.Println("breaking")
 		    flag = true
 		    break
