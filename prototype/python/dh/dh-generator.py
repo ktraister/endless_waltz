@@ -49,13 +49,17 @@ def power( x, y, p):
 # factors of a number
 def findPrimefactors(s, n) :
  
+    print("n before mod: ", n)
     # Print the number of 2s that divide n
     while (n % 2 == 0) :
         s.add(2)
         n = n // 2
+    print("n after mod: ", n)
+
  
     # n must be odd at this point. So we can 
     # skip one element (Note i = i +2)
+    print("sqrt(n) after mod: ", int(sqrt(n)))
     for i in range(3, int(sqrt(n)), 2):
         print("in prime factors for ", i) 
         # While i divides n, print i and divide n
@@ -116,6 +120,6 @@ def findPrimitive( n) :
     return -1
  
 # Driver Code
-n = 474127
+n = 519997
 print("Smallest primitive root of",
          n, "is", findPrimitive(n))
