@@ -77,11 +77,13 @@ func findPrimeFactors(input *big.Int) []string {
     tmpint := big.NewInt(1)
     
     //Print the number of 2s that divide n
+    fmt.Println("n before mod: ", input.String())
     for zero.Cmp(tmpint.Mod(input, two)) == 0 {
 	fmt.Println("Adding 2")
 	factors = AppendIfMissing(factors, two)
 	input.Div(input, two)
     }
+    fmt.Println("n after mod: ", tmpint.String())
 
     //skip one element (Note i = i +2)
     for i := big.NewInt(3); i.Cmp(tmpint.Sqrt(input)) != 1; i.Add(i, two) {
@@ -184,8 +186,8 @@ func checkPrivKey(key string) bool {
 
 func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
-	prime := big.NewInt(1)
-	//prime := big.NewInt(424889)
+	//prime := big.NewInt(1)
+	prime := big.NewInt(424889)
 	tempkey := big.NewInt(1)
 
 	var generator int
