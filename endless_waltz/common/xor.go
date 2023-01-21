@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"math/big"
 )
 
 /*
@@ -25,12 +26,12 @@ import (
 
 //both these functions need to pass around strings for ease of use
 
-func toString(INPUT []int) string {
+func toString(INPUT []string) string {
 	st := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(INPUT)), ", "), "[]")
 	return st
 }
 
-func fromString(INPUT string) []int {
+func fromString(INPUT string) []string {
 	trim := strings.ReplaceAll(INPUT, "\n", "")
 	s := strings.Split(strings.ReplaceAll(trim, " ", ""), ",")
 	mySlice := []int{}
@@ -41,12 +42,25 @@ func fromString(INPUT string) []int {
 	return mySlice
 }
 
+func dh_modify(PRIVKEY string, INT int, OP string) string {
+        dh_int := big.NewInt(1)
+	pad_int := big.NewInt(int64(INT))
+
+	dh_int.SetString(PRIVKEY, 10)
+        if OP == "enc" { 
+	    dh_int.Mul(dh_int, pad_int)
+	} else if OP == "dec" {
+	    dh_int.Div(pad_int, dh_int)
+        }
+	return dh_int.String()
+}
+
 func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 	chars := []rune(MSG)
 	pad := []rune(PAD)
 	asc_chars := make([]int, 0)
 	asc_pad := make([]int, 0)
-	enc_msg := make([]int, 0)
+	enc_msg := make([]string, 0)
 
 	//change chars to ascii_chars
 	for i := 0; i < len(chars); i++ {
@@ -65,7 +79,7 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 		if val < 0 {
 			val = val + 255
 		}
-		enc_msg = append(enc_msg, val)
+		enc_msg = append(enc_msg, dh_modify(PRIVKEY, val, "enc"))
 	}
 
 	//operate on the message with PRIVKEY
@@ -76,7 +90,7 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 	pad := []rune(PAD)
 	asc_pad := make([]int, 0)
-	dec_msg := make([]int, 0)
+	dec_msg := make([]string, 0)
 
 	//convert ENC_MSG string to []int
 	ENC_MSG := fromString(INPUT_MSG)
@@ -94,7 +108,7 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 			val = val - 255
 		}
 		//operate on the message with PRIVKEY
-		dec_msg = append(dec_msg, val)
+		dec_msg = append(dec_msg, dh_modify(PRIVKEY, val, "dec"))
 	}
 
 	//change ascii_chars to chars and stringify
