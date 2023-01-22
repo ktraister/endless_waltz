@@ -161,6 +161,7 @@ func makeGenerator(prime *big.Int) int {
                 //# Check if r^((phi)/primefactors)
                 //# mod n is 1 or not
 		//if power(i, phi // val, prime) == 1
+		//THE PROBLEM IS IN LINE 165
 		if primRootCheck(i, val.Mod(phi, val), prime) {
 		    fmt.Println("breaking")
 		    flag = true
@@ -176,6 +177,7 @@ func makeGenerator(prime *big.Int) int {
 	return -1
 }
 
+//safe (p = 2q + 1)
 func checkGenerator(prime *big.Int, generator int) bool {
 	return true
 }
@@ -208,8 +210,8 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		//calculate generator
 		generator = makeGenerator(prime)
 		if generator == -1 {
-                    fmt.Println("Couldn't create a generator for prime ", prime)
-                    err = fmt.Errorf("Couldn't create a generator for prime ", prime)
+                    fmt.Printf("Couldn't create a generator for prime %q \n", prime)
+                    err = fmt.Errorf("Couldn't create a generator for prime %q", prime)
 		    return "", err
                 }
                 fmt.Println("Server DH Generator: ", generator)

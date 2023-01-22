@@ -102,7 +102,7 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 	//https://stackoverflow.com/questions/40310333/how-to-append-a-character-to-a-string-in-golang
 	var sb strings.Builder
 	for i := 0; i < len(dec_msg); i++ {
-		sb.WriteString(string(dec_msg[i]))
+		sb.WriteString(string(rune(dec_msg[i])))
 	}
 	dec_string := sb.String()
 
