@@ -66,7 +66,8 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
                 }
                 client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
+			return
 		}
 		otp_db := client.Database("otp").Collection("otp")
 
@@ -79,11 +80,12 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			} //else {
 			    //lock the item
 
-			fmt.Println(server_resp)
+			log.Println(server_resp)
 
 			resp, _ := json.Marshal(server_resp)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
+				return
 			}
 
 			//this is where we respond to the connection
@@ -91,7 +93,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 
 		} else if jsonMap["Host"] == "client" {
 			if jsonMap["UUID"] == nil {
-				fmt.Println(fmt.Sprintf("No UUID value in request, informing client"))
+				log.Println(fmt.Sprintf("No UUID value in request, informing client"))
 				w.Write([]byte("ERROR: No UUID included in request."))
 				return
 			}
@@ -103,9 +105,10 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			filterCursor, err := otp_db.Find(ctx, bson.M{"UUID": UUID})
 			if err != nil {
 				log.Fatal(err)
+				return
 			}
 			if !filterCursor.Next(ctx) {
-				fmt.Println(fmt.Sprintf("No value in Mongo for UUID %v, informing client", jsonMap["UUID"]))
+				log.Println(fmt.Sprintf("No value in Mongo for UUID %v, informing client", jsonMap["UUID"]))
 				w.Write([]byte("ERROR: No otp found for UUID included in request."))
 				return
 			}
@@ -120,7 +123,8 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			}
 			resp, _ := json.Marshal(client_resp)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
+				return
 			}
 
 			//this is where we respond to the connection
@@ -128,7 +132,8 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 
 			//add deletion of mongo pad here
 			if _, err = otp_db.DeleteOne(ctx, bson.M{"UUID": UUID}); err != nil {
-				fmt.Println(err)
+				log.Println(err)
+				return
 			}
 		}
 	}
@@ -136,7 +141,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 
-	fmt.Println("Random server coming online!")
+	log.Println("Random server coming online!")
 	MongoURI = os.Getenv("MongoURI")
 	MongoUser = os.Getenv("MongoUser")
         MongoPass = os.Getenv("MongoPass")
