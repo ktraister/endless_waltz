@@ -10,10 +10,10 @@ import (
  
 // test generator function
 func TestMakeGenerator(t *testing.T) {
-    gentest := []string{//"541:2",
-                        "424889:3",
-			//"440527:2",
-			//"506119:2",
+    //add a few to use non-2 generators
+    gentest := []string{"541:2",
+			"440527:2",
+			"506119:2",
                        }
     testint := big.NewInt(1)
     for _, pair := range(gentest) {

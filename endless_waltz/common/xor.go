@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
+	"math/big"
 )
 
 /*
@@ -25,18 +25,17 @@ import (
 
 //both these functions need to pass around strings for ease of use
 
-func toString(INPUT []int) string {
+func toString(INPUT []string) string {
 	st := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(INPUT)), ", "), "[]")
 	return st
 }
 
-func fromString(INPUT string) []int {
+func fromString(INPUT string) []string {
 	trim := strings.ReplaceAll(INPUT, "\n", "")
 	s := strings.Split(strings.ReplaceAll(trim, " ", ""), ",")
-	mySlice := []int{}
+	mySlice := []string{}
 	for _, val := range s {
-		myInt, _ := strconv.Atoi(val)
-		mySlice = append(mySlice, myInt)
+		mySlice = append(mySlice, val)
 	}
 	return mySlice
 }
@@ -46,7 +45,10 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 	pad := []rune(PAD)
 	asc_chars := make([]int, 0)
 	asc_pad := make([]int, 0)
-	enc_msg := make([]int, 0)
+	enc_msg := make([]string, 0)
+	tmpBigInt := big.NewInt(1)
+	PrivKeyInt := big.NewInt(1)
+	PrivKeyInt.SetString(PRIVKEY, 10)
 
 	//change chars to ascii_chars
 	for i := 0; i < len(chars); i++ {
@@ -65,10 +67,11 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 		if val < 0 {
 			val = val + 255
 		}
-		enc_msg = append(enc_msg, val)
+                //operate on the message with PRIVKEY After subtract
+		tmpBigInt.SetInt64(int64(val))
+		tmpBigInt.Mul(tmpBigInt, PrivKeyInt)
+		enc_msg = append(enc_msg, tmpBigInt.String())
 	}
-
-	//operate on the message with PRIVKEY
 
 	return toString(enc_msg)
 }
@@ -77,6 +80,10 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 	pad := []rune(PAD)
 	asc_pad := make([]int, 0)
 	dec_msg := make([]int, 0)
+	tmpBigInt := big.NewInt(1)
+	PrivKeyInt := big.NewInt(1)
+	PrivKeyInt.SetString(PRIVKEY, 10)
+
 
 	//convert ENC_MSG string to []int
 	ENC_MSG := fromString(INPUT_MSG)
@@ -88,8 +95,12 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 
 	//decrypt message
 	for i := 0; i < len(ENC_MSG); i++ {
+                //operate on the message with PRIVKEY before add
+		tmpBigInt.SetString(ENC_MSG[i], 10)
+		tmpBigInt.Div(tmpBigInt, PrivKeyInt)
+
 		//if msg + pad > 255
-		val := ENC_MSG[i] + asc_pad[i]
+		val := int(tmpBigInt.Uint64()) + asc_pad[i]
 		if val > 255 {
 			val = val - 255
 		}
@@ -109,12 +120,3 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 	return dec_string
 }
 
-/*
-func main() {
-	enc_msg := pad_encrypt("foo", "abcdefg")
-	fmt.Println(enc_msg)
-	fmt.Println("-------------------------------------")
-	dec_msg := pad_decrypt(enc_msg, "abcdefg")
-	fmt.Println(dec_msg)
-}
-*/

@@ -41,9 +41,8 @@ POC in python, working code in go
    - [x] reaper should read from env variables for serversMap to upload to
 - [x] Get API/Reaper working on local for testing!!! Consistent endpoint for API...   
    - yes, I'm taking time to celibrate :) 
-- [ ] add DH handshake!!
+- [x] add DH handshake!!
    - dh handshake with rediculous values will be used for pad transformation and message signing
-   - two different values will need to be calculated   
 - [ ] **CODE CLEANUP** 
    - BEFORE PROCEEDING:
    - [ ] ensure all dead code is removed
