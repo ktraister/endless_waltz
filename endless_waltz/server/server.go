@@ -37,7 +37,7 @@ func handleConnection(conn net.Conn, random_host string) {
 	    fmt.Println("Private Key Error!")
 	    return
 	} 
-	fmt.Println("Private DH Key: %s", private_key)
+	fmt.Println("Private DH Key: ", private_key)
 
 	//reach out to the api and get our key and pad
 	data := []byte(`{"Host": "server"}`)
@@ -53,8 +53,8 @@ func handleConnection(conn net.Conn, random_host string) {
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
 	pad := fmt.Sprintf("%v", res["Pad"])
-	fmt.Println("Pad: %v", res["Pad"])
-	fmt.Println("UUID: %v", res["UUID"])
+	fmt.Println("Pad: ", res["Pad"])
+	fmt.Println("UUID: ", res["UUID"])
 
 	//send off the UUID to the client
 	n, err := conn.Write([]byte(fmt.Sprintf("%v", res["UUID"])))

@@ -2,6 +2,8 @@ on:
   pull_request:
     types: [ opened, synchronize ]
 
+env:
+  GOPRIVATE: "github.com/ktraister"
 jobs:
   client:
     runs-on: ubuntu-latest
