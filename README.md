@@ -48,6 +48,14 @@ POC in python, working code in go
    - [x] ensure all dead code is removed
    - [ ] make sure server/api/client do not quit prematurely
    - [ ] implement at least basic unit test coverage -- run on commit
+      - [x] server
+      - [x] reaper
+      - [x] random
+      - [ ] common
+         - [ ] dh.go
+         - [x] xor.go
+      - [x] client
+
 
 ## Phase III
 ### get something working with hardware to deploy to cloud
@@ -74,6 +82,7 @@ POC in python, working code in go
 - [ ] further logging improvements
 - [ ] create infrastructure for project in AWS
    - terraform IAC for non-k8s resources
+- [ ] add item locking to mongo in api -- line 80 in random.go
 - [ ] start padding the message with random data to prevent length attacks
    - pad should be random, use delimeter like "###" to signify padding
 - [ ] Write Desktop application for client and server

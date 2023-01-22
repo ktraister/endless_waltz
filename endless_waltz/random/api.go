@@ -76,7 +76,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			server_resp := Server_Resp{}
 			err := otp_db.FindOne(ctx, bson.M{}).Decode(&server_resp)
 			if err != nil {
-				log.Fatal(err)
+				log.Println(err)
 			} //else {
 			    //lock the item
 

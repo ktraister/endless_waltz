@@ -187,7 +187,6 @@ func checkPrivKey(key string) bool {
 }
 
 func dh_handshake(conn net.Conn, conn_type string) (string, error) {
-
 	//prime := big.NewInt(1)
 	prime := big.NewInt(424889)
 	tempkey := big.NewInt(1)
