@@ -20,6 +20,7 @@ func main() {
     //lets setup our flags here
     msgPtr := flag.String("message", "", "a message to encrypt and send")
     hostPtr := flag.String("host", "localhost", "the server to send the message to")
+    randPtr := flag.String("random", "localhost", "the random server to use for pad")
     flag.Parse()
 
     if len(*msgPtr) > 4096 { panic("We dont support this yet!") }
@@ -41,15 +42,13 @@ func main() {
         return
     }
 
-    /*
     private_key, err := dh_handshake(conn, "client") 
     if err != nil { 
 	fmt.Println("Private Key Error!")
 	return
     }  
 
-    fmt.Println("Private DH Key: %s", private_key)
-    */
+    fmt.Println("Private DH Key: ", private_key)
 
     //read in response from server
     buf := make([]byte, 100)
@@ -69,7 +68,8 @@ func main() {
     if err != nil {
 	fmt.Println(err)
     }
-    req, err := http.NewRequest("POST", "http://localhost:8090/api/otp", bytes.NewBuffer(rapi_data))
+    randHost := fmt.Sprintf("http://%s:8090/api/otp", *randPtr) 
+    req, err := http.NewRequest("POST", randHost, bytes.NewBuffer(rapi_data))
     req.Header.Set("Content-Type", "application/json; charset=UTF-8")
     client := &http.Client{}
     resp, error := client.Do(req)
@@ -79,7 +79,7 @@ func main() {
     var res map[string]interface{}
     json.NewDecoder(resp.Body).Decode(&res)
     raw_pad := fmt.Sprintf("%v", res["Pad"])
-    cipherText := pad_encrypt(*msgPtr, raw_pad)
+    cipherText := pad_encrypt(*msgPtr, raw_pad, private_key)
     println(fmt.Sprintf("Ciphertext: %v\n", cipherText))
 
     n, err = conn.Write([]byte(fmt.Sprintf("%v\n", cipherText)))

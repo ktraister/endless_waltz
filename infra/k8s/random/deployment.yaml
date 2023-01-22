@@ -21,7 +21,7 @@ spec:
         - name: ew-random
           securityContext:
             privileged: true
-          image: "ghcr.io/ktraister/ew_random:0f33dd439510f998381214f753ed8779a297e695"
+          image: "ghcr.io/ktraister/ew_random:af8e7fbb203c7fa4d5e3138d54c03390093730e6"
           imagePullPolicy: Always
           env:
             - name: "MongoURI"
