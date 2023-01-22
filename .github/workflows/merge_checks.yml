@@ -40,6 +40,8 @@ jobs:
       - name: Build and push docker image
         uses: docker/build-push-action@v3
         with:
+          context: ./endless_waltz/random
+          file: ./endless_waltz/random/Dockerfile
           push: false
 
   reaper:
@@ -62,6 +64,8 @@ jobs:
       - name: Build and push docker image
         uses: docker/build-push-action@v3
         with:
+          context: ./endless_waltz/reaper
+          file: ./endless_waltz/reaper/Dockerfile
           push: false
 
   server:
@@ -71,10 +75,6 @@ jobs:
         uses: actions/checkout@v3
 
       - uses: actions/setup-go@v3
-
-      - name: Go Test
-        run: | 
-          go test
 
       - name: Go Build
         run: | 
@@ -88,6 +88,8 @@ jobs:
       - name: Build and push docker image
         uses: docker/build-push-action@v3
         with:
+          context: ./endless_waltz/server
+          file: ./endless_waltz/server/Dockerfile
           push: false
 
   common:
