@@ -45,7 +45,7 @@ POC in python, working code in go
    - dh handshake with rediculous values will be used for pad transformation and message signing
 - [ ] **CODE CLEANUP** 
    - BEFORE PROCEEDING:
-   - [ ] ensure all dead code is removed
+   - [x] ensure all dead code is removed
    - [ ] make sure server/api/client do not quit prematurely
    - [ ] implement at least basic unit test coverage -- run on commit
 

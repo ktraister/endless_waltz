@@ -282,15 +282,6 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 
-		//this needs to be replaced with bigint method setstring
-		/*
-		tempkey, err = strconv.Atoi(string(buf[:n]))
-		if err != nil {
-			log.Println(n, err)
-			return "", err
-		}
-		*/
-
 		fmt.Println("Server TempKey: ", string(buf[:n]))
 		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
 		if !ok {
@@ -314,14 +305,6 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 
-		//this needs to be replaced with bigint method setstring
-		/*
-		tempkey, err = strconv.Atoi(string(buf[:n]))
-		if err != nil {
-			log.Println(n, err)
-			return "", err
-		}
-		*/
                 tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
 		if !ok {
 			log.Println("Couldn't convert response tempPubKey to int")
@@ -330,12 +313,6 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 	}
 
-	//mod pubkey again E.X.) keya = B^a mod p : 2622 mod 541 = 478
-	/*
-	bofp := math.Pow(exkey, myfloat)
-        fmt.Println("DEBUG bofp: ", bofp)
-	privkey := fmt.Sprintf("%f", math.Mod(bofp, primefloat))
-	*/
 	tempkey.Exp(tempkey, myint, nil)
 	tempkey.Mod(tempkey, prime)
 	privkey := tempkey.String()

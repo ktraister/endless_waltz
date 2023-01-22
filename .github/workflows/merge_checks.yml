@@ -1,0 +1,117 @@
+on:
+  pull_request:
+    types: [ opened ]
+
+jobs:
+  client:
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./endless_waltz/client
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+
+      - name: Go Test
+        run: | 
+          go test
+
+      - name: Go Build
+        run: | 
+          export GOOS=linux
+          export GOARCH=amd64
+          export CGO_ENABLED=0
+          go build -tags netgo -a -v .
+
+  random:
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./endless_waltz/random
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+
+      - name: Go Test
+        run: | 
+          go test
+
+      - name: Go Build
+        run: | 
+          export GOOS=linux
+          export GOARCH=amd64
+          export CGO_ENABLED=0
+          go build -tags netgo -a -v .
+
+      - name: Build and push docker image
+        uses: docker/build-push-action@v3
+        with:
+          push: false
+
+  reaper:
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./endless_waltz/reaper
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+
+      - name: Go Test
+        run: | 
+          go test
+
+      - name: Go Build
+        run: | 
+          export GOOS=linux
+          export GOARCH=amd64
+          export CGO_ENABLED=0
+          go build -tags netgo -a -v .
+
+      - name: Build and push docker image
+        uses: docker/build-push-action@v3
+        with:
+          push: false
+
+  server:
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./endless_waltz/server
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+
+      - name: Go Test
+        run: | 
+          go test
+
+      - name: Go Build
+        run: | 
+          export GOOS=linux
+          export GOARCH=amd64
+          export CGO_ENABLED=0
+          go build -tags netgo -a -v .
+
+      - name: Build and push docker image
+        uses: docker/build-push-action@v3
+        with:
+          push: false
+
+  common:
+    runs-on: ubuntu-latest
+    env:
+      working-directory: ./endless_waltz/common
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+
+      - name: Go Test
+        run: | 
+          go test
