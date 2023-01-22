@@ -1,4 +1,4 @@
-package common
+package main
 
 import (
 	"crypto/rand"
@@ -322,6 +322,6 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		return "", err
 	}
 
-	//return common secret
+	//return main secret
 	return privkey, nil
 }

@@ -8,7 +8,6 @@ import (
     "log"
     "crypto/tls"
     "flag"
-    "github.com/ktraister/endless_waltz/common"
 )
 
 type Random_Req struct {
@@ -43,7 +42,7 @@ func main() {
         return
     }
 
-    private_key, err := common.dh_handshake(conn, "client") 
+    private_key, err := dh_handshake(conn, "client") 
     if err != nil { 
 	fmt.Println("Private Key Error!")
 	return
@@ -80,7 +79,7 @@ func main() {
     var res map[string]interface{}
     json.NewDecoder(resp.Body).Decode(&res)
     raw_pad := fmt.Sprintf("%v", res["Pad"])
-    cipherText := common.pad_encrypt(*msgPtr, raw_pad, private_key)
+    cipherText := pad_encrypt(*msgPtr, raw_pad, private_key)
     println(fmt.Sprintf("Ciphertext: %v\n", cipherText))
 
     n, err = conn.Write([]byte(fmt.Sprintf("%v\n", cipherText)))
