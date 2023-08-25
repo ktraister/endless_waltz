@@ -30,6 +30,7 @@ func TestMakeGenerator(t *testing.T) {
     }
 }
 
+/*
 func TestCheckPrimeNumber(t *testing) {
 }
 
@@ -48,3 +49,4 @@ func TestCheckGenerator(t *testing) {
 func TestCheckPrivkey(t *testing) {
 }
 
+*/
