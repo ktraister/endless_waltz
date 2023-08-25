@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ew-reaper
+  labels:
+    name: ew-reaper
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: ew-reaper
+  template:
+    metadata:
+      labels:
+        name: ew-reaper
+    spec:
+      imagePullSecrets:
+        - name: ghcrcred
+      serviceAccountName: ew-reaper
+      containers:
+        - name: ew-reaper
+          securityContext:
+            privileged: true
+          image: "ghcr.io/ktraister/ew_reaper:bcfa37c0268e19e0e9d8fa9a973c85fed5476371"
+          imagePullPolicy: Always
+          env:
+            - name: "MongoURI"
+              valueFrom:
+                secretKeyRef:
+                  key:  mongouri
+                  name: ew-reaper
+            - name: "MongoUser"
+              valueFrom:
+                secretKeyRef:
+                  key:  mongouser
+                  name: ew-reaper
+            - name: "MongoPass"
+              valueFrom:
+                secretKeyRef:
+                  key:  mongopass
+                  name: ew-reaper
+        - name: ew-reaper
+          securityContext:
+            privileged: true
+          image: "ghcr.io/ktraister/ew_entropy:6e912119197ff273ae5d5e0ac66ae1550529b471"
+          imagePullPolicy: Always
+          volumeMounts: 
+          - mountPath: "/tmp"
+            name: bridge
+          - mountPath: "/dev/bus/usb/001/004"
+            name: radio-mount
+      volumes:
+      - name: radio-mount
+        hostPath: 
+          path: "/dev/bus/usb/001/004"
+
