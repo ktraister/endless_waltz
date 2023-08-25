@@ -12,7 +12,7 @@ POC in python, working code in go
 
 ## Phase II
 ### get basic functionality working in GoLang
-***70% Complete***
+***Complete :)***
 - [x] rewrite API in Go
    - moved UUID generation for connection from server into API
 - [x] implement xor library
@@ -43,16 +43,16 @@ POC in python, working code in go
    - yes, I'm taking time to celibrate :) 
 - [x] add DH handshake!!
    - dh handshake with rediculous values will be used for pad transformation and message signing
-- [ ] **CODE CLEANUP** 
+- [x] **CODE CLEANUP** 
    - BEFORE PROCEEDING:
    - [x] ensure all dead code is removed
-   - [ ] make sure server/api/client do not quit prematurely
-   - [ ] implement at least basic unit test coverage -- run on commit
+   - [x] make sure server/api/client do not quit prematurely
+   - [x] implement at least basic unit test coverage -- run on commit
       - [x] server
       - [x] reaper
       - [x] random
-      - [ ] common
-         - [ ] dh.go
+      - [x] common
+         - [x] dh.go
          - [x] xor.go
       - [x] client
 
@@ -72,23 +72,27 @@ POC in python, working code in go
    - Setup for CI DONE! For:
      - [x] Reaper
      - [x] API
-     - [ ] Server* -- change config method from file to vars for ease-of-use
-     - [ ] Client
+     - DEFER Server- plain Go executable (terraform-esque)
+     - DEFER Client - plain Go executable (terraform-esque)
    - CD not yet started...
-- [ ] Create K8s helm charts for services - init files for below
-   - refactor existing helm chart to be plain yaml
-   - TBH... I'm not really a fan of helm :( Let's use Service/Kustomize instead
-- [x] Create Service/Kustomize templates for services   
-- [ ] further logging improvements
-- [ ] create infrastructure for project in AWS
-   - terraform IAC for non-k8s resources
+     - [ ] Start CD when public endpoints are up
+- [x] k8s - fuck helm charts for services - init files for below
+   - [x] refactor reaper helm chart to be plain yaml
+      - TBH... I'm not really a fan of helm :( Let's use Service/Kustomize instead
+- UMM setup API keys for random server to be used for pad persistance
+   - [ ] What was I fucking thinking when I wrote this...?
+   - API keys will be optional, but old pads will be cleaned up without the key being used
+   - thats some primo encryption
 - [ ] add item locking to mongo in api -- line 80 in random.go
 - [ ] start padding the message with random data to prevent length attacks
    - pad should be random, use delimeter like "###" to signify padding
-- [ ] Write Desktop application for client and server
-- [ ] setup API keys for random server to be used for pad persistance
-   - API keys will be optional, but old pads will be cleaned up without the key being used
-   - thats some primo encryption
+- [ ] further logging improvements
+- DEFER: alignment of code/infra paradigms?
+   - [ ] change server config method from file to vars for ease-of-use?
+   - [ ] check code base for contraditing methadologies  
+- DEFER: create infrastructure for project in AWS
+   - [ ] Answer: When do we want to expose a public endpoint?
+   - terraform IAC for non-k8s resources
 
 
 ### At this point, we're ready for the deepweb and linux users
@@ -99,7 +103,7 @@ POC in python, working code in go
 
 ## Phase IV
 ### needed to make the tech accesible
-- [ ] Write Desktop application for client
+- [ ] Write Desktop application for client and server
 - [ ] setup website
 - [ ] need Android client
    - ugh. This is gonna be intense
