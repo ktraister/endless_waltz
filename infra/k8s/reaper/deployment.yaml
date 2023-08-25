@@ -39,7 +39,7 @@ spec:
                 secretKeyRef:
                   key:  mongopass
                   name: ew-reaper
-        - name: ew-reaper
+        - name: ew-entropy
           securityContext:
             privileged: true
           image: "ghcr.io/ktraister/ew_entropy:6e912119197ff273ae5d5e0ac66ae1550529b471"
@@ -53,4 +53,5 @@ spec:
       - name: radio-mount
         hostPath: 
           path: "/dev/bus/usb/001/004"
+      - name: bridge
 
