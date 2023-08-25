@@ -79,10 +79,6 @@ POC in python, working code in go
 - [x] k8s - fuck helm charts for services - init files for below
    - [x] refactor reaper helm chart to be plain yaml
       - TBH... I'm not really a fan of helm :( Let's use Service/Kustomize instead
-- UMM setup API keys for random server to be used for pad persistance
-   - [ ] What was I fucking thinking when I wrote this...?
-   - API keys will be optional, but old pads will be cleaned up without the key being used
-   - thats some primo encryption
 - [ ] add item locking to mongo in api -- line 80 in random.go
 - [ ] start padding the message with random data to prevent length attacks
    - pad should be random, use delimeter like "###" to signify padding
@@ -103,6 +99,7 @@ POC in python, working code in go
 
 ## Phase IV
 ### needed to make the tech accesible
+- [ ] This will be free to use w/o a good reason to sell it.
 - [ ] Write Desktop application for client and server
 - [ ] setup website
 - [ ] need Android client
