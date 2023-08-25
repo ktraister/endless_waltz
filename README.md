@@ -90,7 +90,7 @@ POC in python, working code in go
 - DEFER: alignment of code/infra paradigms?
    - [ ] change server config method from file to vars for ease-of-use?
    - [ ] check code base for contraditing methadologies  
-- DEFER: create infrastructure for project in AWS
+- LASTLY: create infrastructure for project in AWS
    - [ ] Answer: When do we want to expose a public endpoint?
    - terraform IAC for non-k8s resources
 
