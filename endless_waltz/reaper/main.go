@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"time"
+	"log"
 	"os"
 
         "go.mongodb.org/mongo-driver/bson"
@@ -20,8 +21,8 @@ func main() {
 	MongoURI := os.Getenv("MongoURI")
 	MongoUser := os.Getenv("MongoUser")
 	MongoPass := os.Getenv("MongoPass")
-        fmt.Println("MongoURI: ", MongoURI)
-	fmt.Println("Reaper finished starting up!")
+        log.Println("MongoURI: ", MongoURI)
+	log.Println("Reaper finished starting up!")
 
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -32,9 +33,10 @@ func main() {
 		}
 		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 		if err != nil {
-			panic(err)
+			log.Println(err)
+			return
 		} else {
-		    fmt.Println("Database connection succesful!")
+		    log.Println("Database connection succesful!")
 		}
 
 		otp_db := client.Database("otp").Collection("otp")
@@ -44,27 +46,27 @@ func main() {
 		filter := bson.D{{}}
 		count, err := otp_db.CountDocuments(ctx, filter)
 		if err != nil {
-			panic(err)
+			log.Println(err)
 		}
 
 		//if count is less than threshold
 		if count < 100 {
-		    fmt.Println("Found count ", count, "writing to db...")
+		    log.Println("Found count ", count, "writing to db...")
 			for i := 0; i < 100-int(count); i++ {
 				//read from random
 				_, err := rand.Read(b)
 				id := uuid.New().String()
 				_, err = otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"Pad", fmt.Sprintf("%v", b)}})
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
+					break
 				}
-
-                                fmt.Println("Wrote item ", i, " to DB!")
+                                log.Println("Wrote item ", i, " to DB!")
 			}
-                    fmt.Println("Done writing to DB!")
+                    log.Println("Done writing to DB!")
 		} 
 
-		fmt.Println("Count met threshold, sleeping...")
+		log.Println("Count met threshold, sleeping...")
 		time.Sleep(10 * time.Second)
 	}
 }

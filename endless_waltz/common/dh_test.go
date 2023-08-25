@@ -29,3 +29,24 @@ func TestMakeGenerator(t *testing.T) {
 	}
     }
 }
+
+/*
+func TestCheckPrimeNumber(t *testing) {
+}
+
+func TestAppendIfMissing(t *testing) {
+}
+
+func TestFindPrimeFactors(t *testing) {
+}
+
+func TestPrimRootCheck(t *testing) {
+}
+
+func TestCheckGenerator(t *testing) {
+}
+
+func TestCheckPrivkey(t *testing) {
+}
+
+*/

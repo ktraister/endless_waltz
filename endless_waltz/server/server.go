@@ -34,10 +34,10 @@ func handleConnection(conn net.Conn, random_host string) {
 
 	private_key, err := dh_handshake(conn, "server") 
 	if err != nil {
-	    fmt.Println("Private Key Error!")
+	    log.Println("Private Key Error!")
 	    return
 	} 
-	fmt.Println("Private DH Key: %s", private_key)
+	log.Println("Private DH Key: ", private_key)
 
 	//reach out to the api and get our key and pad
 	data := []byte(`{"Host": "server"}`)
@@ -48,13 +48,13 @@ func handleConnection(conn net.Conn, random_host string) {
 	client := &http.Client{}
 	resp, error := client.Do(req)
 	if error != nil {
-		panic(error)
+		log.Println(error)
 	}
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
 	pad := fmt.Sprintf("%v", res["Pad"])
-	fmt.Println("Pad: %v", res["Pad"])
-	fmt.Println("UUID: %v", res["UUID"])
+	log.Println("Pad: ", res["Pad"])
+	log.Println("UUID: ", res["UUID"])
 
 	//send off the UUID to the client
 	n, err := conn.Write([]byte(fmt.Sprintf("%v", res["UUID"])))
@@ -64,7 +64,7 @@ func handleConnection(conn net.Conn, random_host string) {
 	}
 	//we should log the client IP at this point
 	if addr, ok := conn.RemoteAddr().(*net.TCPAddr); ok {
-		fmt.Println(addr.IP.String())
+		log.Println(addr.IP.String())
 	}
 	println("We've just sent off the UUID to client...")
 
@@ -75,7 +75,7 @@ func handleConnection(conn net.Conn, random_host string) {
 		log.Println(err)
 		return
 	}
-	fmt.Println("Incoming msg: ", msg)
+	log.Println("Incoming msg: ", msg)
 	println("decrypted msg")
 	println(pad_decrypt(msg, pad, private_key))
 
@@ -99,10 +99,10 @@ func main() {
 	}
 
 	// Reading variables using the model
-	fmt.Println("Reading variables using the model..")
-	fmt.Println("keypath is\t\t", configuration.Server.Key)
-	fmt.Println("crtpath is\t\t", configuration.Server.Cert)
-	fmt.Println("serverpath is\t\t", configuration.Server.RandomURL)
+	log.Println("Reading variables using the model..")
+	log.Println("keypath is\t\t", configuration.Server.Key)
+	log.Println("crtpath is\t\t", configuration.Server.Cert)
+	log.Println("serverpath is\t\t", configuration.Server.RandomURL)
 
 	cer, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
 	if err != nil {
@@ -118,7 +118,7 @@ func main() {
 	}
 	defer ln.Close()
 
-	fmt.Println("EW Server is coming online!")
+	log.Println("EW Server is coming online!")
 	for {
 		conn, err := ln.Accept()
 		if err != nil {

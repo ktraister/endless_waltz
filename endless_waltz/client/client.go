@@ -23,7 +23,7 @@ func main() {
     randPtr := flag.String("random", "localhost", "the random server to use for pad")
     flag.Parse()
 
-    if len(*msgPtr) > 4096 { panic("We dont support this yet!") }
+    if len(*msgPtr) > 4096 { log.Println("We dont support this yet!"); return }
 
     conf := &tls.Config{
 	 // FIx tHis ItS BADDDD
@@ -44,11 +44,11 @@ func main() {
 
     private_key, err := dh_handshake(conn, "client") 
     if err != nil { 
-	fmt.Println("Private Key Error!")
+	log.Println("Private Key Error!")
 	return
     }  
 
-    fmt.Println("Private DH Key: ", private_key)
+    log.Println("Private DH Key: ", private_key)
 
     //read in response from server
     buf := make([]byte, 100)
@@ -57,7 +57,7 @@ func main() {
         log.Println(n, err)
         return
     }
-    println(string(buf[:n]))
+    log.Println(string(buf[:n]))
 
     //reach out to server and request Pad
     data := Random_Req {
@@ -66,7 +66,7 @@ func main() {
     }
     rapi_data, _ := json.Marshal(data)
     if err != nil {
-	fmt.Println(err)
+	log.Println(err)
     }
     randHost := fmt.Sprintf("http://%s:8090/api/otp", *randPtr) 
     req, err := http.NewRequest("POST", randHost, bytes.NewBuffer(rapi_data))
@@ -74,13 +74,14 @@ func main() {
     client := &http.Client{}
     resp, error := client.Do(req)
     if error != nil {
-	    panic(error)
+	    log.Println(error)
+	    return
     }
     var res map[string]interface{}
     json.NewDecoder(resp.Body).Decode(&res)
     raw_pad := fmt.Sprintf("%v", res["Pad"])
     cipherText := pad_encrypt(*msgPtr, raw_pad, private_key)
-    println(fmt.Sprintf("Ciphertext: %v\n", cipherText))
+    log.Println(fmt.Sprintf("Ciphertext: %v\n", cipherText))
 
     n, err = conn.Write([]byte(fmt.Sprintf("%v\n", cipherText)))
     if err != nil {
