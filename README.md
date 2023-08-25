@@ -64,7 +64,7 @@ POC in python, working code in go
    - Setup for CI DONE! For:
      - [x] Reaper
      - [x] API
-     - [ ] Server
+     - [ ] Server* -- change config method from file to vars for ease-of-use
      - [ ] Client
    - CD not yet started...
 - [ ] Create K8s helm charts for services - init files for below
