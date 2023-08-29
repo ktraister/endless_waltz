@@ -11,6 +11,11 @@ import (
 )
 
 /*
+
+Sooooooooo..... Having the DH params computed on the fly was a good idea, but really kinda technically 
+challenging for a newb in go like me. Let's compile in some params and revisit if we want the whole "on the fly" generation thing
+
+
 Great RedHat docs on this subject:
 https://www.redhat.com/en/blog/understanding-and-verifying-security-diffie-hellman-parameters
 
@@ -45,6 +50,7 @@ keyb = A^B mod p : 1004 mod 541 = 478
  * server should also have urandom seeded to garuntee more true randomness :)
  */
 
+/*
 func checkPrimeNumber(num *big.Int) bool {
 	//extend to check above artificial "floor" value
 	//perform 20 tests to see if a value is prime or not
@@ -176,6 +182,7 @@ func makeGenerator(prime *big.Int) int {
         }
 	return -1
 }
+*/
 
 //safe (p = 2q + 1)
 func checkGenerator(prime *big.Int, generator int) bool {
@@ -184,6 +191,22 @@ func checkGenerator(prime *big.Int, generator int) bool {
 
 func checkPrivKey(key string) bool {
 	return true
+}
+
+func checkPrimeNumber(num *big.Int) bool {
+	//extend to check above artificial "floor" value
+	//perform 20 tests to see if a value is prime or not
+	if num.ProbablyPrime(20) {
+		log.Println("Number is probably prime")
+		return true
+	} else {
+	    log.Println("Number is probably not prime...")
+	    return false
+        }
+}
+
+func getDHParams() (string, string, error) {
+    return "541", "10", nil
 }
 
 func dh_handshake(conn net.Conn, conn_type string) (string, error) {
@@ -199,6 +222,8 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	if conn_type == "server" {
 	        //prime will need to be *big.Int, int cant store the number 
 		//possible gen values 2047,3071,4095, 6143, 7679, 8191
+		// stubbing out creation of params, instead using pre-computed values
+		/*
 		prime, err = rand.Prime(rand.Reader, 19)
 		if err != nil {
 			log.Println(err)
@@ -214,9 +239,18 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		    return "", err
                 }
                 log.Println("Server DH Generator: ", generator)
+		*/
+
+		prime, generator, err := getDHParams()
+		if err != nil {
+		    log.Println(err)
+		    return "", err
+                }
+
+          	log.Println(fmt.Sprintf("sending across conn --> %s:%s\n", prime, generator))
 
 		//send the values across the conn
-		n, err := conn.Write([]byte(fmt.Sprintf("%d:%d\n", prime, generator)))
+		n, err := conn.Write([]byte(fmt.Sprintf("%s:%s\n", prime, generator)))
 		if err != nil {
 			log.Println(n, err)
 			return "", err
@@ -233,7 +267,8 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		prime, ok = prime.SetString(values[0], 0)
 		if !ok {
 			log.Println("Couldn't convert response prime to int")
-			return "", err
+                        log.Println("got %s", prime)
+			return "", err 
 		}
 		generator, err = strconv.Atoi(strings.Trim(values[1], "\n"))
 		if err != nil {
