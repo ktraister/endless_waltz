@@ -205,49 +205,39 @@ func checkPrimeNumber(num *big.Int) bool {
         }
 }
 
-func getDHParams() (string, string, error) {
-    return "541", "10", nil
+func getDHParams() (string, int, error) {
+    return "541", 10, nil
 }
 
 func dh_handshake(conn net.Conn, conn_type string) (string, error) {
-	//prime := big.NewInt(1)
-	prime := big.NewInt(424889)
-	tempkey := big.NewInt(1)
-
-	var generator int
-	var err error
 	var ok bool
+        prime := big.NewInt(1)
+        privatekey := big.NewInt(1)
+        generator := 1
+
 	buf := make([]byte, 10000)
 
 	if conn_type == "server" {
+                privatekey.SetString("2", 0)
+
 	        //prime will need to be *big.Int, int cant store the number 
 		//possible gen values 2047,3071,4095, 6143, 7679, 8191
 		// stubbing out creation of params, instead using pre-computed values
-		/*
-		prime, err = rand.Prime(rand.Reader, 19)
-		if err != nil {
-			log.Println(err)
-		}
-
-                log.Println("Server DH Prime:", prime)
-
-		//calculate generator
-		generator = makeGenerator(prime)
-		if generator == -1 {
-                    fmt.Printf("Couldn't create a generator for prime %q \n", prime)
-                    err = fmt.Errorf("Couldn't create a generator for prime %q", prime)
-		    return "", err
-                }
-                log.Println("Server DH Generator: ", generator)
-		*/
-
-		prime, generator, err := getDHParams()
+		p, generator, err := getDHParams()
 		if err != nil {
 		    log.Println(err)
 		    return "", err
                 }
 
-          	log.Println(fmt.Sprintf("sending across conn --> %s:%s\n", prime, generator))
+		prime, ok = prime.SetString(p, 0)
+		if !ok {
+			log.Println("Couldn't convert dhparam prime to bigInt")
+                        log.Println("got %s", prime)
+			return "", err 
+		}
+
+                log.Println("Server DH Prime:", prime)
+                log.Println("Server DH Generator: ", generator)
 
 		//send the values across the conn
 		n, err := conn.Write([]byte(fmt.Sprintf("%s:%s\n", prime, generator)))
@@ -256,6 +246,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 	} else {
+                privatekey.SetString("4", 0)
 		//wait to receive values
 		n, err := conn.Read(buf)
 		if err != nil {
@@ -295,16 +286,18 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
-        tempkey.Exp(big.NewInt(int64(generator)), myint, nil)
-	tempkey.Mod(tempkey, prime)
+        privatekey.Exp(big.NewInt(int64(generator)), myint, nil)
+	privatekey.Mod(privatekey, prime)
+	publickey := privatekey.String()
+        tempkey := big.NewInt(1)
 
 	//clear the buffer
         buf = make([]byte, 10000)
 
 	if conn_type == "server" {
 		//send the pubkey across the conn
-		log.Println("Sending pubkey to client: ", tempkey)
-		n, err := conn.Write([]byte(tempkey.String()))
+		log.Println("Sending pubkey to client: ", publickey)
+		n, err := conn.Write([]byte(publickey))
 		if err != nil {
 			log.Println(n, err)
 			return "", err
@@ -316,11 +309,11 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 
-		log.Println("Server TempKey: ", string(buf[:n]))
+		log.Println("Server publicKey: ", string(buf[:n]))
 		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
 		if !ok {
-			log.Println("Couldn't convert response tempPubKey to int")
-                        err = fmt.Errorf("Couldn't convert response tempPubKey to int")
+			log.Println("Couldn't convert response PubKey to int")
+                        err = fmt.Errorf("Couldn't convert response PubKey to int")
 			return "", err
 		}
 
@@ -332,8 +325,8 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 
-		//send the tempkey across the conn
-		n, err = conn.Write([]byte(tempkey.String()))
+		//send the client pubkey across the conn
+		n, err = conn.Write([]byte(publickey))
 		if err != nil {
 			log.Println(n, err)
 			return "", err
