@@ -52,88 +52,88 @@ func checkPrimeNumber(num *big.Int) bool {
 		log.Println("Number is probably prime")
 		return true
 	} else {
-	    log.Println("Number is probably not prime...")
-	    return false
-        }
+		log.Println("Number is probably not prime...")
+		return false
+	}
 }
 
-//https://stackoverflow.com/questions/35568334/appending-big-int-in-loop-to-slice-unexpected-result
+// https://stackoverflow.com/questions/35568334/appending-big-int-in-loop-to-slice-unexpected-result
 func AppendIfMissing(slice []string, i *big.Int) []string {
-    for _, ele := range slice {
-        if ele == i.String() {
-	    log.Println("returning slice")
-            return slice
-        }
-    }
+	for _, ele := range slice {
+		if ele == i.String() {
+			log.Println("returning slice")
+			return slice
+		}
+	}
 
-    log.Println("appending value ", i.String(), "to slice ", slice)
-    return append(slice, i.String())
+	log.Println("appending value ", i.String(), "to slice ", slice)
+	return append(slice, i.String())
 }
 
 func findPrimeFactors(input *big.Int) []string {
-    var factors []string
-    zero := big.NewInt(0) 
-    two  := big.NewInt(2)
-    tmpint := big.NewInt(1)
-    
-    //Print the number of 2s that divide n
-    log.Println("n before mod: ", input.String())
-    for zero.Cmp(tmpint.Mod(input, two)) == 0 {
-	log.Println("Adding 2")
-	factors = AppendIfMissing(factors, two)
-	input.Div(input, two)
-    }
-    log.Println("n after mod: ", tmpint.String())
+	var factors []string
+	zero := big.NewInt(0)
+	two := big.NewInt(2)
+	tmpint := big.NewInt(1)
 
-    //skip one element (Note i = i +2)
-    for i := big.NewInt(3); i.Cmp(tmpint.Sqrt(input)) != 1; i.Add(i, two) {
-        log.Println("in prime factors for ", i)
-	log.Println(tmpint.Mod(input, i))
-	for zero.Cmp(tmpint.Mod(input, i)) == 0 {
-	    log.Println("Append in prime ", i.String())
-	    factors = AppendIfMissing(factors, i)
-	    input = input.Div(input, i)
-        }
-    }
+	//Print the number of 2s that divide n
+	log.Println("n before mod: ", input.String())
+	for zero.Cmp(tmpint.Mod(input, two)) == 0 {
+		log.Println("Adding 2")
+		factors = AppendIfMissing(factors, two)
+		input.Div(input, two)
+	}
+	log.Println("n after mod: ", tmpint.String())
 
-    if input.Cmp(two) == -1 {
-	factors = append(factors)
-    }	
+	//skip one element (Note i = i +2)
+	for i := big.NewInt(3); i.Cmp(tmpint.Sqrt(input)) != 1; i.Add(i, two) {
+		log.Println("in prime factors for ", i)
+		log.Println(tmpint.Mod(input, i))
+		for zero.Cmp(tmpint.Mod(input, i)) == 0 {
+			log.Println("Append in prime ", i.String())
+			factors = AppendIfMissing(factors, i)
+			input = input.Div(input, i)
+		}
+	}
 
-    return factors
+	if input.Cmp(two) == -1 {
+		factors = append(factors)
+	}
+
+	return factors
 }
 
 func primRootCheck(x *big.Int, y *big.Int, p *big.Int) bool {
-	 zero := big.NewInt(0)
-	 one := big.NewInt(1)
-	 tmpint := big.NewInt(1)
-         result := big.NewInt(1)
+	zero := big.NewInt(0)
+	one := big.NewInt(1)
+	tmpint := big.NewInt(1)
+	result := big.NewInt(1)
 
-	 //x = x % p : x should be less than/equal to p
-         tmpint.Mod(x, p)
-	 
-	 for y.Cmp(zero) == 1 { 
-	     //if y is odd, multiply x with result 
-               if y.Bit(0) != 0 {
-		  result.Mod(result.Mul(result, tmpint), p)
-	       }
-             
-             //y must be even now
-	     //shift y one bit right
-	     y.Rsh(y, 1)
-	     tmpint.Mod(tmpint.Mul(tmpint, tmpint), p)
-         }
+	//x = x % p : x should be less than/equal to p
+	tmpint.Mod(x, p)
 
-	 if one.Cmp(result) == 0 {
-	     return true
-	 } else {
-	     return false
-         }
+	for y.Cmp(zero) == 1 {
+		//if y is odd, multiply x with result
+		if y.Bit(0) != 0 {
+			result.Mod(result.Mul(result, tmpint), p)
+		}
+
+		//y must be even now
+		//shift y one bit right
+		y.Rsh(y, 1)
+		tmpint.Mod(tmpint.Mul(tmpint, tmpint), p)
+	}
+
+	if one.Cmp(result) == 0 {
+		return true
+	} else {
+		return false
+	}
 }
 
 func makeGenerator(prime *big.Int) int {
-        //sample code to flesh out this logic
-        //https://www.geeksforgeeks.org/primitive-root-of-a-prime-number-n-modulo-n/
+	//sample code to flesh out this logic
+	//https://www.geeksforgeeks.org/primitive-root-of-a-prime-number-n-modulo-n/
 	//read the python example to get whats up
 
 	//add this to calculate primitve roots
@@ -149,35 +149,35 @@ func makeGenerator(prime *big.Int) int {
 
 	//we'll return i if we get a hit
 	for i := big.NewInt(2); i.Cmp(phi) != 0; i.Add(i, one) {
-            flag := false
+		flag := false
 
-	    //for each i, we need to test 
-	    for _, phiString := range phiFactors {
-		val.SetString(phiString, 10)
-                //debug
-		log.Println("it: ", val)
-		log.Println("r: ", i)
+		//for each i, we need to test
+		for _, phiString := range phiFactors {
+			val.SetString(phiString, 10)
+			//debug
+			log.Println("it: ", val)
+			log.Println("r: ", i)
 
-                //# Check if r^((phi)/primefactors)
-                //# mod n is 1 or not
-		//if power(i, phi // val, prime) == 1
-		//THE PROBLEM IS IN LINE 165
-		if primRootCheck(i, val.Mod(phi, val), prime) {
-		    log.Println("breaking")
-		    flag = true
-		    break
-		}    
-		log.Println("r after primRootCheck: ", i)
-            }
-	    if flag == false {
-		log.Println("returning flagFalse")
-		return int(i.Int64())
-            }
-        }
+			//# Check if r^((phi)/primefactors)
+			//# mod n is 1 or not
+			//if power(i, phi // val, prime) == 1
+			//THE PROBLEM IS IN LINE 165
+			if primRootCheck(i, val.Mod(phi, val), prime) {
+				log.Println("breaking")
+				flag = true
+				break
+			}
+			log.Println("r after primRootCheck: ", i)
+		}
+		if flag == false {
+			log.Println("returning flagFalse")
+			return int(i.Int64())
+		}
+	}
 	return -1
 }
 
-//safe (p = 2q + 1)
+// safe (p = 2q + 1)
 func checkGenerator(prime *big.Int, generator int) bool {
 	return true
 }
@@ -196,24 +196,25 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	var ok bool
 	buf := make([]byte, 10000)
 
-	if conn_type == "server" {
-	        //prime will need to be *big.Int, int cant store the number 
+	switch {
+	case conn_type == "server":
+		//prime will need to be *big.Int, int cant store the number
 		//possible gen values 2047,3071,4095, 6143, 7679, 8191
 		prime, err = rand.Prime(rand.Reader, 19)
 		if err != nil {
 			log.Println(err)
 		}
 
-                log.Println("Server DH Prime:", prime)
+		log.Println("Server DH Prime:", prime)
 
 		//calculate generator
 		generator = makeGenerator(prime)
 		if generator == -1 {
-                    fmt.Printf("Couldn't create a generator for prime %q \n", prime)
-                    err = fmt.Errorf("Couldn't create a generator for prime %q", prime)
-		    return "", err
-                }
-                log.Println("Server DH Generator: ", generator)
+			fmt.Printf("Couldn't create a generator for prime %q \n", prime)
+			err = fmt.Errorf("Couldn't create a generator for prime %q", prime)
+			return "", err
+		}
+		log.Println("Server DH Generator: ", generator)
 
 		//send the values across the conn
 		n, err := conn.Write([]byte(fmt.Sprintf("%d:%d\n", prime, generator)))
@@ -221,7 +222,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			log.Println(n, err)
 			return "", err
 		}
-	} else {
+	default:
 		//wait to receive values
 		n, err := conn.Read(buf)
 		if err != nil {
@@ -242,11 +243,11 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 
 		log.Println("Client DH Prime: ", prime)
-                log.Println("Client DH Generator: ", generator)
+		log.Println("Client DH Generator: ", generator)
 
 		//approve the values or bounce the conn
 		if checkPrimeNumber(prime) == false || checkGenerator(prime, generator) == false {
-		        return "", err
+			return "", err
 		}
 	}
 
@@ -260,13 +261,14 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
-        tempkey.Exp(big.NewInt(int64(generator)), myint, nil)
+	tempkey.Exp(big.NewInt(int64(generator)), myint, nil)
 	tempkey.Mod(tempkey, prime)
 
 	//clear the buffer
-        buf = make([]byte, 10000)
+	buf = make([]byte, 10000)
 
-	if conn_type == "server" {
+	switch {
+	case conn_type == "server":
 		//send the pubkey across the conn
 		log.Println("Sending pubkey to client: ", tempkey)
 		n, err := conn.Write([]byte(tempkey.String()))
@@ -285,12 +287,10 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
 		if !ok {
 			log.Println("Couldn't convert response tempPubKey to int")
-                        err = fmt.Errorf("Couldn't convert response tempPubKey to int")
+			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
 			return "", err
 		}
-
-	} else {
-
+	default:
 		n, err := conn.Read(buf)
 		if err != nil {
 			log.Println(n, err)
@@ -304,7 +304,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 
-                tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
+		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
 		if !ok {
 			log.Println("Couldn't convert response tempPubKey to int")
 			err = fmt.Errorf("Couldn't convert response tempPubKey to int")

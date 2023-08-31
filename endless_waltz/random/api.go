@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"os"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,11 +17,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var jsonMap map[string]interface{}
+var jsonMap map[string]interface{} // XXX is this data in a well defined JSON structure? does it change often?
 var MongoURI string
 var MongoUser string
 var MongoPass string
-
 
 type Server_Resp struct {
 	UUID string
@@ -41,7 +40,7 @@ func base_handler(w http.ResponseWriter, req *http.Request) {
 }
 
 func otp_handler(w http.ResponseWriter, req *http.Request) {
-	reqBody, err := ioutil.ReadAll(req.Body)
+	reqBody, err := io.ReadAll(req.Body) // newer versions of go moved ReadAll to io instead of ioutil
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -60,25 +59,28 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		//connect to mongo
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-                credential := options.Credential{
-                    Username: MongoUser,
-                    Password: MongoPass,
-                }
-                client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
+		credential := options.Credential{
+			Username: MongoUser,
+			Password: MongoPass,
+		}
+		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 		if err != nil {
 			log.Println(err)
 			return
 		}
 		otp_db := client.Database("otp").Collection("otp")
 
-		if jsonMap["Host"] == "server" {
+		host := jsonMap["Host"]
+		uuid := jsonMap["UUID"]
+		switch {
+		case host == "server":
 			//lets move to using the db to pull an item
 			server_resp := Server_Resp{}
 			err := otp_db.FindOne(ctx, bson.M{}).Decode(&server_resp)
 			if err != nil {
 				log.Println(err)
 			} //else {
-			    //lock the item
+			//lock the item
 
 			log.Println(server_resp)
 
@@ -90,14 +92,11 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 
 			//this is where we respond to the connection
 			w.Write(resp)
-
-		} else if jsonMap["Host"] == "client" {
-			if jsonMap["UUID"] == nil {
-				log.Println(fmt.Sprintf("No UUID value in request, informing client"))
-				w.Write([]byte("ERROR: No UUID included in request."))
-				return
-			}
-
+		case host == "client" && uuid == nil:
+			log.Println(fmt.Sprintf("No UUID value in request, informing client"))
+			w.Write([]byte("ERROR: No UUID included in request."))
+			return
+		case host == "client":
 			//mongo
 			//https://www.mongodb.com/blog/post/quick-start-golang--mongodb--how-to-read-documents
 			//use above solution to "readOne" of the entries
@@ -144,10 +143,10 @@ func main() {
 	log.Println("Random server coming online!")
 	MongoURI = os.Getenv("MongoURI")
 	MongoUser = os.Getenv("MongoUser")
-        MongoPass = os.Getenv("MongoPass")
+	MongoPass = os.Getenv("MongoPass")
 
 	router := mux.NewRouter()
-	router.HandleFunc("/api/", base_handler).Methods("GET")
+	router.HandleFunc("/api/", base_handler).Methods("GET") // XXX is this intended to behave like /ping would? like an et phone home?
 	router.HandleFunc("/api/otp", otp_handler).Methods("POST")
 
 	http.ListenAndServe(":8090", router)
