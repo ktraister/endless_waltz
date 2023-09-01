@@ -18,6 +18,7 @@ type Client_Resp struct {
 }
 
 func handleConnection(conn net.Conn, random_host string) {
+	defer conn.Close()
 	r := bufio.NewReader(conn)
 	msg, err := r.ReadString('\n')
 	if err != nil {
@@ -32,11 +33,11 @@ func handleConnection(conn net.Conn, random_host string) {
 		return
 	}
 
-	private_key, err := dh_handshake(conn, "server") 
+	private_key, err := dh_handshake(conn, "server")
 	if err != nil {
-	    log.Println("Private Key Error!")
-	    return
-	} 
+		log.Println("Private Key Error!")
+		return
+	}
 	log.Println("Private DH Key: ", private_key)
 
 	//reach out to the api and get our key and pad
@@ -78,8 +79,6 @@ func handleConnection(conn net.Conn, random_host string) {
 	log.Println("Incoming msg: ", msg)
 	println("decrypted msg")
 	println(pad_decrypt(msg, pad, private_key))
-
-	conn.Close()
 }
 
 func main() {
