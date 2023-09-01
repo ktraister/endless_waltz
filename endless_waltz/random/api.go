@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -76,11 +77,21 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		case host == "server":
 			//lets move to using the db to pull an item
 			server_resp := Server_Resp{}
-			err := otp_db.FindOne(ctx, bson.M{}).Decode(&server_resp)
+			err := otp_db.FindOne(ctx, bson.M{"LOCK": nil}).Decode(&server_resp)
 			if err != nil {
 				log.Println(err)
-			} //else {
-			//lock the item
+			} else {
+				//lock the item
+				uuid, _ := primitive.ObjectIDFromHex(server_resp.UUID)
+				filter := bson.D{{"UUID", uuid}}
+				update := bson.D{{"$set", bson.D{{"LOCK", "true"}}}}
+				result, err := otp_db.UpdateOne(ctx, filter, update)
+				if err != nil {
+					log.Println(err)
+				} else {
+					log.Println(result)
+				}
+			}
 
 			log.Println(server_resp)
 
