@@ -76,19 +76,19 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		case host == "server":
 			//lets move to using the db to pull an item
 			server_resp := Server_Resp{}
-			err := p_db.FindOne(ctx, bson.D{"LOCK": nil}).Decode(&server_resp)
+			err := db.FindOne(ctx, bson.M{"LOCK": nil}).Decode(&server_resp)
 			if err != nil {
 				log.Println(err)
 			} else {
 				//lock the item
-				err = otp_db.UpdateOne(ctx,
-					bson.D{"UUID": server_resp["UUID"]},
-					bson.D{{"$set", bson.D{{"LOCK", true}}}},
+				update, err = otp_db.UpdateOne(ctx,
+					bson.M{"UUID": server_resp["UUID"]},
+					bson.M{{"$set", bson.D{{"LOCK", true}}}},
 				)
 				if err != nil {
 					log.Println(err)
 				} else {
-					log.Println("Locked item for server successfully")
+					log.Println("update")
 				}
 			}
 
