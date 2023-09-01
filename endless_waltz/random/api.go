@@ -85,11 +85,11 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 				uuid, _ := primitive.ObjectIDFromHex(server_resp.UUID)
 				filter := bson.D{{"UUID", uuid}}
 				update := bson.D{{"$set", bson.D{{"LOCK", "true"}}}}
-				result, err := otp_db.UpdateOne(ctx, filter, update)
+				_, err := otp_db.UpdateOne(ctx, filter, update)
 				if err != nil {
 					log.Println(err)
 					return
-				} 
+				}
 			}
 
 			resp, _ := json.Marshal(server_resp)
