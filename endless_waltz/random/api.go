@@ -88,12 +88,9 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 				result, err := otp_db.UpdateOne(ctx, filter, update)
 				if err != nil {
 					log.Println(err)
-				} else {
-					log.Println(result)
-				}
+					return
+				} 
 			}
-
-			log.Println(server_resp)
 
 			resp, _ := json.Marshal(server_resp)
 			if err != nil {
