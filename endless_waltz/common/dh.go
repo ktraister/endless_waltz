@@ -132,6 +132,9 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 	}
 
+	// SOMETHING ABOUT THIS GENERATION IS BREAKING THE DH SOMETIMES
+	// IDFK, look into it
+
 	//myint is private, < p, > 0
 	//need to change the method we use here, too
 	myint, err := rand.Int(rand.Reader, prime)
@@ -185,12 +188,15 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 
-		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
+		response := strings.TrimSpace(string(buf[:n]))
+
+		tempkey, ok = tempkey.SetString(response, 0)
 		if !ok {
-			log.Println("Couldn't convert response tempPubKey to int")
-			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
+		        log.Println("Couldn't convert response tempPubKey to int: '%s'", response)
+			err = fmt.Errorf("Couldn't convert response tempPubKey to int: '", response,"'")
 			return "", err
 		}
+
 	}
 
 	tempkey.Exp(tempkey, myint, nil)
