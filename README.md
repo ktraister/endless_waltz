@@ -79,7 +79,8 @@ POC in python, working code in go
 - [x] k8s - fuck helm charts for services - init files for below
    - [x] refactor reaper helm chart to be plain yaml
       - TBH... I'm not really a fan of helm :( Let's use Service/Kustomize instead
-- [ ] add item locking to mongo in api -- line 80 in random.go
+- [x] add item locking to mongo in api -- line 80 in random.go
+- [ ] iron out DH implementation 
 - [ ] start padding the message with random data to prevent length attacks
    - pad should be random, use delimeter like "###" to signify padding
 - [ ] further logging improvements
