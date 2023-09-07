@@ -1,5 +1,6 @@
 package main
  
+/*
 import (
     "fmt"
     "testing"
@@ -8,7 +9,6 @@ import (
     "math/big"
 )
  
-/*
 // test generator function
 func TestCheckDHPair(t *testing.T) {
     //add a few to use non-2 generators
