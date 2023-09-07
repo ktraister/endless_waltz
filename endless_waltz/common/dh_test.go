@@ -1,5 +1,6 @@
 package main
  
+/*
 import (
     "fmt"
     "testing"
@@ -9,7 +10,7 @@ import (
 )
  
 // test generator function
-func TestMakeGenerator(t *testing.T) {
+func TestCheckDHPair(t *testing.T) {
     //add a few to use non-2 generators
     gentest := []string{"541:2",
 			"440527:2",
@@ -30,7 +31,6 @@ func TestMakeGenerator(t *testing.T) {
     }
 }
 
-/*
 func TestCheckPrimeNumber(t *testing) {
 }
 

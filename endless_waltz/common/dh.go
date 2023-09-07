@@ -45,141 +45,25 @@ keyb = A^B mod p : 1004 mod 541 = 478
  * server should also have urandom seeded to garuntee more true randomness :)
  */
 
-func checkPrimeNumber(num *big.Int) bool {
-	//extend to check above artificial "floor" value
-	//perform 20 tests to see if a value is prime or not
-	if num.ProbablyPrime(20) {
-		log.Println("Number is probably prime")
-		return true
-	} else {
-		log.Println("Number is probably not prime...")
-		return false
-	}
-}
-
-// https://stackoverflow.com/questions/35568334/appending-big-int-in-loop-to-slice-unexpected-result
-func AppendIfMissing(slice []string, i *big.Int) []string {
-	for _, ele := range slice {
-		if ele == i.String() {
-			log.Println("returning slice")
-			return slice
+func checkDHPair(num *big.Int, gen int) bool {
+	for index, _ := range moduli_pairs {
+		values := strings.Split(moduli_pairs[index], ":")
+		generator := strconv.Itoa(gen)
+		if generator == values[0] && num.String() == values[1] {
+			return true
 		}
 	}
-
-	log.Println("appending value ", i.String(), "to slice ", slice)
-	return append(slice, i.String())
+	return false
 }
 
-func findPrimeFactors(input *big.Int) []string {
-	var factors []string
-	zero := big.NewInt(0)
-	two := big.NewInt(2)
-	tmpint := big.NewInt(1)
+func fetchValues() (*big.Int, int) {
+	log.Println(moduli_pairs[0])
+	values := strings.Split(moduli_pairs[0], ":")
+	mod := new(big.Int)
+	mod, _ = mod.SetString(values[1], 10)
+	gen, _ := strconv.Atoi(values[0])
 
-	//Print the number of 2s that divide n
-	log.Println("n before mod: ", input.String())
-	for zero.Cmp(tmpint.Mod(input, two)) == 0 {
-		log.Println("Adding 2")
-		factors = AppendIfMissing(factors, two)
-		input.Div(input, two)
-	}
-	log.Println("n after mod: ", tmpint.String())
-
-	//skip one element (Note i = i +2)
-	for i := big.NewInt(3); i.Cmp(tmpint.Sqrt(input)) != 1; i.Add(i, two) {
-		log.Println("in prime factors for ", i)
-		log.Println(tmpint.Mod(input, i))
-		for zero.Cmp(tmpint.Mod(input, i)) == 0 {
-			log.Println("Append in prime ", i.String())
-			factors = AppendIfMissing(factors, i)
-			input = input.Div(input, i)
-		}
-	}
-
-	if input.Cmp(two) == -1 {
-		factors = append(factors)
-	}
-
-	return factors
-}
-
-func primRootCheck(x *big.Int, y *big.Int, p *big.Int) bool {
-	zero := big.NewInt(0)
-	one := big.NewInt(1)
-	tmpint := big.NewInt(1)
-	result := big.NewInt(1)
-
-	//x = x % p : x should be less than/equal to p
-	tmpint.Mod(x, p)
-
-	for y.Cmp(zero) == 1 {
-		//if y is odd, multiply x with result
-		if y.Bit(0) != 0 {
-			result.Mod(result.Mul(result, tmpint), p)
-		}
-
-		//y must be even now
-		//shift y one bit right
-		y.Rsh(y, 1)
-		tmpint.Mod(tmpint.Mul(tmpint, tmpint), p)
-	}
-
-	if one.Cmp(result) == 0 {
-		return true
-	} else {
-		return false
-	}
-}
-
-func makeGenerator(prime *big.Int) int {
-	//sample code to flesh out this logic
-	//https://www.geeksforgeeks.org/primitive-root-of-a-prime-number-n-modulo-n/
-	//read the python example to get whats up
-
-	//add this to calculate primitve roots
-	one := big.NewInt(1)
-	val := big.NewInt(1)
-	phi := big.NewInt(1)
-	phi.Sub(prime, one)
-	log.Println("Prime inside makegen func: ", prime)
-
-	//let's figure out our prime factors and store in a slice
-	phiFactors := findPrimeFactors(phi)
-	log.Println("phiFactors: ", phiFactors)
-
-	//we'll return i if we get a hit
-	for i := big.NewInt(2); i.Cmp(phi) != 0; i.Add(i, one) {
-		flag := false
-
-		//for each i, we need to test
-		for _, phiString := range phiFactors {
-			val.SetString(phiString, 10)
-			//debug
-			log.Println("it: ", val)
-			log.Println("r: ", i)
-
-			//# Check if r^((phi)/primefactors)
-			//# mod n is 1 or not
-			//if power(i, phi // val, prime) == 1
-			//THE PROBLEM IS IN LINE 165
-			if primRootCheck(i, val.Mod(phi, val), prime) {
-				log.Println("breaking")
-				flag = true
-				break
-			}
-			log.Println("r after primRootCheck: ", i)
-		}
-		if flag == false {
-			log.Println("returning flagFalse")
-			return int(i.Int64())
-		}
-	}
-	return -1
-}
-
-// safe (p = 2q + 1)
-func checkGenerator(prime *big.Int, generator int) bool {
-	return true
+	return mod, gen
 }
 
 func checkPrivKey(key string) bool {
@@ -200,20 +84,12 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	case conn_type == "server":
 		//prime will need to be *big.Int, int cant store the number
 		//possible gen values 2047,3071,4095, 6143, 7679, 8191
-		prime, err = rand.Prime(rand.Reader, 19)
-		if err != nil {
-			log.Println(err)
-		}
+
+		//replace this with reading from list
+		//prime, err = rand.Prime(rand.Reader, 19)
+		prime, generator = fetchValues()
 
 		log.Println("Server DH Prime:", prime)
-
-		//calculate generator
-		generator = makeGenerator(prime)
-		if generator == -1 {
-			fmt.Printf("Couldn't create a generator for prime %q \n", prime)
-			err = fmt.Errorf("Couldn't create a generator for prime %q", prime)
-			return "", err
-		}
 		log.Println("Server DH Generator: ", generator)
 
 		//send the values across the conn
@@ -246,10 +122,13 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		log.Println("Client DH Generator: ", generator)
 
 		//approve the values or bounce the conn
-		if checkPrimeNumber(prime) == false || checkGenerator(prime, generator) == false {
+		if checkDHPair(prime, generator) == false {
 			return "", err
 		}
 	}
+
+	// SOMETHING ABOUT THIS GENERATION IS BREAKING THE DH SOMETIMES
+	// IDFK, look into it
 
 	//myint is private, < p, > 0
 	//need to change the method we use here, too
@@ -304,12 +183,15 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 
-		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
+		response := strings.TrimSpace(string(buf[:n]))
+
+		tempkey, ok = tempkey.SetString(response, 0)
 		if !ok {
-			log.Println("Couldn't convert response tempPubKey to int")
-			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
+			log.Println("Couldn't convert response tempPubKey to int: ", response)
+			err = fmt.Errorf("Couldn't convert response tempPubKey to int: %s", response)
 			return "", err
 		}
+
 	}
 
 	tempkey.Exp(tempkey, myint, nil)

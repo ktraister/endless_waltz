@@ -54,7 +54,6 @@ func handleConnection(conn net.Conn, random_host string) {
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
 	pad := fmt.Sprintf("%v", res["Pad"])
-	log.Println("Pad: ", res["Pad"])
 	log.Println("UUID: ", res["UUID"])
 
 	//send off the UUID to the client
