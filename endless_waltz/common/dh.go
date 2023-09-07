@@ -100,6 +100,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 	default:
 		//wait to receive values
+		// need to read all of data sent across the conn -- this is currently what's breaking it!!
 		n, err := conn.Read(buf)
 		if err != nil {
 			log.Println(n, err)
@@ -128,7 +129,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	}
 
 	// SOMETHING ABOUT THIS GENERATION IS BREAKING THE DH SOMETIMES
-	// IDFK, look into it
+	// it's something about the generation of the private secrets. I'll come back to it
 
 	//myint is private, < p, > 0
 	//need to change the method we use here, too
