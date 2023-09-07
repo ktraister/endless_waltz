@@ -45,16 +45,16 @@ keyb = A^B mod p : 1004 mod 541 = 478
  * server should also have urandom seeded to garuntee more true randomness :)
  */
 
-func checkPrimeNumber(num *big.Int) bool {
-	//extend to check above artificial "floor" value
-	//perform 20 tests to see if a value is prime or not
-	if num.ProbablyPrime(20) {
-		log.Println("Number is probably prime")
-		return true
-	} else {
-		log.Println("Number is probably not prime...")
-		return false
-	}
+
+func checkDHPair(num *big.Int, gen int) bool {
+    for index, _ := range moduli_pairs {
+       values := strings.Split(moduli_pairs[index], ":")
+       generator := strconv.Itoa(gen)
+       if generator == values[0] && num.String() == values[1] {
+           return true
+        }
+    }
+    return false
 }
 
 func fetchValues() (*big.Int, int) {
@@ -65,10 +65,6 @@ func fetchValues() (*big.Int, int) {
 	gen, _ := strconv.Atoi(values[0])
 
         return mod, gen
-}
-
-func checkGenerator(prime *big.Int, generator int) bool {
-	return true
 }
 
 func checkPrivKey(key string) bool {
@@ -127,7 +123,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		log.Println("Client DH Generator: ", generator)
 
 		//approve the values or bounce the conn
-		if checkPrimeNumber(prime) == false || checkGenerator(prime, generator) == false {
+		if checkDHPair(prime, generator) == false {
 			return "", err
 		}
 	}
