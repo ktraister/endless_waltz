@@ -187,8 +187,8 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 		tempkey, ok = tempkey.SetString(response, 0)
 		if !ok {
-			log.Println("Couldn't convert response tempPubKey to int: '%s'", response)
-			err = fmt.Errorf("Couldn't convert response tempPubKey to int: '", response, "'")
+			log.Println("Couldn't convert response tempPubKey to int: ", response)
+			err = fmt.Errorf("Couldn't convert response tempPubKey to int: %s", response)
 			return "", err
 		}
 
