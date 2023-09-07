@@ -2,12 +2,12 @@ package main
 
 // Configurations exported
 type Configurations struct {
-	Server       ServerConfigurations
+	Server ServerConfigurations
 }
 
 // ServerConfigurations exported
 type ServerConfigurations struct {
-	Key  string
-	Cert string
+	Key       string
+	Cert      string
 	RandomURL string
 }

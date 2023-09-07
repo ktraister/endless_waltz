@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"strings"
 	"math/big"
+	"strings"
 )
 
 /*
@@ -67,7 +67,7 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 		if val < 0 {
 			val = val + 255
 		}
-                //operate on the message with PRIVKEY After subtract
+		//operate on the message with PRIVKEY After subtract
 		tmpBigInt.SetInt64(int64(val))
 		tmpBigInt.Mul(tmpBigInt, PrivKeyInt)
 		enc_msg = append(enc_msg, tmpBigInt.String())
@@ -84,7 +84,6 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 	PrivKeyInt := big.NewInt(1)
 	PrivKeyInt.SetString(PRIVKEY, 10)
 
-
 	//convert ENC_MSG string to []int
 	ENC_MSG := fromString(INPUT_MSG)
 
@@ -95,7 +94,7 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 
 	//decrypt message
 	for i := 0; i < len(ENC_MSG); i++ {
-                //operate on the message with PRIVKEY before add
+		//operate on the message with PRIVKEY before add
 		tmpBigInt.SetString(ENC_MSG[i], 10)
 		tmpBigInt.Div(tmpBigInt, PrivKeyInt)
 
@@ -119,4 +118,3 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 
 	return dec_string
 }
-

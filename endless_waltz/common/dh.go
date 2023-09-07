@@ -45,26 +45,25 @@ keyb = A^B mod p : 1004 mod 541 = 478
  * server should also have urandom seeded to garuntee more true randomness :)
  */
 
-
 func checkDHPair(num *big.Int, gen int) bool {
-    for index, _ := range moduli_pairs {
-       values := strings.Split(moduli_pairs[index], ":")
-       generator := strconv.Itoa(gen)
-       if generator == values[0] && num.String() == values[1] {
-           return true
-        }
-    }
-    return false
+	for index, _ := range moduli_pairs {
+		values := strings.Split(moduli_pairs[index], ":")
+		generator := strconv.Itoa(gen)
+		if generator == values[0] && num.String() == values[1] {
+			return true
+		}
+	}
+	return false
 }
 
 func fetchValues() (*big.Int, int) {
-        log.Println(moduli_pairs[0])
+	log.Println(moduli_pairs[0])
 	values := strings.Split(moduli_pairs[0], ":")
 	mod := new(big.Int)
 	mod, _ = mod.SetString(values[1], 10)
 	gen, _ := strconv.Atoi(values[0])
 
-        return mod, gen
+	return mod, gen
 }
 
 func checkPrivKey(key string) bool {
@@ -188,8 +187,8 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 		tempkey, ok = tempkey.SetString(response, 0)
 		if !ok {
-		        log.Println("Couldn't convert response tempPubKey to int: '%s'", response)
-			err = fmt.Errorf("Couldn't convert response tempPubKey to int: '", response,"'")
+			log.Println("Couldn't convert response tempPubKey to int: '%s'", response)
+			err = fmt.Errorf("Couldn't convert response tempPubKey to int: '", response, "'")
 			return "", err
 		}
 
