@@ -78,7 +78,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	var generator int
 	var err error
 	var ok bool
-	buf := make([]byte, 10000)
+	buf := make([]byte, 4096)
 
 	switch {
 	case conn_type == "server":
@@ -101,12 +101,20 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	default:
 		//wait to receive values
 		// need to read all of data sent across the conn -- this is currently what's breaking it!!
-		n, err := conn.Read(buf)
-		if err != nil {
-			log.Println(n, err)
-			return "", err
+		var data string
+		totalBytesRead := 0
+
+		for totalBytesRead < 2000 {
+			n, err := conn.Read(buf)
+			if err != nil {
+				log.Println(n, err)
+				return "", err
+			}
+			data += string(buf[:n])
+			totalBytesRead += n
 		}
-		values := strings.Split(string(buf[:n]), ":")
+
+		values := strings.Split(data, ":")
 
 		prime, ok = prime.SetString(values[0], 0)
 		if !ok {
@@ -115,7 +123,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 		generator, err = strconv.Atoi(strings.Trim(values[1], "\n"))
 		if err != nil {
-			log.Println(n, err)
+			log.Println(err)
 			return "", err
 		}
 
@@ -125,6 +133,8 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		//approve the values or bounce the conn
 		if checkDHPair(prime, generator) == false {
 			return "", err
+		} else {
+			log.Println("DH values approved...")
 		}
 	}
 
@@ -133,11 +143,13 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 	//myint is private, < p, > 0
 	//need to change the method we use here, too
+	log.Println("Calculating secret value...")
 	myint, err := rand.Int(rand.Reader, prime)
 	if err != nil {
 		log.Println(err)
 		return "", err
 	}
+	log.Println("Calculated!")
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
