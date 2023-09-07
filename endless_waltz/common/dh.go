@@ -144,13 +144,11 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 	//myint is private, < p, > 0
 	//need to change the method we use here, too
-	log.Println("Calculating secret value...")
-	myint, err := rand.Int(rand.Reader, prime)
+	myint, err := rand.Int(rand.Reader, big.NewInt(10000))
 	if err != nil {
 		log.Println(err)
 		return "", err
 	}
-	log.Println("Calculated!")
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
@@ -163,7 +161,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	switch {
 	case conn_type == "server":
 		//send the pubkey across the conn
-		log.Println("Sending pubkey to client: ", tempkey)
+		log.Println("Sending pubkey TO client: ", tempkey)
 		n, err := conn.Write([]byte(tempkey.String()))
 		if err != nil {
 			log.Println(n, err)
@@ -176,7 +174,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 
-		log.Println("Server TempKey: ", string(buf[:n]))
+		log.Println("Received pubkey FROM client: ", string(buf[:n]))
 		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
 		if !ok {
 			log.Println("Couldn't convert response tempPubKey to int")
@@ -189,8 +187,10 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			log.Println(n, err)
 			return "", err
 		}
+		log.Println("Received pubkey FROM server: ", string(buf[:n]))
 
 		//send the tempkey across the conn
+		log.Println("Sending pubkey TO server: ", tempkey)
 		n, err = conn.Write([]byte(tempkey.String()))
 		if err != nil {
 			log.Println(n, err)
