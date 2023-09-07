@@ -57,8 +57,9 @@ func checkDHPair(num *big.Int, gen int) bool {
 }
 
 func fetchValues() (*big.Int, int) {
-	log.Println(moduli_pairs[0])
-	values := strings.Split(moduli_pairs[0], ":")
+	randomNumber, _  := rand.Int(rand.Reader, big.NewInt(int64(len(moduli_pairs)+1)))
+	index := int(randomNumber.Int64()) 
+	values := strings.Split(moduli_pairs[index], ":")
 	mod := new(big.Int)
 	mod, _ = mod.SetString(values[1], 10)
 	gen, _ := strconv.Atoi(values[0])
