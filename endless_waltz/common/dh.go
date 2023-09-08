@@ -80,7 +80,6 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	var generator int
 	var err error
 	var ok bool
-	buf := make([]byte, 4096)
 
 	switch {
 	case conn_type == "server":
@@ -152,20 +151,11 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	tempkey.Exp(big.NewInt(int64(generator)), myint, nil)
 	tempkey.Mod(tempkey, prime)
 
-	//clear the buffer
-	buf = make([]byte, 10000)
-
 	switch {
 	case conn_type == "server":
 		//send the pubkey across the conn
 		log.Println("Sending pubkey TO client: ", tempkey)
 		n, err := conn.Write([]byte(fmt.Sprintf("%s\n", tempkey.String())))
-		if err != nil {
-			log.Println(n, err)
-			return "", err
-		}
-
-		n, err = conn.Read(buf)
 		if err != nil {
 			log.Println(n, err)
 			return "", err
