@@ -8,6 +8,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"bufio"
 )
 
 /*
@@ -101,18 +102,14 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 	default:
 		//wait to receive values
-		// need to read all of data sent across the conn -- this is currently what's breaking it!!
 		var data string
-		totalBytesRead := 0
 
-		for totalBytesRead < 2000 {
-			n, err := conn.Read(buf)
-			if err != nil {
-				log.Println(n, err)
-				return "", err
-			}
-			data += string(buf[:n])
-			totalBytesRead += n
+		reader := bufio.NewReader(conn)
+		// Read until a newline character is encountered
+		data, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error:", err)
+			break
 		}
 
 		values := strings.Split(data, ":")
@@ -162,7 +159,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	case conn_type == "server":
 		//send the pubkey across the conn
 		log.Println("Sending pubkey TO client: ", tempkey)
-		n, err := conn.Write([]byte(tempkey.String()))
+		n, err := conn.Write([]byte(fmt.Sprintf("%s\n", tempkey.String())))
 		if err != nil {
 			log.Println(n, err)
 			return "", err
@@ -174,35 +171,47 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 
-		log.Println("Received pubkey FROM client: ", string(buf[:n]))
-		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
+		var data string
+
+                reader := bufio.NewReader(conn)
+                data, err = reader.ReadString('\n')
+                if err != nil {
+                        fmt.Println("Error:", err)
+                        break
+                }
+		data = strings.Replace(data, "\n", "", -1)
+
+		log.Println("Received pubkey FROM client: ", data)
+		tempkey, ok = tempkey.SetString(data, 0)
 		if !ok {
 			log.Println("Couldn't convert response tempPubKey to int")
 			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
 			return "", err
 		}
 	default:
-		n, err := conn.Read(buf)
-		if err != nil {
-			log.Println(n, err)
-			return "", err
-		}
-		log.Println("Received pubkey FROM server: ", string(buf[:n]))
+	        var data string
+                reader := bufio.NewReader(conn)
+                data, err := reader.ReadString('\n')
+                if err != nil {
+                        fmt.Println("Error:", err)
+                        break
+                }
+		data = strings.Replace(data, "\n", "", -1)
+
+		log.Println("Received pubkey FROM server: ", data)
 
 		//send the tempkey across the conn
 		log.Println("Sending pubkey TO server: ", tempkey)
-		n, err = conn.Write([]byte(tempkey.String()))
+		n, err := conn.Write([]byte(fmt.Sprintf("%s\n", tempkey.String())))
 		if err != nil {
 			log.Println(n, err)
 			return "", err
 		}
 
-		response := strings.TrimSpace(string(buf[:n]))
-
-		tempkey, ok = tempkey.SetString(response, 0)
+		tempkey, ok = tempkey.SetString(data, 0)
 		if !ok {
-			log.Println("Couldn't convert response tempPubKey to int: ", response)
-			err = fmt.Errorf("Couldn't convert response tempPubKey to int: %s", response)
+			log.Println("Couldn't convert response tempPubKey to int: ", data)
+			err = fmt.Errorf("Couldn't convert response tempPubKey to int: %s", data)
 			return "", err
 		}
 
