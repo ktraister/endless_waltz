@@ -58,7 +58,7 @@ func checkDHPair(num *big.Int, gen int) bool {
 }
 
 func fetchValues() (*big.Int, int) {
-	randomNumber, _  := rand.Int(rand.Reader, big.NewInt(int64(len(moduli_pairs)+1)))
+	randomNumber, _  := rand.Int(rand.Reader, big.NewInt(int64(len(moduli_pairs))))
 	index := int(randomNumber.Int64()) 
 	values := strings.Split(moduli_pairs[index], ":")
 	mod := new(big.Int)
@@ -140,11 +140,13 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 	//myint is private, < p, > 0
 	//need to change the method we use here, too
-	myint, err := rand.Int(rand.Reader, big.NewInt(10000))
+	//code will now generate an int between 1001 and 2001
+	myint, err := rand.Int(rand.Reader, big.NewInt(1001))
 	if err != nil {
 		log.Println(err)
 		return "", err
 	}
+	myint.Add(myint, big.NewInt(1000))
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
