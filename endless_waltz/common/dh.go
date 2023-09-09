@@ -8,6 +8,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"bufio"
 )
 
 /*
@@ -57,8 +58,9 @@ func checkDHPair(num *big.Int, gen int) bool {
 }
 
 func fetchValues() (*big.Int, int) {
-	log.Println(moduli_pairs[0])
-	values := strings.Split(moduli_pairs[0], ":")
+	randomNumber, _  := rand.Int(rand.Reader, big.NewInt(int64(len(moduli_pairs)+1)))
+	index := int(randomNumber.Int64()) 
+	values := strings.Split(moduli_pairs[index], ":")
 	mod := new(big.Int)
 	mod, _ = mod.SetString(values[1], 10)
 	gen, _ := strconv.Atoi(values[0])
@@ -78,7 +80,6 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	var generator int
 	var err error
 	var ok bool
-	buf := make([]byte, 10000)
 
 	switch {
 	case conn_type == "server":
@@ -100,12 +101,17 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 	default:
 		//wait to receive values
-		n, err := conn.Read(buf)
+		var data string
+
+		reader := bufio.NewReader(conn)
+		// Read until a newline character is encountered
+		data, err := reader.ReadString('\n')
 		if err != nil {
-			log.Println(n, err)
-			return "", err
+			fmt.Println("Error:", err)
+			break
 		}
-		values := strings.Split(string(buf[:n]), ":")
+
+		values := strings.Split(data, ":")
 
 		prime, ok = prime.SetString(values[0], 0)
 		if !ok {
@@ -114,7 +120,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 		generator, err = strconv.Atoi(strings.Trim(values[1], "\n"))
 		if err != nil {
-			log.Println(n, err)
+			log.Println(err)
 			return "", err
 		}
 
@@ -124,15 +130,17 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		//approve the values or bounce the conn
 		if checkDHPair(prime, generator) == false {
 			return "", err
+		} else {
+			log.Println("DH values approved...")
 		}
 	}
 
 	// SOMETHING ABOUT THIS GENERATION IS BREAKING THE DH SOMETIMES
-	// IDFK, look into it
+	// it's something about the generation of the private secrets. I'll come back to it
 
 	//myint is private, < p, > 0
 	//need to change the method we use here, too
-	myint, err := rand.Int(rand.Reader, prime)
+	myint, err := rand.Int(rand.Reader, big.NewInt(10000))
 	if err != nil {
 		log.Println(err)
 		return "", err
@@ -143,52 +151,57 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	tempkey.Exp(big.NewInt(int64(generator)), myint, nil)
 	tempkey.Mod(tempkey, prime)
 
-	//clear the buffer
-	buf = make([]byte, 10000)
-
 	switch {
 	case conn_type == "server":
 		//send the pubkey across the conn
-		log.Println("Sending pubkey to client: ", tempkey)
-		n, err := conn.Write([]byte(tempkey.String()))
+		log.Println("Sending pubkey TO client: ", tempkey)
+		n, err := conn.Write([]byte(fmt.Sprintf("%s\n", tempkey.String())))
 		if err != nil {
 			log.Println(n, err)
 			return "", err
 		}
 
-		n, err = conn.Read(buf)
-		if err != nil {
-			log.Println(n, err)
-			return "", err
-		}
+		var data string
 
-		log.Println("Server TempKey: ", string(buf[:n]))
-		tempkey, ok = tempkey.SetString(string(buf[:n]), 0)
+                reader := bufio.NewReader(conn)
+                data, err = reader.ReadString('\n')
+                if err != nil {
+                        fmt.Println("Error:", err)
+                        break
+                }
+		data = strings.Replace(data, "\n", "", -1)
+
+		log.Println("Received pubkey FROM client: ", data)
+		tempkey, ok = tempkey.SetString(data, 0)
 		if !ok {
 			log.Println("Couldn't convert response tempPubKey to int")
 			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
 			return "", err
 		}
 	default:
-		n, err := conn.Read(buf)
-		if err != nil {
-			log.Println(n, err)
-			return "", err
-		}
+	        var data string
+                reader := bufio.NewReader(conn)
+                data, err := reader.ReadString('\n')
+                if err != nil {
+                        fmt.Println("Error:", err)
+                        break
+                }
+		data = strings.Replace(data, "\n", "", -1)
+
+		log.Println("Received pubkey FROM server: ", data)
 
 		//send the tempkey across the conn
-		n, err = conn.Write([]byte(tempkey.String()))
+		log.Println("Sending pubkey TO server: ", tempkey)
+		n, err := conn.Write([]byte(fmt.Sprintf("%s\n", tempkey.String())))
 		if err != nil {
 			log.Println(n, err)
 			return "", err
 		}
 
-		response := strings.TrimSpace(string(buf[:n]))
-
-		tempkey, ok = tempkey.SetString(response, 0)
+		tempkey, ok = tempkey.SetString(data, 0)
 		if !ok {
-			log.Println("Couldn't convert response tempPubKey to int: ", response)
-			err = fmt.Errorf("Couldn't convert response tempPubKey to int: %s", response)
+			log.Println("Couldn't convert response tempPubKey to int: ", data)
+			err = fmt.Errorf("Couldn't convert response tempPubKey to int: %s", data)
 			return "", err
 		}
 
