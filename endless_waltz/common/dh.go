@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"crypto/rand"
 	"fmt"
 	"log"
@@ -8,7 +9,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-	"bufio"
 )
 
 /*
@@ -58,8 +58,8 @@ func checkDHPair(num *big.Int, gen int) bool {
 }
 
 func fetchValues() (*big.Int, int) {
-	randomNumber, _  := rand.Int(rand.Reader, big.NewInt(int64(len(moduli_pairs))))
-	index := int(randomNumber.Int64()) 
+	randomNumber, _ := rand.Int(rand.Reader, big.NewInt(int64(len(moduli_pairs))))
+	index := int(randomNumber.Int64())
 	values := strings.Split(moduli_pairs[index], ":")
 	mod := new(big.Int)
 	mod, _ = mod.SetString(values[1], 10)
@@ -165,12 +165,12 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 
 		var data string
 
-                reader := bufio.NewReader(conn)
-                data, err = reader.ReadString('\n')
-                if err != nil {
-                        fmt.Println("Error:", err)
-                        break
-                }
+		reader := bufio.NewReader(conn)
+		data, err = reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error:", err)
+			break
+		}
 		data = strings.Replace(data, "\n", "", -1)
 
 		log.Println("Received pubkey FROM client: ", data)
@@ -181,13 +181,13 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 			return "", err
 		}
 	default:
-	        var data string
-                reader := bufio.NewReader(conn)
-                data, err := reader.ReadString('\n')
-                if err != nil {
-                        fmt.Println("Error:", err)
-                        break
-                }
+		var data string
+		reader := bufio.NewReader(conn)
+		data, err := reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("Error:", err)
+			break
+		}
 		data = strings.Replace(data, "\n", "", -1)
 
 		log.Println("Received pubkey FROM server: ", data)

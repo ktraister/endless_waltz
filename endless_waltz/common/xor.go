@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"math/big"
-	"strings"
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -43,33 +43,33 @@ func fromString(INPUT string) []string {
 }
 
 func pack_message(INPUT string) []rune {
-    desiredLength := 4096
-    fillCharacters := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@$%^&*()-_=+[]{}|;:',.<>?~"
+	desiredLength := 4096
+	fillCharacters := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@$%^&*()-_=+[]{}|;:',.<>?~"
 
-    rand.Seed(time.Now().UnixNano())
+	rand.Seed(time.Now().UnixNano())
 
-    result := INPUT + "###"
+	result := INPUT + "###"
 
-    for len(result) < desiredLength {
-	    randomIndex := rand.Intn(len(fillCharacters))
-	    result += string(fillCharacters[randomIndex])
-    }
+	for len(result) < desiredLength {
+		randomIndex := rand.Intn(len(fillCharacters))
+		result += string(fillCharacters[randomIndex])
+	}
 
-    // Trim the string if it's longer than desiredLength
-    if len(result) > desiredLength {
-	    result = result[:desiredLength]
-    }
+	// Trim the string if it's longer than desiredLength
+	if len(result) > desiredLength {
+		result = result[:desiredLength]
+	}
 
-    return []rune(result)
+	return []rune(result)
 }
 
 func unpack_message(INPUT string) string {
-    result := strings.Split(INPUT, "###")
-    return result[0]
+	result := strings.Split(INPUT, "###")
+	return result[0]
 }
 
 func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
-        //implement pack_message here
+	//implement pack_message here
 	chars := pack_message(MSG)
 	pad := []rune(PAD)
 	asc_chars := make([]int, 0)
