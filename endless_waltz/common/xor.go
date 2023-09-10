@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"math/big"
 	"strings"
+	"math/rand"
+	"time"
 )
 
 /*
@@ -40,8 +42,35 @@ func fromString(INPUT string) []string {
 	return mySlice
 }
 
+func pack_message(INPUT string) []rune {
+    desiredLength := 4096
+    fillCharacters := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@$%^&*()-_=+[]{}|;:',.<>?~"
+
+    rand.Seed(time.Now().UnixNano())
+
+    result := INPUT + "###"
+
+    for len(result) < desiredLength {
+	    randomIndex := rand.Intn(len(fillCharacters))
+	    result += string(fillCharacters[randomIndex])
+    }
+
+    // Trim the string if it's longer than desiredLength
+    if len(result) > desiredLength {
+	    result = result[:desiredLength]
+    }
+
+    return []rune(result)
+}
+
+func unpack_message(INPUT string) string {
+    result := strings.Split(INPUT, "###")
+    return result[0]
+}
+
 func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
-	chars := []rune(MSG)
+        //implement pack_message here
+	chars := pack_message(MSG)
 	pad := []rune(PAD)
 	asc_chars := make([]int, 0)
 	asc_pad := make([]int, 0)
@@ -116,5 +145,5 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 	}
 	dec_string := sb.String()
 
-	return dec_string
+	return unpack_message(dec_string)
 }
