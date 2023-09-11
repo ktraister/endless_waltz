@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -16,13 +15,19 @@ import (
 )
 
 func main() {
-
 	//reading in env variable for mongo conn URI
 	MongoURI := os.Getenv("MongoURI")
 	MongoUser := os.Getenv("MongoUser")
 	MongoPass := os.Getenv("MongoPass")
-	log.Println("MongoURI: ", MongoURI)
-	log.Println("Reaper finished starting up!")
+	LogLevel := os.Getenv("LogLevel")
+	LogType := os.Getenv("LogType")
+
+	logger := createLogger(LogLevel, LogType)
+	logger.Info("Reaper finished starting up!")
+
+	//set counts to use later in error message escalation
+	readFailedCount := 0
+	writeFailedCount := 0
 
 	for {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -33,10 +38,10 @@ func main() {
 		}
 		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 		if err != nil {
-			log.Println(err)
+			logger.Fatal(err)
 			return
 		} else {
-			log.Println("Database connection succesful!")
+			logger.Info("Database connection succesful!")
 		}
 
 		otp_db := client.Database("otp").Collection("otp")
@@ -46,27 +51,39 @@ func main() {
 		filter := bson.D{{}}
 		count, err := otp_db.CountDocuments(ctx, filter)
 		if err != nil {
-			log.Println(err)
+			readFailedCount++
+			if readFailedCount <= 2 {
+				logger.Warn(err)
+			} else {
+				logger.Error(err)
+			}
+			break
 		}
 
-		//if count is less than threshold
+		//if count is less than threshold (this will need to go up for prod)
 		if count < 100 {
-			log.Println("Found count ", count, "writing to db...")
+			logger.Info("Found count ", count, "writing to db...")
 			for i := 0; i < 100-int(count); i++ {
 				//read from random
 				_, err := rand.Read(b)
 				id := uuid.New().String()
+				//need to check if UUID already exists in db
 				_, err = otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"Pad", fmt.Sprintf("%v", b)}})
 				if err != nil {
-					log.Println(err)
+					writeFailedCount++
+					if writeFailedCount <= 10 {
+						logger.Warn(err)
+					} else {
+						logger.Error(err)
+					}
 					break
 				}
-				log.Println("Wrote item ", i, " to DB!")
+				logger.Debug("Wrote item ", i, " to DB!")
 			}
-			log.Println("Done writing to DB!")
+			logger.Info("Done writing to DB!")
 		}
 
-		log.Println("Count met threshold, sleeping...")
+		logger.Info("Count met threshold, sleeping...")
 		time.Sleep(10 * time.Second)
 	}
 }
