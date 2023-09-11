@@ -19,10 +19,12 @@ func main() {
 	msgPtr := flag.String("message", "", "a message to encrypt and send")
 	hostPtr := flag.String("host", "localhost", "the server to send the message to")
 	randPtr := flag.String("random", "localhost", "the random server to use for pad")
-	logLvlPtr := flag.String("LogLevel", "Warn", "the random server to use for pad")
+	logLvlPtr := flag.String("logLevel", "Warn", "the random server to use for pad")
 	flag.Parse()
 
 	logger := createLogger(*logLvlPtr, "normal")
+
+	fmt.Println(fmt.Sprintf("Sending message to %s...", *hostPtr))
 
 	if len(*msgPtr) > 4096 {
 		logger.Fatal("We dont support this yet!")
@@ -94,6 +96,8 @@ func main() {
 	}
 
 	//notify client of successful send
+	fmt.Println("Sent message successfully!")
+	fmt.Println("goodbye :)")
 	//logger
 
 	conn.Close()
