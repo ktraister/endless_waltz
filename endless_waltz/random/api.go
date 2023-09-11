@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -16,12 +15,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
-var jsonMap map[string]interface{} // XXX is this data in a well defined JSON structure? does it change often?
 var MongoURI string
 var MongoUser string
 var MongoPass string
+
+var jsonMap map[string]interface{} // XXX is this data in a well defined JSON structure? does it change often?
 
 type Server_Resp struct {
 	UUID string
@@ -36,37 +37,69 @@ type Error_Resp struct {
 	Error string
 }
 
+// Custom middleware function to inject a logger into the request context
+func LoggerMiddleware(logger *logrus.Logger) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Inject the logger into the request context
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, "logger", logger)
+			r = r.WithContext(ctx)
+
+			// Call the next middleware or handler in the chain
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 func base_handler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		fmt.Println("ERROR: Could not configure logger!")
+		return
+	}
 	w.Write([]byte("The base route has been hit successfully!"))
+	logger.Info("Someone hit the base route...")
+
 }
 
 func otp_handler(w http.ResponseWriter, req *http.Request) {
+	//logging setup
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		fmt.Println("ERROR: Could not configure logger!")
+		return
+	}
+
 	reqBody, err := io.ReadAll(req.Body) // newer versions of go moved ReadAll to io instead of ioutil
 	if err != nil {
-		log.Fatal(err)
+		logger.Error(err)
 	}
 
 	//logging our header will show IP once server is in AWS
-	fmt.Printf("Incoming request: %s, %s\n", req.Header.Get("X-Forwarded-For"), reqBody)
-	fmt.Printf("%s\n", reqBody)
+	logger.Info(fmt.Sprintf("Incoming request: %s, %s\n", req.Header.Get("X-Forwarded-For"), reqBody))
 
 	if len(reqBody) == 0 {
-		fmt.Printf("Found no body for this request, returning")
+		logger.Debug("Found no body for this request, returning")
+		//lets return a different error code here -- not sure what
 		w.WriteHeader(404)
 	} else {
-		fmt.Printf("Found body for the request, proceeding!\n")
+		logger.Debug("Found body for the request, proceeding!\n")
 		json.Unmarshal([]byte(reqBody), &jsonMap)
 
-		//connect to mongo
+		//creating context to connect to mongo
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		credential := options.Credential{
 			Username: MongoUser,
 			Password: MongoPass,
 		}
+		//actually connect to mongo
 		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 		if err != nil {
-			log.Println(err)
+			logger.Fatal(err)
 			return
 		}
 		otp_db := client.Database("otp").Collection("otp")
@@ -79,7 +112,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			server_resp := Server_Resp{}
 			err := otp_db.FindOne(ctx, bson.M{"LOCK": nil}).Decode(&server_resp)
 			if err != nil {
-				log.Println(err)
+				logger.Error(err)
 			} else {
 				//lock the item
 				uuid, _ := primitive.ObjectIDFromHex(server_resp.UUID)
@@ -87,21 +120,21 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 				update := bson.D{{"$set", bson.D{{"LOCK", "true"}}}}
 				_, err := otp_db.UpdateOne(ctx, filter, update)
 				if err != nil {
-					log.Println(err)
+					logger.Error(err)
 					return
 				}
 			}
 
 			resp, _ := json.Marshal(server_resp)
 			if err != nil {
-				log.Println(err)
+				logger.Error(err)
 				return
 			}
 
 			//this is where we respond to the connection
 			w.Write(resp)
 		case host == "client" && uuid == nil:
-			log.Println(fmt.Sprintf("No UUID value in request, informing client"))
+			logger.Warn(fmt.Sprintf("No UUID value in request, informing client"))
 			w.Write([]byte("ERROR: No UUID included in request."))
 			return
 		case host == "client":
@@ -111,17 +144,17 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			UUID := fmt.Sprintf("%v", jsonMap["UUID"])
 			filterCursor, err := otp_db.Find(ctx, bson.M{"UUID": UUID})
 			if err != nil {
-				log.Fatal(err)
+				logger.Error(err)
 				return
 			}
 			if !filterCursor.Next(ctx) {
-				log.Println(fmt.Sprintf("No value in Mongo for UUID %v, informing client", jsonMap["UUID"]))
+				logger.Warn(fmt.Sprintf("No value in Mongo for UUID %v, informing client", jsonMap["UUID"]))
 				w.Write([]byte("ERROR: No otp found for UUID included in request."))
 				return
 			}
 			var dbResult []bson.M
 			if err = filterCursor.All(ctx, &dbResult); err != nil {
-				log.Fatal(err)
+				logger.Error(err)
 			}
 
 			otp := fmt.Sprintf("%v", dbResult[0]["Pad"])
@@ -130,7 +163,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			}
 			resp, _ := json.Marshal(client_resp)
 			if err != nil {
-				log.Println(err)
+				logger.Warn(err)
 				return
 			}
 
@@ -139,7 +172,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 
 			//add deletion of mongo pad here
 			if _, err = otp_db.DeleteOne(ctx, bson.M{"UUID": UUID}); err != nil {
-				log.Println(err)
+				logger.Error(err)
 				return
 			}
 		}
@@ -147,13 +180,17 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-
-	log.Println("Random server coming online!")
 	MongoURI = os.Getenv("MongoURI")
 	MongoUser = os.Getenv("MongoUser")
 	MongoPass = os.Getenv("MongoPass")
+	LogLevel := os.Getenv("LogLevel")
+	LogType := os.Getenv("LogType")
+
+	logger := createLogger(LogLevel, LogType)
+	logger.Info("Random Server finished starting up!")
 
 	router := mux.NewRouter()
+	router.Use(LoggerMiddleware(logger))
 	router.HandleFunc("/api/", base_handler).Methods("GET") // XXX is this intended to behave like /ping would? like an et phone home?
 	router.HandleFunc("/api/otp", otp_handler).Methods("POST")
 
