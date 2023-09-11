@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"crypto/rand"
 	"fmt"
-	"log"
 	"math/big"
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 /*
@@ -72,7 +73,7 @@ func checkPrivKey(key string) bool {
 	return true
 }
 
-func dh_handshake(conn net.Conn, conn_type string) (string, error) {
+func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (string, error) {
 	//prime := big.NewInt(1)
 	prime := big.NewInt(424889)
 	tempkey := big.NewInt(1)
@@ -90,13 +91,13 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		//prime, err = rand.Prime(rand.Reader, 19)
 		prime, generator = fetchValues()
 
-		log.Println("Server DH Prime:", prime)
-		log.Println("Server DH Generator: ", generator)
+		logger.Debug("Server DH Prime:", prime)
+		logger.Debug("Server DH Generator: ", generator)
 
 		//send the values across the conn
 		n, err := conn.Write([]byte(fmt.Sprintf("%d:%d\n", prime, generator)))
 		if err != nil {
-			log.Println(n, err)
+			logger.Error(n, err)
 			return "", err
 		}
 	default:
@@ -107,31 +108,32 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		// Read until a newline character is encountered
 		data, err := reader.ReadString('\n')
 		if err != nil {
-			fmt.Println("Error:", err)
-			break
+			logger.Error("Error:", err)
+			return "", err
 		}
 
 		values := strings.Split(data, ":")
 
 		prime, ok = prime.SetString(values[0], 0)
 		if !ok {
-			log.Println("Couldn't convert response prime to int")
+			logger.Error("Couldn't convert response prime to int")
 			return "", err
 		}
 		generator, err = strconv.Atoi(strings.Trim(values[1], "\n"))
 		if err != nil {
-			log.Println(err)
+			logger.Error(err)
 			return "", err
 		}
 
-		log.Println("Client DH Prime: ", prime)
-		log.Println("Client DH Generator: ", generator)
+		logger.Debug("Client DH Prime: ", prime)
+		logger.Debug("Client DH Generator: ", generator)
 
 		//approve the values or bounce the conn
 		if checkDHPair(prime, generator) == false {
+			logger.Error(err)
 			return "", err
 		} else {
-			log.Println("DH values approved...")
+			logger.Info("DH values approved!")
 		}
 	}
 
@@ -143,7 +145,7 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	//code will now generate an int between 1001 and 2001
 	myint, err := rand.Int(rand.Reader, big.NewInt(1001))
 	if err != nil {
-		log.Println(err)
+		logger.Error(err)
 		return "", err
 	}
 	myint.Add(myint, big.NewInt(1000))
@@ -156,10 +158,10 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 	switch {
 	case conn_type == "server":
 		//send the pubkey across the conn
-		log.Println("Sending pubkey TO client: ", tempkey)
+		logger.Debug("Sending pubkey TO client: ", tempkey)
 		n, err := conn.Write([]byte(fmt.Sprintf("%s\n", tempkey.String())))
 		if err != nil {
-			log.Println(n, err)
+			logger.Error(n, err)
 			return "", err
 		}
 
@@ -173,10 +175,10 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 		data = strings.Replace(data, "\n", "", -1)
 
-		log.Println("Received pubkey FROM client: ", data)
+		logger.Debug("Received pubkey FROM client: ", data)
 		tempkey, ok = tempkey.SetString(data, 0)
 		if !ok {
-			log.Println("Couldn't convert response tempPubKey to int")
+			logger.Error("Couldn't convert response tempPubKey to int")
 			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
 			return "", err
 		}
@@ -190,19 +192,19 @@ func dh_handshake(conn net.Conn, conn_type string) (string, error) {
 		}
 		data = strings.Replace(data, "\n", "", -1)
 
-		log.Println("Received pubkey FROM server: ", data)
+		logger.Debug("Received pubkey FROM server: ", data)
 
 		//send the tempkey across the conn
-		log.Println("Sending pubkey TO server: ", tempkey)
+		logger.Debug("Sending pubkey TO server: ", tempkey)
 		n, err := conn.Write([]byte(fmt.Sprintf("%s\n", tempkey.String())))
 		if err != nil {
-			log.Println(n, err)
+			logger.Error(n, err)
 			return "", err
 		}
 
 		tempkey, ok = tempkey.SetString(data, 0)
 		if !ok {
-			log.Println("Couldn't convert response tempPubKey to int: ", data)
+			logger.Error("Couldn't convert response tempPubKey to int: ", data)
 			err = fmt.Errorf("Couldn't convert response tempPubKey to int: %s", data)
 			return "", err
 		}
