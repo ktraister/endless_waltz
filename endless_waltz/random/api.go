@@ -65,7 +65,7 @@ func base_handler(w http.ResponseWriter, req *http.Request) {
 }
 
 func otp_handler(w http.ResponseWriter, req *http.Request) {
-        //logging setup
+	//logging setup
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -82,7 +82,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 	logger.Info(fmt.Sprintf("Incoming request: %s, %s\n", req.Header.Get("X-Forwarded-For"), reqBody))
 
 	if len(reqBody) == 0 {
-                logger.Debug("Found no body for this request, returning")
+		logger.Debug("Found no body for this request, returning")
 		//lets return a different error code here -- not sure what
 		w.WriteHeader(404)
 	} else {
