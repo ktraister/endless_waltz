@@ -79,7 +79,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//logging our header will show IP once server is in AWS
-	logger.Info("Incoming request: %s, %s\n", req.Header.Get("X-Forwarded-For"), reqBody)
+	logger.Info(fmt.Sprintf("Incoming request: %s, %s\n", req.Header.Get("X-Forwarded-For"), reqBody))
 
 	if len(reqBody) == 0 {
                 logger.Debug("Found no body for this request, returning")
