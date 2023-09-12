@@ -74,7 +74,7 @@ func checkAPIKey(remote_key string, logger *logrus.Logger) bool {
 		//this will print every item returned 
 		//this is where we can match&return true
 		//remote_key
-		fmt.Println(result) // Print the document
+		logger.Info(result) // Print the document
 		return true
 	}
 
