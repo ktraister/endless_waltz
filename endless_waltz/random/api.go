@@ -37,7 +37,7 @@ type Error_Resp struct {
 	Error string
 }
 
-func checkAPIKey(remote_key string) bool {
+func checkAPIKey(remote_key string, logger *logrus.Logger) bool {
 	//creating context to connect to mongo
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -49,7 +49,7 @@ func checkAPIKey(remote_key string) bool {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 	if err != nil {
 		logger.Fatal(err)
-		return
+		return false
 	}
 	auth_db := client.Database("auth").Collection("keys")
 
@@ -57,9 +57,9 @@ func checkAPIKey(remote_key string) bool {
 	filter := bson.M{}
 
 	// Create a cursor to retrieve documents
-	cursor, err := collection.Find(context.Background(), filter)
+	cursor, err := auth_db.Find(context.Background(), filter)
 	if err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	defer cursor.Close(context.Background())
@@ -68,7 +68,7 @@ func checkAPIKey(remote_key string) bool {
 	for cursor.Next(context.Background()) {
 		var result bson.M
 		if err := cursor.Decode(&result); err != nil {
-			log.Fatal(err)
+			logger.Fatal(err)
 		}
 
 		//this will print every item returned 
@@ -79,7 +79,7 @@ func checkAPIKey(remote_key string) bool {
 	}
 
 	if err := cursor.Err(); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 
 	// allow all to pass for now
@@ -109,7 +109,7 @@ func base_handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAPIKey(req.Header.Get("API-Key"))
+	ok = checkAPIKey(req.Header.Get("API-Key"), logger)
 	if !ok {
 		fmt.Println("Unauthorized API Key!")
         }
