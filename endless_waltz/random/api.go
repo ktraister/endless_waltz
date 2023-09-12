@@ -48,7 +48,7 @@ func checkAPIKey(remote_key string, logger *logrus.Logger) bool {
 	//actually connect to mongo
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
 		return false
 	}
 	auth_db := client.Database("auth").Collection("keys")
@@ -59,7 +59,8 @@ func checkAPIKey(remote_key string, logger *logrus.Logger) bool {
 	// Create a cursor to retrieve documents
 	cursor, err := auth_db.Find(context.Background(), filter)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
+		return false
 	}
 
 	defer cursor.Close(context.Background())
@@ -68,22 +69,25 @@ func checkAPIKey(remote_key string, logger *logrus.Logger) bool {
 	for cursor.Next(context.Background()) {
 		var result bson.M
 		if err := cursor.Decode(&result); err != nil {
-			logger.Fatal(err)
+			logger.Error(err)
 		}
 
-		//this will print every item returned 
+		//this will print every item returned
 		//this is where we can match&return true
 		//remote_key
 		logger.Info(result) // Print the document
-		return true
+		if result["API-Key"] == remote_key {
+			logger.Info("Found valid auth key!")
+			return true
+		}
 	}
 
 	if err := cursor.Err(); err != nil {
-		logger.Fatal(err)
+		logger.Error(err)
+		return false
 	}
 
-	// allow all to pass for now
-	return true
+	return false
 }
 
 // Custom middleware function to inject a logger into the request context
@@ -103,11 +107,19 @@ func LoggerMiddleware(logger *logrus.Logger) mux.MiddlewareFunc {
 
 func health_handler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+
 	if !ok {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		fmt.Println("ERROR: Could not configure logger!")
 		return
 	}
+	ok = checkAPIKey(req.Header.Get("API-Key"), logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusInternalServerError)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
 	w.Write([]byte("HEALTHY"))
 	logger.Info("Someone hit the health check route...")
 
@@ -119,6 +131,12 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		fmt.Println("ERROR: Could not configure logger!")
+		return
+	}
+	ok = checkAPIKey(req.Header.Get("API-Key"), logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusInternalServerError)
+		logger.Info("request denied 403 unauthorized")
 		return
 	}
 
