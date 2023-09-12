@@ -43,8 +43,8 @@ func main() {
 		} else {
 			logger.Info("Database connection succesful!")
 		}
-
 		otp_db := client.Database("otp").Collection("otp")
+
 		b := make([]byte, 4096)
 
 		//check and see how many items are in the db

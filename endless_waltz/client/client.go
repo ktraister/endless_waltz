@@ -38,9 +38,25 @@ func main() {
 
 	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:6000", *hostPtr), conf)
 	if err != nil {
-		logger.Fatal(err)
+		logger.Fatal("Could not connect to remote message server...")
 		return
 	}
+
+	//check here if the random API is up and ready
+	randHost := fmt.Sprintf("http://%s:8090/api/healthcheck", *randPtr)
+	req, err := http.NewRequest("GET", randHost)
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	client := &http.Client{}
+	resp, error := client.Do(req)
+	if error != nil {
+		logger.Fatal(error)
+		return
+	}
+
+	if resp.Body == "HEALTHY" {
+	    logger.Info("Random host healthy, Proceeding")
+        }
+
 
 	n, err := conn.Write([]byte("HELO\n"))
 	if err != nil {
@@ -74,11 +90,11 @@ func main() {
 	if err != nil {
 		logger.Warn(err)
 	}
-	randHost := fmt.Sprintf("http://%s:8090/api/otp", *randPtr)
-	req, err := http.NewRequest("POST", randHost, bytes.NewBuffer(rapi_data))
+	randHost = fmt.Sprintf("http://%s:8090/api/otp", *randPtr)
+	req, err = http.NewRequest("POST", randHost, bytes.NewBuffer(rapi_data))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	client := &http.Client{}
-	resp, error := client.Do(req)
+	client = &http.Client{}
+	resp, error = client.Do(req)
 	if error != nil {
 		logger.Fatal(error)
 		return

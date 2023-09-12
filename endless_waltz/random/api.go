@@ -52,15 +52,15 @@ func LoggerMiddleware(logger *logrus.Logger) mux.MiddlewareFunc {
 	}
 }
 
-func base_handler(w http.ResponseWriter, req *http.Request) {
+func health_handler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		fmt.Println("ERROR: Could not configure logger!")
 		return
 	}
-	w.Write([]byte("The base route has been hit successfully!"))
-	logger.Info("Someone hit the base route...")
+	w.Write([]byte("HEALTHY"))
+	logger.Info("Someone hit the health check route...")
 
 }
 
@@ -191,7 +191,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
-	router.HandleFunc("/api/", base_handler).Methods("GET") // XXX is this intended to behave like /ping would? like an et phone home?
+	router.HandleFunc("/api/healthcheck", health_handler).Methods("GET") // XXX is this intended to behave like /ping would? like an et phone home?
 	router.HandleFunc("/api/otp", otp_handler).Methods("POST")
 
 	http.ListenAndServe(":8090", router)

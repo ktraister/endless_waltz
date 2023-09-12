@@ -1,16 +1,36 @@
 services:
   random:
+    depends_on:
+      mongo:
+        condition: service_started
     build:
       context: random
     ports:
       - "8090:8090"
+    environment:
+      MongoURI: mongodb://mongo:27017
+      MongoUser: adminuser
+      MongoPass: password123
+      LogLevel: Info
 
   mongo:
     image: mongo
     restart: always
     ports:
       - "27017:27017"
+    environment:
+        # provide your credentials here
+        - MONGO_INITDB_ROOT_USERNAME=adminuser
+        - MONGO_INITDB_ROOT_PASSWORD=password123
 
   reaper:
+    depends_on:
+      mongo:
+        condition: service_started
     build:
       context: reaper
+    environment:
+      MongoURI: mongodb://mongo:27017
+      MongoUser: adminuser
+      MongoPass: password123
+      LogLevel: Info
