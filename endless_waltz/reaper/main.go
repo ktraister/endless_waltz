@@ -61,13 +61,30 @@ func main() {
 		}
 
 		//if count is less than threshold (this will need to go up for prod)
-		if count < 100 {
-			logger.Info("Found count ", count, "writing to db...")
-			for i := 0; i < 100-int(count); i++ {
+		threshold := int64(1000)
+		if count < threshold {
+			logger.Info("Found count ", count, ", writing to db...")
+			for i := int64(0); i < threshold-count; i++ {
 				//read from random
 				_, err := rand.Read(b)
 				id := uuid.New().String()
 				//need to check if UUID already exists in db
+				// Define the filter criteria
+				filter := bson.M{"UUID": id} 
+
+				// Check if the item exists in the collection
+				var result bson.M
+				err = otp_db.FindOne(context.TODO(), filter).Decode(&result)
+				if err == nil {
+					logger.Warn("UUID exists in the collection, passing.")
+					continue
+				} else if err == mongo.ErrNoDocuments {
+					logger.Debug("UUID is unique, proceeding.")
+				} else {
+					logger.Error(err)
+				}
+
+				//Then we insert
 				_, err = otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"Pad", fmt.Sprintf("%v", b)}})
 				if err != nil {
 					writeFailedCount++
@@ -76,7 +93,7 @@ func main() {
 					} else {
 						logger.Error(err)
 					}
-					break
+					continue
 				}
 				logger.Debug("Wrote item ", i, " to DB!")
 			}

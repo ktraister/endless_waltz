@@ -51,43 +51,24 @@ func checkAPIKey(remote_key string, logger *logrus.Logger) bool {
 		logger.Error(err)
 		return false
 	}
+
 	auth_db := client.Database("auth").Collection("keys")
 
-	// Define a filter to match all documents (an empty filter)
-	filter := bson.M{}
-
-	// Create a cursor to retrieve documents
-	cursor, err := auth_db.Find(context.Background(), filter)
-	if err != nil {
+	// Check if the item exists in the collection
+	logger.Debug(fmt.Sprintf("checking remote key %s", remote_key))
+	filter := bson.M{"API-Key": remote_key}
+	var result bson.M
+	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
+	if err == nil {
+		logger.Info("Found API key in db, authorized")
+		return true
+	} else if err == mongo.ErrNoDocuments {
+		logger.Warn("No API key found, unauthorized")
+	        return false
+	} else {
 		logger.Error(err)
 		return false
 	}
-
-	defer cursor.Close(context.Background())
-
-	// Loop through the cursor to read documents
-	for cursor.Next(context.Background()) {
-		var result bson.M
-		if err := cursor.Decode(&result); err != nil {
-			logger.Error(err)
-		}
-
-		//this will print every item returned
-		//this is where we can match&return true
-		//remote_key
-		logger.Info(result) // Print the document
-		if result["API-Key"] == remote_key {
-			logger.Info("Found valid auth key!")
-			return true
-		}
-	}
-
-	if err := cursor.Err(); err != nil {
-		logger.Error(err)
-		return false
-	}
-
-	return false
 }
 
 // Custom middleware function to inject a logger into the request context
