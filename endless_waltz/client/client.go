@@ -42,6 +42,7 @@ func main() {
 		return
 	}
 
+	/*
 	//check here if the random API is up and ready
 	randHost := fmt.Sprintf("http://%s:8090/api/healthcheck", *randPtr)
 	req, err := http.NewRequest("GET", randHost)
@@ -56,7 +57,7 @@ func main() {
 	if resp.Body == "HEALTHY" {
 	    logger.Info("Random host healthy, Proceeding")
         }
-
+        */
 
 	n, err := conn.Write([]byte("HELO\n"))
 	if err != nil {
