@@ -17,7 +17,7 @@ type Client_Resp struct {
 	UUID string
 }
 
-func handleConnection(conn net.Conn, logger *logrus.Logger, random_host string) {
+func handleConnection(conn net.Conn, logger *logrus.Logger, random_host string, api_key string) {
 	defer conn.Close()
 	r := bufio.NewReader(conn)
 	msg, err := r.ReadString('\n')
@@ -46,6 +46,7 @@ func handleConnection(conn net.Conn, logger *logrus.Logger, random_host string) 
 	//reach out and get random pad and UUID
 	req, err := http.NewRequest("POST", random_host, bytes.NewBuffer(data))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Set("API-Key", api_key)
 	client := &http.Client{}
 	resp, error := client.Do(req)
 	if error != nil {
@@ -101,6 +102,7 @@ func main() {
 	logger.Debug("keypath is\t\t", configuration.Server.Key)
 	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
 	logger.Debug("serverpath is\t\t", configuration.Server.RandomURL)
+	logger.Debug("API_Key is\t\t", configuration.Server.API_Key)
 
 	cer, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
 	if err != nil {
@@ -124,6 +126,6 @@ func main() {
 			logger.Error(err)
 			continue
 		}
-		go handleConnection(conn, logger, configuration.Server.RandomURL)
+		go handleConnection(conn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
 	}
 }
