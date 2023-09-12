@@ -37,6 +37,55 @@ type Error_Resp struct {
 	Error string
 }
 
+func checkAPIKey(remote_key string) bool {
+	//creating context to connect to mongo
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	credential := options.Credential{
+		Username: MongoUser,
+		Password: MongoPass,
+	}
+	//actually connect to mongo
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
+	if err != nil {
+		logger.Fatal(err)
+		return
+	}
+	auth_db := client.Database("auth").Collection("keys")
+
+	// Define a filter to match all documents (an empty filter)
+	filter := bson.M{}
+
+	// Create a cursor to retrieve documents
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer cursor.Close(context.Background())
+
+	// Loop through the cursor to read documents
+	for cursor.Next(context.Background()) {
+		var result bson.M
+		if err := cursor.Decode(&result); err != nil {
+			log.Fatal(err)
+		}
+
+		//this will print every item returned 
+		//this is where we can match&return true
+		//remote_key
+		fmt.Println(result) // Print the document
+		return true
+	}
+
+	if err := cursor.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	// allow all to pass for now
+	return true
+}
+
 // Custom middleware function to inject a logger into the request context
 func LoggerMiddleware(logger *logrus.Logger) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
@@ -59,8 +108,15 @@ func base_handler(w http.ResponseWriter, req *http.Request) {
 		fmt.Println("ERROR: Could not configure logger!")
 		return
 	}
-	w.Write([]byte("The base route has been hit successfully!"))
-	logger.Info("Someone hit the base route...")
+
+	ok = checkAPIKey(req.Header.Get("API-Key"))
+	if !ok {
+		fmt.Println("Unauthorized API Key!")
+        }
+
+	//do checks here to make sure api is actually healthy
+	w.Write([]byte("Healthy"))
+	logger.Info("responding as healthy")
 
 }
 
