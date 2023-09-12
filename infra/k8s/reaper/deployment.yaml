@@ -21,7 +21,7 @@ spec:
         - name: ew-reaper
           securityContext:
             privileged: true
-          image: "ghcr.io/ktraister/ew_reaper:08d3f028b5243ab56d825a22f0ac9d0ab21af664"
+          image: "ghcr.io/ktraister/ew_reaper:5866f78189f6cad6f88eab18651176d117cef6f2"
           imagePullPolicy: Always
           env:
             - name: "MongoURI"
