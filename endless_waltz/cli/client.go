@@ -14,7 +14,7 @@ type Random_Req struct {
 	UUID string `json:"UUID"`
 }
 
-func main() {
+func client() {
 	//lets setup our flags here
 	msgPtr := flag.String("message", "", "a message to encrypt and send")
 	hostPtr := flag.String("host", "localhost", "the server to send the message to")
