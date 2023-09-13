@@ -71,7 +71,7 @@ func main() {
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 
-		if input == "quit" {
+		if input == "quit" || input == "exit" {
 			break
 		}
 	}
