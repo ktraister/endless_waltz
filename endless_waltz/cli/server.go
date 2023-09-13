@@ -78,4 +78,3 @@ func handleConnection(conn net.Conn, logger *logrus.Logger, random_host string, 
 	println("decrypted msg")
 	println(pad_decrypt(msg, pad, private_key))
 }
-

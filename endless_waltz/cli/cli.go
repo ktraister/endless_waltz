@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"crypto/tls"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -46,17 +49,29 @@ func main() {
 	}
 	defer ln.Close()
 
-	logger.Info("EW CLI is coming online!")
+	reader := bufio.NewReader(os.Stdin)
+
+	//logger.Info("EW CLI is coming online!")
 	for {
-	        // old code from the server exe
-		/*
-		conn, err := ln.Accept()
-		if err != nil {
-			logger.Error(err)
-			continue
+		fmt.Print("ew_cli > ")
+		input, _ := reader.ReadString('\n')
+		input = strings.TrimSpace(input)
+
+		if input == "quit" || input == "exit" {
+			break
 		}
-		go handleConnection(conn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
+
+		if input == "help" {
+		}
+
+		// old code from the server exe
+		/*
+			conn, err := ln.Accept()
+			if err != nil {
+				logger.Error(err)
+				continue
+			}
+			go handleConnection(conn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
 		*/
 	}
 }
-
