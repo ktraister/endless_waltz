@@ -74,7 +74,7 @@ func main() {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-	        fmt.Println("API Key entered is invalid for randomAPI")
+		fmt.Println("API Key entered is invalid for randomAPI")
 		fmt.Printf("Request failed with status: %s\n", resp.Status)
 		return
 	}
@@ -84,14 +84,23 @@ func main() {
 
 	reader := bufio.NewReader(os.Stdin)
 
+	//this is the interactive part of the EW_cli
 	for {
 		fmt.Print("EW_cli > ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 
-		if input == "quit" || input == "exit" {
-			break
+		switch input {
+		case "exit", "quit":
+		    return
+
+		case "help":
+			fmt.Println("Help...")
+
+		default:
+			fmt.Println("Didn't understand input, try again")
 		}
+
 	}
 
 }
