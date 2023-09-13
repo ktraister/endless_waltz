@@ -1,11 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"crypto/tls"
 	"fmt"
-	"bufio"
-	"strings"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -60,6 +61,23 @@ func main() {
 	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
 	logger.Debug("serverpath is\t\t", configuration.Server.RandomURL)
 	logger.Debug("API_Key is\t\t", configuration.Server.API_Key)
+
+	//check and make sure inserted API key works
+	health_url := fmt.Sprintf("%s%s", strings.Split(configuration.Server.RandomURL, "/otp")[0], "/healthcheck")
+	req, err := http.NewRequest("GET", health_url, nil)
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Set("API-Key", configuration.Server.API_Key)
+	client := &http.Client{}
+	resp, error := client.Do(req)
+	if error != nil {
+		logger.Error(error)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+	        fmt.Println("API Key entered is invalid for randomAPI")
+		fmt.Printf("Request failed with status: %s\n", resp.Status)
+		return
+	}
 
 	//goroutine to listen for message
 	go listenForMsg(logger, configuration)

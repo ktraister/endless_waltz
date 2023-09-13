@@ -96,7 +96,7 @@ func health_handler(w http.ResponseWriter, req *http.Request) {
 	}
 	ok = checkAPIKey(req.Header.Get("API-Key"), logger)
 	if !ok {
-		http.Error(w, "403 Unauthorized", http.StatusInternalServerError)
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
 		return
 	}
