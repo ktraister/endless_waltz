@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/json"
-	"flag"
+	//"flag"
 	"fmt"
 	"net/http"
+"github.com/sirupsen/logrus"
 )
 
 type Random_Req struct {
@@ -14,27 +15,25 @@ type Random_Req struct {
 	UUID string `json:"UUID"`
 }
 
-func client() {
+func ew_client(logger *logrus.Logger, api_key string, message string, host string, random string) {
 	//lets setup our flags here
+	/*
 	msgPtr := flag.String("message", "", "a message to encrypt and send")
 	hostPtr := flag.String("host", "localhost", "the server to send the message to")
-	randPtr := flag.String("random", "localhost", "the random server to use for pad")
+	randPtr := flag.String("random", "localhost", "the aandom server to use for pad")
 	apiKeyPtr := flag.String("API-Key", "", "The API key for the randomAPI server")
 	logLvlPtr := flag.String("logLevel", "Warn", "the random server to use for pad")
 	flag.Parse()
+	*/
 
-	api_key := *apiKeyPtr
-	log_lvl := *logLvlPtr
-	logger := createLogger(log_lvl, "normal")
+	fmt.Println(fmt.Sprintf("Sending message to %s...", host))
 
-	fmt.Println(fmt.Sprintf("Sending message to %s...", *hostPtr))
-
-	if len(*msgPtr) > 4096 {
+	if len(message) > 4096 {
 		logger.Fatal("We dont support this yet!")
 		return
 	}
 
-	if *apiKeyPtr == "" {
+	if api_key == "" {
 		logger.Fatal("Random Servers require an API key")
 		return
 	}
@@ -44,7 +43,7 @@ func client() {
 		InsecureSkipVerify: true,
 	}
 
-	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:6000", *hostPtr), conf)
+	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:6000", host), conf)
 	if err != nil {
 		logger.Fatal(err)
 		return
@@ -82,8 +81,7 @@ func client() {
 	if err != nil {
 		logger.Warn(err)
 	}
-	randHost := fmt.Sprintf("http://%s:8090/api/otp", *randPtr)
-	req, err := http.NewRequest("POST", randHost, bytes.NewBuffer(rapi_data))
+	req, err := http.NewRequest("POST", random, bytes.NewBuffer(rapi_data))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Set("API-Key", api_key)
 	client := &http.Client{}
@@ -96,7 +94,7 @@ func client() {
 	json.NewDecoder(resp.Body).Decode(&res)
 	logger.Debug("got response from RandomAPI: ", res)
 	raw_pad := fmt.Sprintf("%v", res["Pad"])
-	cipherText := pad_encrypt(*msgPtr, raw_pad, private_key)
+	cipherText := pad_encrypt(message, raw_pad, private_key)
 	logger.Debug(fmt.Sprintf("Ciphertext: %v\n", cipherText))
 
 	n, err = conn.Write([]byte(fmt.Sprintf("%v\n", cipherText)))
@@ -107,8 +105,6 @@ func client() {
 
 	//notify client of successful send
 	fmt.Println("Sent message successfully!")
-	fmt.Println("goodbye :)")
-	//logger
 
 	conn.Close()
 

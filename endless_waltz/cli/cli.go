@@ -87,15 +87,27 @@ func main() {
 	//this is the interactive part of the EW_cli
 	for {
 		fmt.Print("EW_cli > ")
-		input, _ := reader.ReadString('\n')
-		input = strings.TrimSpace(input)
+		raw_input, _ := reader.ReadString('\n')
+		input := strings.Split(strings.TrimSpace(raw_input), " ")[0]
+		flags := strings.Split(strings.TrimSpace(raw_input), " ")[1:]
 
 		switch input {
+		case "":
+
 		case "exit", "quit":
 		    return
 
 		case "help":
 			fmt.Println("Help...")
+
+		case "send":
+		    if len(flags) != 2 {
+			fmt.Println("Not enough fields in send call")
+			fmt.Println("Usage: send <host> <message>")
+			fmt.Println()
+			continue
+                    }
+		    ew_client(logger, configuration.Server.API_Key, flags[1], flags[0], configuration.Server.RandomURL)
 
 		default:
 			fmt.Println("Didn't understand input, try again")
