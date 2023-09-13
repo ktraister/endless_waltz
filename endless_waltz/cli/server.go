@@ -95,7 +95,7 @@ func main() {
 		fmt.Printf("Unable to decode into struct, %v", err)
 	}
 
-	logger := createLogger(configuration.Server.logLevel, "normal")
+	logger := createLogger(configuration.Server.LogLevel, "normal")
 
 	// Reading variables using the model
 	logger.Debug("Reading variables using the model..")

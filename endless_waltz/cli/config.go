@@ -10,6 +10,6 @@ type ServerConfigurations struct {
 	Key       string
 	Cert      string
 	RandomURL string
-	logLevel  string
+	LogLevel  string
 	API_Key   string
 }
