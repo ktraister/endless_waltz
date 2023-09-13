@@ -1,6 +1,0 @@
-server:
-  key: "./certs/server.key"
-  cert: "./certs/server.crt"
-  randomURL: "http://192.168.1.248:8090/api/otp"
-  logLevel: "Info"
-  API_Key: "arandomnumber"
