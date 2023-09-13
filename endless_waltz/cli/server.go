@@ -62,7 +62,8 @@ func handleConnection(conn net.Conn, logger *logrus.Logger, random_host string, 
 		return
 	}
 	//we should log the client IP at this point
-	if addr, ok := conn.RemoteAddr().(*net.TCPAddr); ok {
+	addr, ok := conn.RemoteAddr().(*net.TCPAddr)
+	if ok {
 		logger.Info(addr.IP.String())
 	}
 	logger.Debug("We've just sent off the UUID to client...")
@@ -75,6 +76,8 @@ func handleConnection(conn net.Conn, logger *logrus.Logger, random_host string, 
 		return
 	}
 	logger.Debug("Incoming msg: ", msg)
-	println("decrypted msg")
-	println(pad_decrypt(msg, pad, private_key))
+	fmt.Println()
+	fmt.Println()
+	fmt.Println(fmt.Sprintf("Receiving unauth'd msg from %s...", addr.IP.String()))
+	fmt.Println(pad_decrypt(msg, pad, private_key))
 }
