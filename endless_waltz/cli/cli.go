@@ -15,8 +15,7 @@ import (
 
 
 func listenForMsg(logger *logrus.Logger, configuration Configurations) {
-        //cer, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
-        cert, err := tls.LoadX509KeyPair("./certs/example.com.pem", "./certs/example.com.key")
+        cert, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
 
         if err != nil {
                 logger.Fatal(err)
@@ -159,7 +158,7 @@ func main() {
 				msg = input[2]
 			}
 
-			ew_client(logger, configuration.Server.API_Key, msg, input[1], configuration.Server.RandomURL)
+			ew_client(logger, configuration, msg, input[1])
 
 		default:
 			fmt.Println("Didn't understand input, try again")
