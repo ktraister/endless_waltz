@@ -3,14 +3,12 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 type Client_Resp struct {
@@ -64,7 +62,8 @@ func handleConnection(conn net.Conn, logger *logrus.Logger, random_host string, 
 		return
 	}
 	//we should log the client IP at this point
-	if addr, ok := conn.RemoteAddr().(*net.TCPAddr); ok {
+	addr, ok := conn.RemoteAddr().(*net.TCPAddr)
+	if ok {
 		logger.Info(addr.IP.String())
 	}
 	logger.Debug("We've just sent off the UUID to client...")
@@ -77,55 +76,8 @@ func handleConnection(conn net.Conn, logger *logrus.Logger, random_host string, 
 		return
 	}
 	logger.Debug("Incoming msg: ", msg)
-	println("decrypted msg")
-	println(pad_decrypt(msg, pad, private_key))
-}
-
-func main() {
-	//configuration stuff
-	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
-	viper.SetConfigType("yml")
-	var configuration Configurations
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file, %s", err)
-	}
-	err := viper.Unmarshal(&configuration)
-	if err != nil {
-		fmt.Printf("Unable to decode into struct, %v", err)
-	}
-
-	logger := createLogger(configuration.Server.logLevel, "normal")
-
-	// Reading variables using the model
-	logger.Debug("Reading variables using the model..")
-	logger.Debug("keypath is\t\t", configuration.Server.Key)
-	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
-	logger.Debug("serverpath is\t\t", configuration.Server.RandomURL)
-	logger.Debug("API_Key is\t\t", configuration.Server.API_Key)
-
-	cer, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
-	if err != nil {
-		logger.Fatal(err)
-		return
-	}
-
-	config := &tls.Config{Certificates: []tls.Certificate{cer}}
-	//change this to be configurable via config file
-	ln, err := tls.Listen("tcp", ":6000", config)
-	if err != nil {
-		logger.Fatal(err)
-		return
-	}
-	defer ln.Close()
-
-	logger.Info("EW Server is coming online!")
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			logger.Error(err)
-			continue
-		}
-		go handleConnection(conn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
-	}
+	fmt.Println()
+	fmt.Println()
+	fmt.Println(fmt.Sprintf("Receiving unauth'd msg from %s...", addr.IP.String()))
+	fmt.Println(pad_decrypt(msg, pad, private_key))
 }

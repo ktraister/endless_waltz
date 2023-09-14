@@ -11,29 +11,27 @@ func createLogger(LEVEL string, JSON string) *logrus.Logger {
 	if JSON == "JSON" {
 		logger.SetFormatter(&logrus.JSONFormatter{})
 	}
-	// Set the log level (e.g., INFO, DEBUG, WARN, ERROR)
-	setLogLevelFromString(LEVEL)
-	return logger
-}
 
-func setLogLevelFromString(levelStr string) {
-	switch strings.ToLower(levelStr) {
+	switch strings.ToLower(LEVEL) {
 	case "debug":
-		logrus.SetLevel(logrus.DebugLevel)
+		logger.SetLevel(logrus.DebugLevel)
 	case "info":
-		logrus.SetLevel(logrus.InfoLevel)
+		logger.SetLevel(logrus.InfoLevel)
 	case "warn", "warning":
-		logrus.SetLevel(logrus.WarnLevel)
+		logger.SetLevel(logrus.WarnLevel)
 	case "error":
-		logrus.SetLevel(logrus.ErrorLevel)
+		logger.SetLevel(logrus.ErrorLevel)
 	case "fatal":
-		logrus.SetLevel(logrus.FatalLevel)
+		logger.SetLevel(logrus.FatalLevel)
 	case "panic":
-		logrus.SetLevel(logrus.PanicLevel)
+		logger.SetLevel(logrus.PanicLevel)
 	default:
-		fmt.Printf("Invalid log level: \"%s\". Using default level (INFO).\n", levelStr)
-		logrus.SetLevel(logrus.InfoLevel)
+		fmt.Printf("Invalid log level: \"%s\". Using default level (INFO).\n", LEVEL)
+		logger.SetLevel(logrus.InfoLevel)
 	}
+
+	// Set the log level (e.g., INFO, DEBUG, WARN, ERROR)
+	return logger
 }
 
 /*
