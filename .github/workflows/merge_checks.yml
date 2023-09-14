@@ -3,7 +3,7 @@ on:
     types: [ opened, synchronize ]
 
 jobs:
-  client:
+  cli:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -16,7 +16,7 @@ jobs:
           export GOOS=linux
           export GOARCH=amd64
           export CGO_ENABLED=0
-          cd ./endless_waltz/client
+          cd ./endless_waltz/cli
           go test
           go build -tags netgo -a -v .
 
@@ -66,30 +66,6 @@ jobs:
         with:
           context: ./endless_waltz/reaper
           file: ./endless_waltz/reaper/Dockerfile
-          push: false
-
-  server:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-
-      - uses: actions/setup-go@v3
-
-      - name: Go Build
-        run: | 
-          export GOOS=linux
-          export GOARCH=amd64
-          export CGO_ENABLED=0
-          cd ./endless_waltz/server
-          go test
-          go build -tags netgo -a -v .
-
-      - name: Build and push docker image
-        uses: docker/build-push-action@v3
-        with:
-          context: ./endless_waltz/server
-          file: ./endless_waltz/server/Dockerfile
           push: false
 
   common:
