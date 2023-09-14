@@ -12,9 +12,29 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
-func main() {
+// set counts to use later in error message escalation
+var readFailedCount = 0
+var writeFailedCount = 0
+
+func otpItemCount(logger *logrus.Logger, ctx context.Context, otp_db *mongo.Collection) int64 {
+	filter := bson.D{{}}
+	count, err := otp_db.CountDocuments(ctx, filter)
+	if err != nil {
+		readFailedCount++
+		if readFailedCount <= 2 {
+			logger.Warn(err)
+		} else {
+			logger.Error(err)
+		}
+		return -1
+	}
+	return int64(count)
+}
+
+func reaper() {
 	//reading in env variable for mongo conn URI
 	MongoURI := os.Getenv("MongoURI")
 	MongoUser := os.Getenv("MongoUser")
@@ -25,40 +45,29 @@ func main() {
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Reaper finished starting up!")
 
-	//set counts to use later in error message escalation
-	readFailedCount := 0
-	writeFailedCount := 0
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	credential := options.Credential{
+		Username: MongoUser,
+		Password: MongoPass,
+	}
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
+	if err != nil {
+		logger.Fatal(err)
+		return
+	} else {
+		logger.Info("Database connection succesful!")
+	}
+	otp_db := client.Database("otp").Collection("otp")
 
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		credential := options.Credential{
-			Username: MongoUser,
-			Password: MongoPass,
+		count := otpItemCount(logger, ctx, otp_db)
+		if count == -1 {
+			continue
 		}
-		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
-		if err != nil {
-			logger.Fatal(err)
-			return
-		} else {
-			logger.Info("Database connection succesful!")
-		}
-		otp_db := client.Database("otp").Collection("otp")
 
+		//create buffer to use inserting pads into db
 		b := make([]byte, 4096)
-
-		//check and see how many items are in the db
-		filter := bson.D{{}}
-		count, err := otp_db.CountDocuments(ctx, filter)
-		if err != nil {
-			readFailedCount++
-			if readFailedCount <= 2 {
-				logger.Warn(err)
-			} else {
-				logger.Error(err)
-			}
-			break
-		}
 
 		//if count is less than threshold (this will need to go up for prod)
 		threshold := int64(1000)
@@ -70,7 +79,7 @@ func main() {
 				id := uuid.New().String()
 				//need to check if UUID already exists in db
 				// Define the filter criteria
-				filter := bson.M{"UUID": id} 
+				filter := bson.M{"UUID": id}
 
 				// Check if the item exists in the collection
 				var result bson.M
@@ -103,4 +112,9 @@ func main() {
 		logger.Info("Count met threshold, sleeping...")
 		time.Sleep(10 * time.Second)
 	}
+
+}
+
+func main() {
+	reaper()
 }
