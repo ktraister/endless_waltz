@@ -94,13 +94,13 @@ func main() {
 		case "":
 
 		case "exit", "quit":
-		    return
+			return
 
 		case "help":
-		        fmt.Println()
+			fmt.Println()
 			fmt.Println("Help Text")
 			fmt.Println("----------------------------")
-                        fmt.Println()
+			fmt.Println()
 			fmt.Println("Send and receive messages with other EW_CLIs")
 			fmt.Println()
 
@@ -110,28 +110,28 @@ func main() {
 			fmt.Println()
 
 		case "send":
-		    if len(input) <= 2 {
-			fmt.Println("Not enough fields in send call")
-			fmt.Println("Usage: send <host> <message>")
-			fmt.Println()
-			continue
-                    }
+			if len(input) <= 2 {
+				fmt.Println("Not enough fields in send call")
+				fmt.Println("Usage: send <host> <message>")
+				fmt.Println()
+				continue
+			}
 
-		    msg := ""
-		    if strings.HasPrefix(input[2], "\"") {
-                        for i, werd := range input[2:] {
-			    if i == 0 {
-				msg = werd
-			    } else {
-				msg = msg + " " + werd
-		            }		
-                        }
-                    } else {
-			msg = input[2]
-                    }
+			msg := ""
+			if strings.HasPrefix(input[2], "\"") {
+				for i, werd := range input[2:] {
+					if i == 0 {
+						msg = werd
+					} else {
+						msg = msg + " " + werd
+					}
+				}
+			} else {
+				msg = input[2]
+			}
 
-		    fmt.Println("Sending msg ", msg)
-		    ew_client(logger, configuration.Server.API_Key, msg, input[1], configuration.Server.RandomURL)
+			fmt.Println("Sending msg ", msg)
+			ew_client(logger, configuration.Server.API_Key, msg, input[1], configuration.Server.RandomURL)
 
 		default:
 			fmt.Println("Didn't understand input, try again")

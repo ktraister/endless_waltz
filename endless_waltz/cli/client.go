@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	//"flag"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net/http"
-"github.com/sirupsen/logrus"
 )
 
 type Random_Req struct {
@@ -18,12 +18,12 @@ type Random_Req struct {
 func ew_client(logger *logrus.Logger, api_key string, message string, host string, random string) {
 	//lets setup our flags here
 	/*
-	msgPtr := flag.String("message", "", "a message to encrypt and send")
-	hostPtr := flag.String("host", "localhost", "the server to send the message to")
-	randPtr := flag.String("random", "localhost", "the aandom server to use for pad")
-	apiKeyPtr := flag.String("API-Key", "", "The API key for the randomAPI server")
-	logLvlPtr := flag.String("logLevel", "Warn", "the random server to use for pad")
-	flag.Parse()
+		msgPtr := flag.String("message", "", "a message to encrypt and send")
+		hostPtr := flag.String("host", "localhost", "the server to send the message to")
+		randPtr := flag.String("random", "localhost", "the aandom server to use for pad")
+		apiKeyPtr := flag.String("API-Key", "", "The API key for the randomAPI server")
+		logLvlPtr := flag.String("logLevel", "Warn", "the random server to use for pad")
+		flag.Parse()
 	*/
 
 	fmt.Println(fmt.Sprintf("Sending message to %s...", host))

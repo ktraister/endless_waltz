@@ -1,5 +1,5 @@
 package main
- 
+
 /*
 import (
     "fmt"
@@ -8,7 +8,7 @@ import (
     "strconv"
     "math/big"
 )
- 
+
 // test generator function
 func TestCheckDHPair(t *testing.T) {
     //add a few to use non-2 generators
@@ -19,7 +19,7 @@ func TestCheckDHPair(t *testing.T) {
     testint := big.NewInt(1)
     for _, pair := range(gentest) {
 	fmt.Println("Working on pair ", pair)
-	testint.SetString(strings.Split(pair, ":")[0], 10) 
+	testint.SetString(strings.Split(pair, ":")[0], 10)
 	output := makeGenerator(testint)
 	expectedOutput, err := strconv.Atoi(strings.Split(pair, ":")[1])
 	if err != nil {
