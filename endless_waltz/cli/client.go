@@ -110,7 +110,16 @@ func ew_client(logger *logrus.Logger, api_key string, message string, host strin
 
 	//notify client of successful send
 	certs := conn.ConnectionState().PeerCertificates
-	fmt.Println(fmt.Sprintf("Sent message successfully to %s at %s", certs[0].Issuer.CommonName, host))
+
+        var clientCommonName string
+        if len(certs) == 0 { 
+                clientCommonName = fmt.Sprintf("%sunknown%s", RedColor, ResetColor)
+        } else {
+                clientCommonName = fmt.Sprintf("%s%s%s", GreenColor, certs[0].Issuer.CommonName, ResetColor)
+        }
+
+	fmt.Println()
+	fmt.Println(fmt.Sprintf("Sent message successfully to %s at %s", clientCommonName, host))
 
 	conn.Close()
 

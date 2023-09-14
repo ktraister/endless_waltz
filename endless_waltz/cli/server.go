@@ -13,43 +13,21 @@ import (
 )
 
 const (
-    ResetColor  = "\033[0m"
-    RedColor    = "\033[31m"
-    GreenColor  = "\033[32m"
-    YellowColor = "\033[33m"
-    BlueColor   = "\033[34m"
-    PurpleColor = "\033[35m"
-    CyanColor   = "\033[36m"
+	ResetColor  = "\033[0m"
+	RedColor    = "\033[31m"
+	GreenColor  = "\033[32m"
+	YellowColor = "\033[33m"
+	BlueColor   = "\033[34m"
+	PurpleColor = "\033[35m"
+	CyanColor   = "\033[36m"
 )
 
 type Client_Resp struct {
 	UUID string
 }
 
-func handleConnection(conn net.Conn, logger *logrus.Logger, random_host string, api_key string) {
-	defer conn.Close()
-
-	// Convert the net.Conn into a TLS connection
-	tlsConn, ok := conn.(*tls.Conn)
-	if !ok {
-		fmt.Println("Connection is not a TLS connection.")
-		return
-	}
-
-	// Perform TLS handshake to get the client's certificate
-	if err := tlsConn.Handshake(); err != nil {
-		fmt.Println("TLS handshake error:", err)
-		return
-	}
-
-	//certificate stuff
-	clientCert := tlsConn.ConnectionState().PeerCertificates
-	var clientCommonName string
-	if len(clientCert) == 0 {
-		clientCommonName = fmt.Sprintf("%sunknown%s", RedColor, ResetColor) 
-	} else {
-		clientCommonName = fmt.Sprintf("%s%s%s", GreenColor, clientCert[0].Issuer.CommonName, ResetColor)
-	}
+func handleConnection(tlsConn *tls.Conn, logger *logrus.Logger, random_host string, api_key string) {
+	defer tlsConn.Close()
 
 	r := bufio.NewReader(tlsConn)
 	msg, err := r.ReadString('\n')
@@ -112,6 +90,22 @@ func handleConnection(conn net.Conn, logger *logrus.Logger, random_host string, 
 	logger.Debug("Incoming msg: ", msg)
 
 	//woof
+	// Perform TLS handshake to get the client's certificate
+	if err := tlsConn.Handshake(); err != nil {
+		fmt.Println("TLS handshake error:", err)
+		return
+	}
+
+	//certificate stuff
+	clientCert := tlsConn.ConnectionState().PeerCertificates
+
+	var clientCommonName string
+	if len(clientCert) == 0 {
+		clientCommonName = fmt.Sprintf("%sunknown%s", RedColor, ResetColor)
+	} else {
+		clientCommonName = fmt.Sprintf("%s%s%s", GreenColor, clientCert[0].Issuer.CommonName, ResetColor)
+	}
+
 
 	fmt.Println()
 	fmt.Println()

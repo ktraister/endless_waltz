@@ -8,40 +8,67 @@ import (
 	"os"
 	"strings"
 
+	"os/signal"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
+
 func listenForMsg(logger *logrus.Logger, configuration Configurations) {
-	//cer, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
-	cer, err := tls.LoadX509KeyPair("./certs/example.com.pem", "./certs/example.com.key")
+        //cer, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
+        cert, err := tls.LoadX509KeyPair("./certs/example.com.pem", "./certs/example.com.key")
 
-	if err != nil {
-		logger.Fatal(err)
-		return
-	}
+        if err != nil {
+                logger.Fatal(err)
+                return
+        }
 
-	config := &tls.Config{Certificates: []tls.Certificate{cer}}
-	//change this to be configurable via config file
-	ln, err := tls.Listen("tcp", ":6000", config)
-	if err != nil {
-		logger.Fatal(err)
-		return
-	}
-	defer ln.Close()
+        config := &tls.Config{
+                Certificates: []tls.Certificate{cert},
+                // FIx tHis ItS BADDDD
+                InsecureSkipVerify: true,
+                //ClientAuth:   tls.RequireAndVerifyClientCert,
+                ClientAuth:   tls.RequireAnyClientCert,
+        }
 
-	logger.Info("EW Server is coming online!")
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			logger.Error(err)
-			continue
-		}
-		go handleConnection(conn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
-	}
+        //change this to be configurable via config file
+        ln, err := tls.Listen("tcp", ":6000", config)
+        if err != nil {
+                logger.Fatal(err)
+                return
+        }
+        defer ln.Close()
+
+        logger.Info("EW Server is coming online!")
+        for {
+                conn, err := ln.Accept()
+                if err != nil {
+                        logger.Error(err)
+                        continue
+                }
+
+                // Convert the net.Conn into a TLS connection
+                tlsConn, ok := conn.(*tls.Conn)
+                if !ok {
+                        fmt.Println("Connection is not a TLS connection.")
+                        return
+                }
+
+                go handleConnection(tlsConn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
+        }
 }
 
 func main() {
+        //trap control-c
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func(){
+	    for range c {
+		fmt.Println()
+		fmt.Println("Ctrl+C Trapped! Use quit to exit")
+	    }
+	}()
+
 	//configuration stuff
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
