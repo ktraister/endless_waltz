@@ -8,38 +8,66 @@ import (
 	"os"
 	"strings"
 
+	"os/signal"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
+
 func listenForMsg(logger *logrus.Logger, configuration Configurations) {
-	cer, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
-	if err != nil {
-		logger.Fatal(err)
-		return
-	}
+        cert, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
 
-	config := &tls.Config{Certificates: []tls.Certificate{cer}}
-	//change this to be configurable via config file
-	ln, err := tls.Listen("tcp", ":6000", config)
-	if err != nil {
-		logger.Fatal(err)
-		return
-	}
-	defer ln.Close()
+        if err != nil {
+                logger.Fatal(err)
+                return
+        }
 
-	logger.Info("EW Server is coming online!")
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			logger.Error(err)
-			continue
-		}
-		go handleConnection(conn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
-	}
+        config := &tls.Config{
+                Certificates: []tls.Certificate{cert},
+                // FIx tHis ItS BADDDD
+                InsecureSkipVerify: true,
+                //ClientAuth:   tls.RequireAndVerifyClientCert,
+                ClientAuth:   tls.RequireAnyClientCert,
+        }
+
+        //change this to be configurable via config file
+        ln, err := tls.Listen("tcp", ":6000", config)
+        if err != nil {
+                logger.Fatal(err)
+                return
+        }
+        defer ln.Close()
+
+        logger.Info("EW Server is coming online!")
+        for {
+                conn, err := ln.Accept()
+                if err != nil {
+                        logger.Error(err)
+                        continue
+                }
+
+                // Convert the net.Conn into a TLS connection
+                tlsConn, ok := conn.(*tls.Conn)
+                if !ok {
+                        fmt.Println("Connection is not a TLS connection.")
+                        return
+                }
+
+                go handleConnection(tlsConn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
+        }
 }
 
 func main() {
+        //trap control-c
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func(){
+	    for range c {
+		fmt.Println()
+		fmt.Println("Ctrl+C Trapped! Use quit to exit")
+	    }
+	}()
+
 	//configuration stuff
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
@@ -130,8 +158,7 @@ func main() {
 				msg = input[2]
 			}
 
-			fmt.Println("Sending msg ", msg)
-			ew_client(logger, configuration.Server.API_Key, msg, input[1], configuration.Server.RandomURL)
+			ew_client(logger, configuration, msg, input[1])
 
 		default:
 			fmt.Println("Didn't understand input, try again")
