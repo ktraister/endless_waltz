@@ -88,26 +88,50 @@ func main() {
 	for {
 		fmt.Print("EW_cli > ")
 		raw_input, _ := reader.ReadString('\n')
-		input := strings.Split(strings.TrimSpace(raw_input), " ")[0]
-		flags := strings.Split(strings.TrimSpace(raw_input), " ")[1:]
+		input := strings.Split(strings.TrimSpace(raw_input), " ")
 
-		switch input {
+		switch input[0] {
 		case "":
 
 		case "exit", "quit":
 		    return
 
 		case "help":
-			fmt.Println("Help...")
+		        fmt.Println()
+			fmt.Println("Help Text")
+			fmt.Println("----------------------------")
+                        fmt.Println()
+			fmt.Println("Send and receive messages with other EW_CLIs")
+			fmt.Println()
+
+			fmt.Println("exit, quit            ---> leave the CLI")
+			fmt.Println("send <host> <message> ---> send a message to an active EW host")
+			fmt.Println("help                  ---> print this message")
+			fmt.Println()
 
 		case "send":
-		    if len(flags) != 2 {
+		    if len(input) <= 2 {
 			fmt.Println("Not enough fields in send call")
 			fmt.Println("Usage: send <host> <message>")
 			fmt.Println()
 			continue
                     }
-		    ew_client(logger, configuration.Server.API_Key, flags[1], flags[0], configuration.Server.RandomURL)
+
+		    msg := ""
+		    if strings.HasPrefix(input[2], "\"") {
+                        for i, werd := range input[2:] {
+			    if i == 0 {
+				msg = werd
+			    } else {
+				msg = msg + " " + werd
+		            }		
+                        }
+                    } else {
+			msg = input[2]
+                    }
+
+		    fmt.Println("Sending msg ", msg)
+		    ew_client(logger, configuration.Server.API_Key, msg, input[1], configuration.Server.RandomURL)
 
 		default:
 			fmt.Println("Didn't understand input, try again")
