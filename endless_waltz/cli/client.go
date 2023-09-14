@@ -26,8 +26,6 @@ func ew_client(logger *logrus.Logger, api_key string, message string, host strin
 		flag.Parse()
 	*/
 
-	fmt.Println(fmt.Sprintf("Sending message to %s...", host))
-
 	if len(message) > 4096 {
 		logger.Fatal("We dont support this yet!")
 		return
@@ -38,7 +36,14 @@ func ew_client(logger *logrus.Logger, api_key string, message string, host strin
 		return
 	}
 
+	//set up certificates
+	cert, err := tls.LoadX509KeyPair("./certs/example.com.pem", "./certs/example.com.key")
+	if err != nil {
+		logger.Fatal(err)
+	}
+
 	conf := &tls.Config{
+		Certificates: []tls.Certificate{cert},
 		// FIx tHis ItS BADDDD
 		InsecureSkipVerify: true,
 	}
@@ -104,7 +109,8 @@ func ew_client(logger *logrus.Logger, api_key string, message string, host strin
 	}
 
 	//notify client of successful send
-	fmt.Println("Sent message successfully!")
+	certs := conn.ConnectionState().PeerCertificates
+	fmt.Println(fmt.Sprintf("Sent message successfully to %s at %s", certs[0].Issuer.CommonName, host))
 
 	conn.Close()
 
