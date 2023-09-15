@@ -1,6 +1,5 @@
 package main
 
-/*
 import (
     "testing"
 )
@@ -12,4 +11,3 @@ func TestPadEncrypt(t *testing.T) {
 	    t.Errorf("Expected output(%s) is not same as actual output(%s)", expectedOutput, output)
 	}
 }
-*/
