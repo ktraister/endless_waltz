@@ -24,6 +24,9 @@ https://github.com/k3s-io/k3s/releases/tag/v1.26.0+k3s1
 
 SVC SETUP:
 --------------------------
+This is the process for a new dev namespace with all the trimmings.
+Pick and choose what you need to deploy for each unieuq part
+
 #set up pull secret
 kubectl create secret docker-registry ghcrcred \
   --docker-server=ghcr.io \
