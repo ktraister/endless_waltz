@@ -28,7 +28,16 @@ Test connectivity from the CLI:
 sudo openvpn --client --config /etc/openvpn/client.conf
 
 sudo systemctl start openvpn@client
+sudo systemctl enable openvpn@client
 
 NEXT STEPS:
 --------------------------
 proceed to ../k8s and follow readme
+
+
+When Bouncing HeavyArms:
+-------------------------
+ - fixup client vpn config on Zero
+ - fixup reaper env config on Zero
+ - fixup ssh config on Deathscythe
+ - fixup kubeconfig on Deathscythe
