@@ -1,6 +1,7 @@
 #!/bin/bash
 #
 # https://github.com/Nyr/openvpn-install
+# https://www.cyberciti.biz/faq/howto-setup-openvpn-server-on-ubuntu-linux-14-04-or-16-04-lts/
 #
 # Copyright (c) 2013 Nyr. Released under the MIT License.
 
