@@ -47,11 +47,11 @@ spec:
           volumeMounts: 
           - mountPath: "/tmp"
             name: bridge
-          - mountPath: "/dev/bus/usb/001/004"
+          - mountPath: "/dev/bus/usb/001/003"
             name: radio-mount
       volumes:
       - name: radio-mount
         hostPath: 
-          path: "/dev/bus/usb/001/004"
+          path: "/dev/bus/usb/001/003"
       - name: bridge
 
