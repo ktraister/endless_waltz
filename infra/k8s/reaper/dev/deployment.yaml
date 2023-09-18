@@ -42,8 +42,11 @@ spec:
         - name: ew-entropy
           securityContext:
             privileged: true
-          image: "ghcr.io/ktraister/ew_entropy:6e912119197ff273ae5d5e0ac66ae1550529b471"
+          image: "ghcr.io/ktraister/ew_entropy:34b1d65b6662529f53a81ea081c8d6794824f663"
           imagePullPolicy: Always
+          env:
+            - name: "RTLDevIndex"
+              value: "0"
           volumeMounts: 
           - mountPath: "/tmp"
             name: bridge
