@@ -141,7 +141,8 @@ func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (strin
 	// it's something about the generation of the private secrets. I'll come back to it
 
 	//myint is private, < p, > 0
-	//need to change the method we use here, too
+	//NEED TO CHANGE THE METHOD WE USE HERE, TOO
+	//NEEDS TO GENERATE int = range(2 - (Prime-1))
 	//code will now generate an int between 1001 and 2001
 	myint, err := rand.Int(rand.Reader, big.NewInt(1001))
 	if err != nil {
