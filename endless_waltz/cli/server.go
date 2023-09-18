@@ -106,7 +106,6 @@ func handleConnection(tlsConn *tls.Conn, logger *logrus.Logger, random_host stri
 		clientCommonName = fmt.Sprintf("%s%s%s", GreenColor, clientCert[0].Issuer.CommonName, ResetColor)
 	}
 
-
 	fmt.Println()
 	fmt.Println()
 	fmt.Println(fmt.Sprintf("Receiving msg from %s at host %s...", clientCommonName, addr.IP.String()))

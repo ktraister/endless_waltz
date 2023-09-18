@@ -137,24 +137,43 @@ func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (strin
 		}
 	}
 
-	// SOMETHING ABOUT THIS GENERATION IS BREAKING THE DH SOMETIMES
-	// it's something about the generation of the private secrets. I'll come back to it
+	/*
+	I reaaaallllyyyyyy need to revisit the creation of the private key int
+	I understand the THEORY says that 2 <= int < Prime, but huge keys are slow
+	And do they even grant extra security? I really don't know.
 
-	//myint is private, < p, > 0
-	//NEED TO CHANGE THE METHOD WE USE HERE, TOO
-	//NEEDS TO GENERATE int = range(2 - (Prime-1))
-	//code will now generate an int between 1001 and 2001
-	myint, err := rand.Int(rand.Reader, big.NewInt(1001))
+	Anyway, we'll be revisiting this part of the code many times. 
+	*/
+
+	//myint is private, int < p, int >= 2
+	myint, err := rand.Int(rand.Reader, big.NewInt(0).Sub(prime, big.NewInt(1)))
+	logger.Debug(fmt.Sprintf("%s chose private int %s", conn_type, myint.String()))
 	if err != nil {
 		logger.Error(err)
 		return "", err
 	}
-	myint.Add(myint, big.NewInt(1000))
+	two := big.NewInt(2)
+	if myint.Cmp(two) <= 0 {
+		myint.Add(myint, big.NewInt(2))
+	}
+	//this code is crazy computationally expensive.
+	//Lets try changing its base from 10 to 2
+	if len(myint.String()) > 4 {
+		myint.SetString(myint.String()[:4], 0)
+		logger.Debug(fmt.Sprintf("Reset private int to %s due to length", myint.String()))
+	}
+
+	//changing base to get some kind of speed boost or something
+	prime.Text(2)
+	myint.Text(2)
+	tempkey.Text(2)
 
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
-	tempkey.Exp(big.NewInt(int64(generator)), myint, nil)
-	tempkey.Mod(tempkey, prime)
+	tempkey.Exp(big.NewInt(int64(generator)), myint, nil).Mod(tempkey, prime)
+	logger.Debug("Done with exp operation...")
+	//tempkey.Mod(tempkey, prime)
+	logger.Debug("Done with mod operation!")
 
 	switch {
 	case conn_type == "server":
@@ -212,8 +231,8 @@ func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (strin
 
 	}
 
-	tempkey.Exp(tempkey, myint, nil)
-	tempkey.Mod(tempkey, prime)
+	tempkey.Exp(tempkey, myint, nil).Mod(tempkey, prime)
+	//tempkey.Mod(tempkey, prime)
 	privkey := tempkey.String()
 
 	if checkPrivKey(privkey) == false {

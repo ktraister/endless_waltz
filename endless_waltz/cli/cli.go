@@ -7,65 +7,71 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
-	"os/signal"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"os/signal"
 )
 
+var CtlCounter = 0
 
 func listenForMsg(logger *logrus.Logger, configuration Configurations) {
-        cert, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
+	cert, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
 
-        if err != nil {
-                logger.Fatal(err)
-                return
-        }
+	if err != nil {
+		logger.Fatal(err)
+		return
+	}
 
-        config := &tls.Config{
-                Certificates: []tls.Certificate{cert},
-                // FIx tHis ItS BADDDD
-                InsecureSkipVerify: true,
-                //ClientAuth:   tls.RequireAndVerifyClientCert,
-                ClientAuth:   tls.RequireAnyClientCert,
-        }
+	config := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		// FIx tHis ItS BADDDD
+		InsecureSkipVerify: true,
+		//ClientAuth:   tls.RequireAndVerifyClientCert,
+		ClientAuth: tls.RequireAnyClientCert,
+	}
 
-        //change this to be configurable via config file
-        ln, err := tls.Listen("tcp", ":6000", config)
-        if err != nil {
-                logger.Fatal(err)
-                return
-        }
-        defer ln.Close()
+	//change this to be configurable via config file
+	ln, err := tls.Listen("tcp", ":6000", config)
+	if err != nil {
+		logger.Fatal(err)
+		return
+	}
+	defer ln.Close()
 
-        logger.Info("EW Server is coming online!")
-        for {
-                conn, err := ln.Accept()
-                if err != nil {
-                        logger.Error(err)
-                        continue
-                }
+	logger.Info("EW Server is coming online!")
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			logger.Error(err)
+			continue
+		}
 
-                // Convert the net.Conn into a TLS connection
-                tlsConn, ok := conn.(*tls.Conn)
-                if !ok {
-                        fmt.Println("Connection is not a TLS connection.")
-                        return
-                }
+		// Convert the net.Conn into a TLS connection
+		tlsConn, ok := conn.(*tls.Conn)
+		if !ok {
+			fmt.Println("Connection is not a TLS connection.")
+			return
+		}
 
-                go handleConnection(tlsConn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
-        }
+		go handleConnection(tlsConn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
+	}
 }
 
 func main() {
-        //trap control-c
+	//trap control-c
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	go func(){
-	    for range c {
-		fmt.Println()
-		fmt.Println("Ctrl+C Trapped! Use quit to exit")
-	    }
+	go func() {
+		for range c {
+			fmt.Println()
+			fmt.Println("Ctrl+C Trapped! Use quit to exit or Ctrl+C again.")
+			CtlCounter++
+			if CtlCounter > 1 {
+				os.Exit(130)
+			}
+		}
 	}()
 
 	//configuration stuff
@@ -158,7 +164,9 @@ func main() {
 				msg = input[2]
 			}
 
+			start := time.Now()
 			ew_client(logger, configuration, msg, input[1])
+			logger.Info("Sending message duration: ", time.Since(start))
 
 		default:
 			fmt.Println("Didn't understand input, try again")
