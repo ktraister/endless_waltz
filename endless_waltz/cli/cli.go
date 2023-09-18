@@ -126,6 +126,7 @@ func main() {
 
 	//goroutine to listen for message
 	go listenForMsg(logger, configuration)
+	fmt.Println("after listen for msg")
 
 	reader := bufio.NewReader(os.Stdin)
 

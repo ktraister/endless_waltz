@@ -108,7 +108,11 @@ func main() {
 			logger.Info("Found count ", count, ", writing to db...")
 			for i := int64(0); i < threshold-count; i++ {
 
-				//read from random
+				//read from random into our buffer
+				/*
+				gonna have to change this approach if you want larger/more diverse
+				pad values. Which I do. Soooooo yeah. 
+				*/
 				_, err := rand.Read(b)
 				if err != nil {
 					logger.Error("Could not read /dev/urandom")
