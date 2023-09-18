@@ -53,7 +53,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message stri
 
 	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:6000", host), conf)
 	if err != nil {
-		logger.Fatal(err)
+	        fmt.Println(fmt.Sprintf("Could not connect to host '%s'", host))
 		return
 	}
 
@@ -69,7 +69,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message stri
 		return
 	}
 
-	logger.Debug("Private DH Key: ", private_key)
+	logger.Info("Private DH Key: ", private_key)
 
 	//read in response from server
 	buf := make([]byte, 100)
@@ -114,12 +114,12 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message stri
 	//notify client of successful send
 	certs := conn.ConnectionState().PeerCertificates
 
-        var clientCommonName string
-        if len(certs) == 0 { 
-                clientCommonName = fmt.Sprintf("%sunknown%s", RedColor, ResetColor)
-        } else {
-                clientCommonName = fmt.Sprintf("%s%s%s", GreenColor, certs[0].Issuer.CommonName, ResetColor)
-        }
+	var clientCommonName string
+	if len(certs) == 0 {
+		clientCommonName = fmt.Sprintf("%sunknown%s", RedColor, ResetColor)
+	} else {
+		clientCommonName = fmt.Sprintf("%s%s%s", GreenColor, certs[0].Issuer.CommonName, ResetColor)
+	}
 
 	fmt.Println()
 	fmt.Println(fmt.Sprintf("Sent message successfully to %s at %s", clientCommonName, host))
