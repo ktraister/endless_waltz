@@ -110,4 +110,7 @@ func handleConnection(tlsConn *tls.Conn, logger *logrus.Logger, random_host stri
 	fmt.Println()
 	fmt.Println(fmt.Sprintf("Receiving msg from %s at host %s...", clientCommonName, addr.IP.String()))
 	fmt.Println(pad_decrypt(msg, pad, private_key))
+	fmt.Println()
+	fmt.Print("EW_cli > ")
+
 }

@@ -69,7 +69,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message stri
 		return
 	}
 
-	logger.Debug("Private DH Key: ", private_key)
+	logger.Info("Private DH Key: ", private_key)
 
 	//read in response from server
 	buf := make([]byte, 100)

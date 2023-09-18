@@ -55,7 +55,7 @@ func listenForMsg(logger *logrus.Logger, configuration Configurations) {
 			return
 		}
 
-		go handleConnection(tlsConn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
+		handleConnection(tlsConn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
 	}
 }
 
@@ -67,6 +67,8 @@ func main() {
 		for range c {
 			fmt.Println()
 			fmt.Println("Ctrl+C Trapped! Use quit to exit or Ctrl+C again.")
+			fmt.Println()
+			fmt.Print("EW_cli > ")
 			CtlCounter++
 			if CtlCounter > 1 {
 				os.Exit(130)

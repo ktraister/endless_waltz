@@ -63,7 +63,7 @@ func fetchValues() (*big.Int, int) {
 	index := int(randomNumber.Int64())
 	values := strings.Split(moduli_pairs[index], ":")
 	mod := new(big.Int)
-	mod, _ = mod.SetString(values[1], 10)
+	mod, _ = mod.SetString(values[1], 0)
 	gen, _ := strconv.Atoi(values[0])
 
 	return mod, gen
@@ -146,7 +146,7 @@ func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (strin
 	*/
 
 	//myint is private, int < p, int >= 2
-	myint, err := rand.Int(rand.Reader, big.NewInt(0).Sub(prime, big.NewInt(1)))
+	myint, err := rand.Int(rand.Reader, big.NewInt(9999))
 	logger.Debug(fmt.Sprintf("%s chose private int %s", conn_type, myint.String()))
 	if err != nil {
 		logger.Error(err)
@@ -156,12 +156,14 @@ func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (strin
 	if myint.Cmp(two) <= 0 {
 		myint.Add(myint, big.NewInt(2))
 	}
+	/*
 	//this code is crazy computationally expensive.
 	//Lets try changing its base from 10 to 2
-	if len(myint.String()) > 4 {
-		myint.SetString(myint.String()[:4], 0)
+	if len(myint.String()) > 5 {
+		myint.SetString(myint.String()[:5], 0)
 		logger.Debug(fmt.Sprintf("Reset private int to %s due to length", myint.String()))
 	}
+	*/
 
 	//changing base to get some kind of speed boost or something
 	prime.Text(2)
