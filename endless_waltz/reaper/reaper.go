@@ -81,7 +81,7 @@ func main() {
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Reaper finished starting up!")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	credential := options.Credential{
 		Username: MongoUser,
