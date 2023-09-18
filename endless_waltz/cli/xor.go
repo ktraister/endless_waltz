@@ -89,6 +89,7 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 		asc_pad = append(asc_pad, int(pad[i]))
 	}
 
+	//encoding and decoding is what needs to get modified. We need to produce wildly different outputs with minor differences in #
 	//encode the message
 	for i := 0; i < len(asc_chars); i++ {
 		//if chars - pad < 255
