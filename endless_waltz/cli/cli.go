@@ -99,14 +99,22 @@ func main() {
 	logger.Debug("API_Key is\t\t", configuration.Server.API_Key)
 
 	//check and make sure inserted API key works
+	logger.Debug("Checking api key...")
 	health_url := fmt.Sprintf("%s%s", strings.Split(configuration.Server.RandomURL, "/otp")[0], "/healthcheck")
 	req, err := http.NewRequest("GET", health_url, nil)
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Set("API-Key", configuration.Server.API_Key)
-	client := &http.Client{}
-	resp, error := client.Do(req)
-	if error != nil {
-		logger.Error(error)
+	client := http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Could not connect to configured randomAPI ", configuration.Server.RandomURL)
+		fmt.Println("Quietly exiting now. Please reconfigure.")
+                return
+	}
+	if resp == nil {
+		fmt.Println("Could not connect to configured randomAPI ", configuration.Server.RandomURL)
+		fmt.Println("Quietly exiting now. Please reconfigure.")
+		return
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -114,6 +122,7 @@ func main() {
 		fmt.Printf("Request failed with status: %s\n", resp.Status)
 		return
 	}
+	logger.Debug("API Key passed check!")
 
 	//goroutine to listen for message
 	go listenForMsg(logger, configuration)
