@@ -68,39 +68,54 @@ func unpack_message(INPUT string) string {
 	return result[0]
 }
 
+func transform_pad(PAD string, PRIVKEY string) ([]string, error) {
+        privKeyInt, _ := big.NewInt(0).SetString(PRIVKEY, 0)
+        tmpBigInt := big.NewInt(0)
+	otp := strings.Split(PAD, " ")
+	final := []string{}
+
+	for _, s := range otp {
+	    tmpBigInt, _ = tmpBigInt.SetString(s, 0)
+	    tmpBigInt.Mod(privKeyInt, tmpBigInt)
+	    final = append(final, tmpBigInt.String())
+        }
+
+	return final, nil
+}
+
 func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 	//implement pack_message here
 	chars := pack_message(MSG)
-	pad := []rune(PAD)
 	asc_chars := make([]int, 0)
-	asc_pad := make([]int, 0)
 	enc_msg := make([]string, 0)
 	tmpBigInt := big.NewInt(1)
-	PrivKeyInt := big.NewInt(1)
-	PrivKeyInt.SetString(PRIVKEY, 10)
 
 	//change chars to ascii_chars
 	for i := 0; i < len(chars); i++ {
 		asc_chars = append(asc_chars, int(chars[i]))
 	}
 
+	asc_pad, _ := transform_pad(PAD, PRIVKEY)
+	/*
 	//change pad to ascii_pad
 	for i := 0; i < len(pad); i++ {
 		asc_pad = append(asc_pad, int(pad[i]))
 	}
+	*/
 
 	//encoding and decoding is what needs to get modified. We need to produce wildly different outputs with minor differences in #
 	//encode the message
 	for i := 0; i < len(asc_chars); i++ {
+	        /*
 		//if chars - pad < 255
 		val := asc_chars[i] - asc_pad[i]
 		if val < 0 {
 			val = val + 255
 		}
-		//operate on the message with PRIVKEY After subtract
-		tmpBigInt.SetInt64(int64(val))
-		tmpBigInt.Mul(tmpBigInt, PrivKeyInt)
-		//tmpBigInt.Mod(PrivKeyInt, tmpBigInt)
+		*/
+		tmpBigInt.SetString(asc_pad[i], 0)
+		//sticking with subtract logic for now
+		tmpBigInt.Sub(tmpBigInt, big.NewInt(int64(asc_chars[i])))
 		enc_msg = append(enc_msg, tmpBigInt.String())
 	}
 
@@ -108,34 +123,35 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 }
 
 func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
-	pad := []rune(PAD)
-	asc_pad := make([]int, 0)
-	dec_msg := make([]int, 0)
+	dec_msg := make([]string, 0)
 	tmpBigInt := big.NewInt(1)
-	PrivKeyInt := big.NewInt(1)
-	PrivKeyInt.SetString(PRIVKEY, 10)
+	bigIntToo := big.NewInt(1)
 
 	//convert ENC_MSG string to []int
-	ENC_MSG := fromString(INPUT_MSG)
+	enc_msg := fromString(INPUT_MSG)
 
+	asc_pad, _ := transform_pad(PAD, PRIVKEY)
+	/*
 	//change pad to ascii_pad
 	for i := 0; i < len(pad); i++ {
 		asc_pad = append(asc_pad, int(pad[i]))
 	}
+	*/
 
 	//decrypt message
-	for i := 0; i < len(ENC_MSG); i++ {
-		//operate on the message with PRIVKEY before add
-		tmpBigInt.SetString(ENC_MSG[i], 10)
-		tmpBigInt.Div(tmpBigInt, PrivKeyInt)
-
+	for i := 0; i < len(enc_msg); i++ {
+	        /*
 		//if msg + pad > 255
 		val := int(tmpBigInt.Uint64()) + asc_pad[i]
 		if val > 255 {
 			val = val - 255
 		}
-		//operate on the message with PRIVKEY
-		dec_msg = append(dec_msg, val)
+		*/
+		tmpBigInt.SetString(enc_msg[i], 0)
+		bigIntToo.SetString(asc_pad[i], 0)
+		//sticking with subtract logic for now lol
+		tmpBigInt.Add(tmpBigInt, bigIntToo)
+		dec_msg = append(dec_msg, tmpBigInt.String())
 	}
 
 	//change ascii_chars to chars and stringify
@@ -143,7 +159,7 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 	//https://stackoverflow.com/questions/40310333/how-to-append-a-character-to-a-string-in-golang
 	var sb strings.Builder
 	for i := 0; i < len(dec_msg); i++ {
-		sb.WriteString(string(rune(dec_msg[i])))
+		sb.WriteString(dec_msg[i])
 	}
 	dec_string := sb.String()
 
