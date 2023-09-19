@@ -99,8 +99,8 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 		}
 		//operate on the message with PRIVKEY After subtract
 		tmpBigInt.SetInt64(int64(val))
-		//tmpBigInt.Mul(tmpBigInt, PrivKeyInt)
-                tmpBigInt.Mod(PrivKeyInt, tmpBigInt)
+		tmpBigInt.Mul(tmpBigInt, PrivKeyInt)
+		//tmpBigInt.Mod(PrivKeyInt, tmpBigInt)
 		enc_msg = append(enc_msg, tmpBigInt.String())
 	}
 

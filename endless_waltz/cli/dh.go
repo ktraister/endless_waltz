@@ -138,11 +138,11 @@ func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (strin
 	}
 
 	/*
-	I reaaaallllyyyyyy need to revisit the creation of the private key int
-	I understand the THEORY says that 2 <= int < Prime, but huge keys are slow
-	And do they even grant extra security? I really don't know.
+		I reaaaallllyyyyyy need to revisit the creation of the private key int
+		I understand the THEORY says that 2 <= int < Prime, but huge keys are slow
+		And do they even grant extra security? I really don't know.
 
-	Anyway, we'll be revisiting this part of the code many times. 
+		Anyway, we'll be revisiting this part of the code many times.
 	*/
 
 	//myint is private, int < p, int >= 2
@@ -157,12 +157,12 @@ func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (strin
 		myint.Add(myint, big.NewInt(2))
 	}
 	/*
-	//this code is crazy computationally expensive.
-	//Lets try changing its base from 10 to 2
-	if len(myint.String()) > 5 {
-		myint.SetString(myint.String()[:5], 0)
-		logger.Debug(fmt.Sprintf("Reset private int to %s due to length", myint.String()))
-	}
+		//this code is crazy computationally expensive.
+		//Lets try changing its base from 10 to 2
+		if len(myint.String()) > 5 {
+			myint.SetString(myint.String()[:5], 0)
+			logger.Debug(fmt.Sprintf("Reset private int to %s due to length", myint.String()))
+		}
 	*/
 
 	//changing base to get some kind of speed boost or something

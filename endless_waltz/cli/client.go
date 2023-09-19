@@ -53,7 +53,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message stri
 
 	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:6000", host), conf)
 	if err != nil {
-	        fmt.Println(fmt.Sprintf("Could not connect to host '%s'", host))
+		fmt.Println(fmt.Sprintf("Could not connect to host '%s'", host))
 		return
 	}
 

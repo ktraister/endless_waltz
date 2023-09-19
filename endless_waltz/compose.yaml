@@ -33,4 +33,4 @@ services:
       MongoURI: mongodb://mongo:27017
       MongoUser: adminuser
       MongoPass: password123
-      LogLevel: Info
+      LogLevel: Debug

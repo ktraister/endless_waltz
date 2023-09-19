@@ -3,8 +3,9 @@ package main
 import (
 	"context"
 	"crypto/rand"
-	"fmt"
+	"math/big"
 	"os"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -55,9 +56,35 @@ func checkUUIDUnique(logger *logrus.Logger, ctx context.Context, otp_db *mongo.C
 	}
 }
 
-func insertItem(logger *logrus.Logger, ctx context.Context, otp_db *mongo.Collection, id string) bool {
+func createOTP() (string, error) {
+	temp := []string{}
+	maximum, _ := big.NewInt(0).SetString("1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", 0)
+	i := 0
+	for i < 4097 {
+		randomNumber, _ := rand.Int(rand.Reader, maximum)
+		temp = append(temp, randomNumber.String())
+		i++
+	}
+	return strings.Join(temp[:], " "), nil
+}
+
+func insertItem(logger *logrus.Logger, ctx context.Context, otp_db *mongo.Collection) bool {
+	// create uuid inside function for ease of use
+	id := uuid.New().String()
+	ok := checkUUIDUnique(logger, ctx, otp_db, id)
+	if !ok {
+		logger.Debug("Non-unique UUID generated, passing for now...")
+		return false
+	}
+
+	otp, err := createOTP()
+	if err != nil {
+		logger.Error(err)
+		return false
+	}
+
 	//Then we insert
-	_, err := otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"Pad", fmt.Sprintf("%v", b)}})
+	_, err = otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"Pad", otp}})
 	if err != nil {
 		writeFailedCount++
 		if writeFailedCount <= 10 {
@@ -81,22 +108,22 @@ func main() {
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Reaper finished starting up!")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-	credential := options.Credential{
-		Username: MongoUser,
-		Password: MongoPass,
-	}
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
-	if err != nil {
-		logger.Fatal(err)
-		return
-	} else {
-		logger.Info("Database connection succesful!")
-	}
-	otp_db := client.Database("otp").Collection("otp")
-
 	for {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+		credential := options.Credential{
+			Username: MongoUser,
+			Password: MongoPass,
+		}
+		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
+		if err != nil {
+			logger.Fatal(err)
+			return
+		} else {
+			logger.Info("Database connection succesful!")
+		}
+		otp_db := client.Database("otp").Collection("otp")
+
 		count := otpItemCount(logger, ctx, otp_db)
 		if count == -1 {
 			continue
@@ -107,26 +134,12 @@ func main() {
 		if count < threshold {
 			logger.Info("Found count ", count, ", writing to db...")
 			for i := int64(0); i < threshold-count; i++ {
-
-				//read from random
-				_, err := rand.Read(b)
-				if err != nil {
-					logger.Error("Could not read /dev/urandom")
-				}
-
-				id := uuid.New().String()
-				ok := checkUUIDUnique(logger, ctx, otp_db, id)
-				if !ok {
-					continue
-				}
-
-				ok = insertItem(logger, ctx, otp_db, id)
+				ok := insertItem(logger, ctx, otp_db)
 				if !ok {
 					continue
 				} else {
 					logger.Debug("Wrote item ", i, " to DB!")
 				}
-
 			}
 			logger.Info("Done writing to DB!")
 		}
