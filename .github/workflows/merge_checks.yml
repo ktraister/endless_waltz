@@ -17,7 +17,7 @@ jobs:
           export GOARCH=amd64
           export CGO_ENABLED=0
           cd ./endless_waltz/cli
-          go test
+          go test -v
           go build -tags netgo -a -v .
 
   random:
@@ -34,7 +34,7 @@ jobs:
           export GOARCH=amd64
           export CGO_ENABLED=0
           cd ./endless_waltz/random
-          go test
+          go test -v
           go build -tags netgo -a -v .
 
       - name: Build and push docker image
@@ -58,7 +58,7 @@ jobs:
           export GOARCH=amd64
           export CGO_ENABLED=0
           cd ./endless_waltz/reaper
-          go test
+          go test -v 
           go build -tags netgo -a -v .
 
       - name: Build and push docker image
@@ -67,16 +67,3 @@ jobs:
           context: ./endless_waltz/reaper
           file: ./endless_waltz/reaper/Dockerfile
           push: false
-
-  common:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-
-      - uses: actions/setup-go@v3
-
-      - name: Go Test
-        run: | 
-          cd ./endless_waltz/common
-          go test

@@ -2,5 +2,5 @@ server:
   key: "./certs/server.key"
   cert: "./certs/server.crt"
   randomURL: "http://localhost:8090/api/otp"
-  logLevel: "Debug"
+  logLevel: "Fatal"
   API_Key: "arandomnumber"
