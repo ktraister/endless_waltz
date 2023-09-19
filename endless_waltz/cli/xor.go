@@ -93,15 +93,10 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 	//change chars to ascii_chars
 	for i := 0; i < len(chars); i++ {
 		asc_chars = append(asc_chars, int(chars[i]))
-		//correct thus far
-		//fmt.Println(fmt.Sprintf("appending %v to asc_chars", int(chars[i])))
 	}
 
 	asc_pad, _ := transform_pad(PAD, PRIVKEY)
-	//looks good
-	//fmt.Println(fmt.Sprintf("asc_pad >>> %v", asc_pad))
 
-	//encrypt/decrypt is what needs to get modified. We need to produce wildly different outputs with minor differences in #
 	//encrypt the message
 	for i := 0; i < len(asc_chars); i++ {
 	        /*
@@ -133,12 +128,8 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 	//decrypt message
 	for i := 0; i < len(enc_msg); i++ {
 		tmpBigInt.SetString(enc_msg[i], 0)
-		//fmt.Println(asc_pad[i])
 		bigIntToo.SetString(asc_pad[i], 0)
-		//sticking with subtract logic for now lol
-		//fmt.Println(fmt.Sprintf("%s and %s result in:", tmpBigInt.String(), bigIntToo.String()))
 		tmpBigInt.Sub(tmpBigInt, bigIntToo)
-		//fmt.Println(tmpBigInt.String())
 		dec_msg = append(dec_msg, string(rune(int(tmpBigInt.Int64()))))
 	}
 
