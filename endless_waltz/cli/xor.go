@@ -93,18 +93,16 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 	//change chars to ascii_chars
 	for i := 0; i < len(chars); i++ {
 		asc_chars = append(asc_chars, int(chars[i]))
+		//correct thus far
+		//fmt.Println(fmt.Sprintf("appending %v to asc_chars", int(chars[i])))
 	}
 
 	asc_pad, _ := transform_pad(PAD, PRIVKEY)
-	/*
-	//change pad to ascii_pad
-	for i := 0; i < len(pad); i++ {
-		asc_pad = append(asc_pad, int(pad[i]))
-	}
-	*/
+	//looks good
+	//fmt.Println(fmt.Sprintf("asc_pad >>> %v", asc_pad))
 
-	//encoding and decoding is what needs to get modified. We need to produce wildly different outputs with minor differences in #
-	//encode the message
+	//encrypt/decrypt is what needs to get modified. We need to produce wildly different outputs with minor differences in #
+	//encrypt the message
 	for i := 0; i < len(asc_chars); i++ {
 	        /*
 		//if chars - pad < 255
@@ -115,7 +113,7 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 		*/
 		tmpBigInt.SetString(asc_pad[i], 0)
 		//sticking with subtract logic for now
-		tmpBigInt.Sub(tmpBigInt, big.NewInt(int64(asc_chars[i])))
+		tmpBigInt.Add(tmpBigInt, big.NewInt(int64(asc_chars[i])))
 		enc_msg = append(enc_msg, tmpBigInt.String())
 	}
 
@@ -131,27 +129,17 @@ func pad_decrypt(INPUT_MSG string, PAD string, PRIVKEY string) string {
 	enc_msg := fromString(INPUT_MSG)
 
 	asc_pad, _ := transform_pad(PAD, PRIVKEY)
-	/*
-	//change pad to ascii_pad
-	for i := 0; i < len(pad); i++ {
-		asc_pad = append(asc_pad, int(pad[i]))
-	}
-	*/
 
 	//decrypt message
 	for i := 0; i < len(enc_msg); i++ {
-	        /*
-		//if msg + pad > 255
-		val := int(tmpBigInt.Uint64()) + asc_pad[i]
-		if val > 255 {
-			val = val - 255
-		}
-		*/
 		tmpBigInt.SetString(enc_msg[i], 0)
+		//fmt.Println(asc_pad[i])
 		bigIntToo.SetString(asc_pad[i], 0)
 		//sticking with subtract logic for now lol
-		tmpBigInt.Add(tmpBigInt, bigIntToo)
-		dec_msg = append(dec_msg, tmpBigInt.String())
+		//fmt.Println(fmt.Sprintf("%s and %s result in:", tmpBigInt.String(), bigIntToo.String()))
+		tmpBigInt.Sub(tmpBigInt, bigIntToo)
+		//fmt.Println(tmpBigInt.String())
+		dec_msg = append(dec_msg, string(rune(int(tmpBigInt.Int64()))))
 	}
 
 	//change ascii_chars to chars and stringify
