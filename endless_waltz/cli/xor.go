@@ -91,7 +91,9 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 	asc_chars := make([]int, 0)
 	enc_msg := make([]string, 0)
 	tmpBigInt := big.NewInt(1)
+	fmt.Println(len(PAD))
 	asc_pad := transform_pad(PAD, PRIVKEY)
+	fmt.Println("Transformed Pad: ", len(asc_pad))
 
 	//change chars to ascii_chars
 	for i := 0; i < len(chars); i++ {

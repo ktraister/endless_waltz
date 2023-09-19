@@ -30,7 +30,7 @@ services:
     build:
       context: reaper
     environment:
-      MongoURI: mongodb://mongo:27017/
+      MongoURI: mongodb://mongo:27017
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
