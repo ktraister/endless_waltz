@@ -128,7 +128,7 @@ func broadcaster() {
 				"from:", message.From,
 				"to:", message.To)
 
-			if client.Username == message.From || client.Username == message.To {
+			if client.Username == message.To {
 				err := client.Conn.WriteJSON(message)
 				if err != nil {
 					log.Printf("Websocket error: %s", err)

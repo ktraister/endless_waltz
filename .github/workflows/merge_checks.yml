@@ -44,7 +44,7 @@ jobs:
           file: ./endless_waltz/random/Dockerfile
           push: false
 
-  websocket:
+  exchange:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -57,15 +57,15 @@ jobs:
           export GOOS=linux
           export GOARCH=amd64
           export CGO_ENABLED=0
-          cd ./endless_waltz/websocket
+          cd ./endless_waltz/exchange
           go test -v
           go build -tags netgo -a -v .
 
       - name: Build and push docker image
         uses: docker/build-push-action@v3
         with:
-          context: ./endless_waltz/websocket
-          file: ./endless_waltz/websocket/Dockerfile
+          context: ./endless_waltz/exchange
+          file: ./endless_waltz/exchange/Dockerfile
           push: false
 
 

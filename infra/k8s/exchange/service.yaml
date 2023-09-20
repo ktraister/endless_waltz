@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: ew-websocket
+  name: ew-exchange
   labels:
-    app: ew-websocket
+    app: ew-exchange
 spec:
   ports:
     - port: 8081
@@ -11,4 +11,4 @@ spec:
       protocol: TCP
       name: http
   selector:
-    name: ew-websocket
+    name: ew-exchange
