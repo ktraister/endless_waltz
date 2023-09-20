@@ -1,27 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ew-websocket
+  name: ew-exchange
   labels:
-    name: ew-websocket
+    name: ew-exchange
 spec:
   replicas: 1
   selector:
     matchLabels:
-      name: ew-websocket
+      name: ew-exchange
   template:
     metadata:
       labels:
-        name: ew-websocket
+        name: ew-exchange
     spec:
       imagePullSecrets:
         - name: ghcrcred
-      serviceAccountName: ew-websocket
+      serviceAccountName: ew-exchange
       containers:
-        - name: ew-websocket
+        - name: ew-exchange
           securityContext:
             privileged: true
-          image: "ghcr.io/ktraister/ew_websocket:foo"
+          image: "ghcr.io/ktraister/ew_exchange:foo"
           imagePullPolicy: Always
           env:
           ports:
