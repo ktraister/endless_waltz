@@ -13,9 +13,9 @@ services:
       MongoPass: password123
       LogLevel: Info
         
-  websocket:
+  exchange:
     build:
-      context: websocket
+      context: exchange
     ports:
       - "8081:8081"
     environment:
