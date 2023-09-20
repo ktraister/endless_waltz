@@ -71,7 +71,7 @@ func main() {
 	logger.Debug("keypath is\t\t", configuration.Server.Key)
 	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
 	logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
-	logger.Debug("exchangeURL is\t\t", configuration.Server.ExchangeURL)
+	logger.Debug("exchangeURL is\t", configuration.Server.ExchangeURL)
 	logger.Debug("user is\t\t", configuration.Server.User)
 	logger.Debug("API_Key is\t\t", configuration.Server.API_Key)
 
