@@ -44,6 +44,7 @@ func listen(conn *websocket.Conn, logger *logrus.Logger) {
 	done := make(chan struct{})
 	defer close(done)
 	for {
+		//PROTOCODE
 		//this is where we'll get our HELOs
 		_, message, err := conn.ReadMessage()
 		if err != nil {
@@ -63,7 +64,10 @@ func listen(conn *websocket.Conn, logger *logrus.Logger) {
 		fmt.Println()
 		fmt.Printf("Received: %s\n", dat["message"])
 		fmt.Print("EW_cli > ")
+		//END PROTOCODE
 
+		//We need to run our "server" function here
+		//server function will need to be able to map incoming message to correct action
 	}
 }
 
@@ -215,6 +219,7 @@ func main() {
 				ew_client(logger, configuration, conn, msg, input[1])
 				logger.Info("Sending message duration: ", time.Since(start))
 			*/
+			ew_client(logger, configuration, conn, msg, input[1])
 
 		default:
 			fmt.Println("Didn't understand input, try again")

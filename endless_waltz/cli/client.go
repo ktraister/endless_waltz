@@ -11,7 +11,6 @@ import (
 )
 
 type Chat struct {
-	ID   string `json:"id"`
 	From string `json:"from"`
 	To   string `json:"to"`
 	Msg  string `json:"message"`
@@ -33,7 +32,7 @@ type Random_Req struct {
 	UUID string `json:"UUID"`
 }
 
-func ew_client(logger *logrus.Logger, configuration Configurations, conn *tls.Conn, message string, user string) {
+func ew_client(logger *logrus.Logger, configuration Configurations, conn *websocket.Conn, message string, user string) {
 	api_key := configuration.Server.API_Key
 	random := configuration.Server.RandomURL
 
@@ -47,40 +46,26 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *tls.Co
 		return
 	}
 
-	/* no longer are we connecting to plain sockets. We'll have to pass around the websocket connection
-	//set up certificates
-	cert, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
-	if err != nil {
-		logger.Fatal(err)
+	//send HELO to target user
+	//n, err := conn.Write([]byte("HELO\n"))
+	helo := &Message{Type: "helo",
+		User: configuration.Server.User,
+		Chat: Chat{From: configuration.Server.User,
+			To:  user,
+			Msg: "HELO",
+		},
 	}
-
-	conf := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		// FIx tHis ItS BADDDD
-		InsecureSkipVerify: true,
-	}
-
-	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:6000", host), conf)
+	b, err := json.Marshal(helo)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Could not connect to host '%s'", host))
+		fmt.Println(err)
 		return
 	}
 
-	*/
-
-	//send HELO to target user
-	n, err := conn.Write([]byte("HELO\n"))
+	err = conn.WriteMessage(websocket.TextMessage, b)
 	if err != nil {
 		logger.Fatal(n, err)
 		return
 	}
-
-	//EXAMPLE OF ABOVE BELOW
-	//message = []byte("{\"type\":\"test\", \"chat\":{\"id\":\"123456\",\"from\":\"foo\",\"to\":\"bar\",\"message\":\"sending init message\"}}")
-	//err = conn.WriteMessage(websocket.TextMessage, message)
-	//if err != nil {
-	//      log.Fatal(err)
-	//}
 
 	//HELO should be received within 5 seconds to proceed OR exit
 
