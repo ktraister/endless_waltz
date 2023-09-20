@@ -26,22 +26,25 @@ type Client_Resp struct {
 	UUID string
 }
 
+//Change handleConnection to act as the "server side" in this transaction
+//we'll pass around the websocket to accomplish this
 func handleConnection(tlsConn *tls.Conn, logger *logrus.Logger, random_host string, api_key string) {
 	defer tlsConn.Close()
 
 	r := bufio.NewReader(tlsConn)
 	msg, err := r.ReadString('\n')
 	if err != nil {
-		println("Uh ohh, error in reading init string...")
 		logger.Warn(fmt.Sprintf("Error reading init string: %s", err))
 		return
 	}
 
 	//new connections should always ask
 	if string(msg) != "HELO\n" {
-		println("returning...")
+	        logger.Warn("New connection didn't HELO, bouncing")
 		return
 	}
+
+	//we need to respond with a HELO here
 
 	private_key, err := dh_handshake(tlsConn, logger, "server")
 	if err != nil {
