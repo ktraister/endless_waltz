@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ew-websocket
+  labels:
+    name: ew-websocket
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: ew-websocket
+  template:
+    metadata:
+      labels:
+        name: ew-websocket
+    spec:
+      imagePullSecrets:
+        - name: ghcrcred
+      serviceAccountName: ew-websocket
+      containers:
+        - name: ew-websocket
+          securityContext:
+            privileged: true
+          image: "ghcr.io/ktraister/ew_websocket:foo"
+          imagePullPolicy: Always
+          env:
+          ports:
+            - containerPort: 8081

@@ -12,6 +12,14 @@ services:
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Info
+        
+  websocket:
+    build:
+      context: websocket
+    ports:
+      - "8081:8081"
+    environment:
+      LogLevel: Info
 
   mongo:
     image: mongo
