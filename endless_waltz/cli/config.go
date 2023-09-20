@@ -13,5 +13,5 @@ type ServerConfigurations struct {
 	LogLevel    string
 	API_Key     string
 	ExchangeURL string
-	User string
+	User        string
 }

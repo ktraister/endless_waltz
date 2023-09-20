@@ -81,8 +81,8 @@ func receiver(client *Client) {
 		}
 
 		fmt.Println("host", client.Conn.RemoteAddr())
-		if m.Type == "bootup" {
-			// do mapping on bootup
+		if m.Type == "startup" {
+			// do mapping on startup
 			client.Username = m.User
 			fmt.Println("client successfully mapped", &client, client, client.Username)
 		} else {

@@ -2,13 +2,13 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
-	"encoding/json"
 
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
@@ -41,23 +41,30 @@ func trap(conn *websocket.Conn, logger *logrus.Logger) {
 }
 
 func listen(conn *websocket.Conn, logger *logrus.Logger) {
-        done := make(chan struct{})
-        defer close(done)
-        for {
-	    //this is where we'll get our HELOs 
-            _, message, err := conn.ReadMessage()
-            if err != nil {
-                logger.Error("Error reading message:", err)
-                return
-            }   
+	done := make(chan struct{})
+	defer close(done)
+	for {
+		//this is where we'll get our HELOs
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			logger.Error("Error reading message:", err)
+			return
+		}
 
-	    //this is where we'll do our work
-	    fmt.Println()
-	    fmt.Println()
-            fmt.Printf("Received: %s\n", message)
+		var dat map[string]interface{}
+		err = json.Unmarshal([]byte(message), &dat)
+		if err != nil {
+			logger.Error("Error unmarshalling json:", err)
+			return
+		}
+
+		//this is where we'll do our work
+		fmt.Println()
+		fmt.Println()
+		fmt.Printf("Received: %s\n", dat["message"])
 		fmt.Print("EW_cli > ")
 
-        } 
+	}
 }
 
 func main() {
@@ -121,8 +128,8 @@ func main() {
 	// Establish a WebSocket connection
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-	    fmt.Println("Could not establish WebSocket connection with ", u.String())
-	    return
+		fmt.Println("Could not establish WebSocket connection with ", u.String())
+		return
 	}
 	defer conn.Close()
 
@@ -130,21 +137,22 @@ func main() {
 	go trap(conn, logger)
 
 	//check if user var is empty
-	if configuration.Server.User == "" { fmt.Println("Can't start without a user..."); return }
+	if configuration.Server.User == "" {
+		fmt.Println("Can't start without a user...")
+		return
+	}
 
 	//connect to exchange with our username for mapping
-	//need to use our structs and marshall JSON
-	//message := []byte("{\"Type\":\"bootup\", \"user\":\"bar\"}")
-	message := &Message{Type:"bootup", User:configuration.Server.User}
+	message := &Message{Type: "startup", User: configuration.Server.User}
 	b, err := json.Marshal(message)
-	    if err != nil {
-        fmt.Println(err)
-        return
-    }
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	err = conn.WriteMessage(websocket.TextMessage, b)
 	if err != nil {
-	    logger.Fatal(err)
-	}   
+		logger.Fatal(err)
+	}
 
 	//listen on conn
 	go listen(conn, logger)
@@ -181,31 +189,31 @@ func main() {
 			fmt.Println()
 
 		case "send":
-		    /*
-			if len(input) <= 2 {
-				fmt.Println("Not enough fields in send call")
-				fmt.Println("Usage: send <user> <message>")
-				fmt.Println()
-				continue
-			}
-
-			msg := ""
-			if strings.HasPrefix(input[2], "\"") {
-				for i, werd := range input[2:] {
-					if i == 0 {
-						msg = werd
-					} else {
-						msg = msg + " " + werd
-					}
+			/*
+				if len(input) <= 2 {
+					fmt.Println("Not enough fields in send call")
+					fmt.Println("Usage: send <user> <message>")
+					fmt.Println()
+					continue
 				}
-			} else {
-				msg = input[2]
-			}
 
-			start := time.Now()
-			//this is going to have to change too
-			ew_client(logger, configuration, conn, msg, input[1])
-			logger.Info("Sending message duration: ", time.Since(start))
+				msg := ""
+				if strings.HasPrefix(input[2], "\"") {
+					for i, werd := range input[2:] {
+						if i == 0 {
+							msg = werd
+						} else {
+							msg = msg + " " + werd
+						}
+					}
+				} else {
+					msg = input[2]
+				}
+
+				start := time.Now()
+				//this is going to have to change too
+				ew_client(logger, configuration, conn, msg, input[1])
+				logger.Info("Sending message duration: ", time.Since(start))
 			*/
 
 		default:
