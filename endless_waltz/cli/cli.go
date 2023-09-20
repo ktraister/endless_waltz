@@ -16,6 +16,10 @@ import (
 
 var CtlCounter = 0
 
+//under the new paradigm of the exchange server to handle connection proxying
+//there is no reason to have a goroutine to listen for incoming messages
+//HOWEVER, there will need to be some real logic updates
+/*
 func listenForMsg(logger *logrus.Logger, configuration Configurations) {
 	cert, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
 
@@ -58,6 +62,7 @@ func listenForMsg(logger *logrus.Logger, configuration Configurations) {
 		handleConnection(tlsConn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
 	}
 }
+*/
 
 func main() {
 	//trap control-c

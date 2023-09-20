@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -15,7 +14,6 @@ type Chat struct {
 	From      string `json:"from"`
 	To        string `json:"to"`
 	Msg       string `json:"message"`
-	Timestamp int64  `json:"timestamp"`
 }
 
 type Client struct {
@@ -32,25 +30,19 @@ type Message struct {
 var clients = make(map[*Client]bool)
 var broadcast = make(chan Chat)
 
-// We'll need to define an Upgrader
-// this will require a Read and Write buffer size
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 
-	// We'll need to check the origin of our connection
-	// this will allow us to make requests from our React
-	// development server to here.
-	// For now, we'll do no checking and just allow any connection
+	//mod to check API key sent with request
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// define our WebSocket endpoint
 func serveWs(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(r.Host, r.URL.Query())
 
 	// upgrade this connection to a WebSocket
-	// connection
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -69,9 +61,6 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	delete(clients, client)
 }
 
-// define a receiver which will listen for
-// new messages being sent to our WebSocket
-// endpoint
 func receiver(client *Client) {
 	for {
 		// read in a message
@@ -99,19 +88,9 @@ func receiver(client *Client) {
 		} else {
 			fmt.Println("received message", m.Type, m.Chat)
 			c := m.Chat
-			c.Timestamp = time.Now().Unix()
+			//broadcast <- &c
+			broadcast <- c
 
-			/*
-			// save in redis
-			id, err := redisrepo.CreateChat(&c)
-			if err != nil {
-				log.Println("error while saving chat in redis", err)
-				return
-			}
-
-			c.ID = id
-			broadcast <- &c
-			*/
 		}
 	}
 }
@@ -141,9 +120,6 @@ func broadcaster() {
 }
 
 func setupRoutes() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Simple Server")
-	})
 	// map our `/ws` endpoint to the `serveWs` function
 	http.HandleFunc("/ws", serveWs)
 }
