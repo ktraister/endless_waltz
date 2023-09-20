@@ -48,7 +48,7 @@ func main() {
         log.Fatal(err)
     }
 
-    message = []byte("{\"type\":\"test\", \"chat\":{\"id\":\"123456\",\"from\":\"foo\",\"to\":\"bar\",\"message\":\"sending init message\"}}")
+    message = []byte("{\"type\":\"test\", \"chat\":{\"id\":\"123456\",\"from\":\"foo\",\"to\":\"Kayleigh\",\"message\":\"sending init message\"}}")
 
     err = conn.WriteMessage(websocket.TextMessage, message)
     if err != nil {

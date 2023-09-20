@@ -2,6 +2,7 @@ server:
   key: "./certs/server.key"
   cert: "./certs/server.crt"
   randomURL: "http://localhost:8090/api/otp"
-  exchangeURL: "http://localhost:8081/api/otp"
+  exchangeURL: "ws://localhost:8081/ws"
   logLevel: "Fatal"
+  user: "Kayleigh"
   API_Key: "arandomnumber"

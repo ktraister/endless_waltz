@@ -2,19 +2,38 @@ package main
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"crypto/tls"
 )
+
+type Chat struct {
+	ID   string `json:"id"`
+	From string `json:"from"`
+	To   string `json:"to"`
+	Msg  string `json:"message"`
+}
+
+type Client struct {
+	Conn     *websocket.Conn
+	Username string
+}
+
+type Message struct {
+	Type string `json:"type"`
+	User string `json:"user,omitempty"`
+	Chat Chat   `json:"chat,omitempty"`
+}
 
 type Random_Req struct {
 	Host string `json:"Host"`
 	UUID string `json:"UUID"`
 }
 
-func ew_client(logger *logrus.Logger, configuration Configurations, message string, user string) {
+func ew_client(logger *logrus.Logger, configuration Configurations, conn *tls.Conn, message string, user string) {
 	api_key := configuration.Server.API_Key
 	random := configuration.Server.RandomURL
 
@@ -55,6 +74,13 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message stri
 		logger.Fatal(n, err)
 		return
 	}
+
+	//EXAMPLE OF ABOVE BELOW
+	//message = []byte("{\"type\":\"test\", \"chat\":{\"id\":\"123456\",\"from\":\"foo\",\"to\":\"bar\",\"message\":\"sending init message\"}}")
+	//err = conn.WriteMessage(websocket.TextMessage, message)
+	//if err != nil {
+	//      log.Fatal(err)
+	//}
 
 	//HELO should be received within 5 seconds to proceed OR exit
 

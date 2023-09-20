@@ -26,8 +26,8 @@ type Client_Resp struct {
 	UUID string
 }
 
-//Change handleConnection to act as the "server side" in this transaction
-//we'll pass around the websocket to accomplish this
+// Change handleConnection to act as the "server side" in this transaction
+// we'll pass around the websocket to accomplish this
 func handleConnection(tlsConn *tls.Conn, logger *logrus.Logger, random_host string, api_key string) {
 	defer tlsConn.Close()
 
@@ -40,7 +40,7 @@ func handleConnection(tlsConn *tls.Conn, logger *logrus.Logger, random_host stri
 
 	//new connections should always ask
 	if string(msg) != "HELO\n" {
-	        logger.Warn("New connection didn't HELO, bouncing")
+		logger.Warn("New connection didn't HELO, bouncing")
 		return
 	}
 

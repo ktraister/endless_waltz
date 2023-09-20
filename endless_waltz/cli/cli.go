@@ -8,31 +8,59 @@ import (
 	"os"
 	"strings"
 	"time"
+	"encoding/json"
 
 	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os/signal"
 )
 
 var CtlCounter = 0
 
-func main() {
-	//trap control-c
+func trap(conn *websocket.Conn, logger *logrus.Logger) {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			fmt.Println()
-			fmt.Println("Ctrl+C Trapped! Use quit to exit or Ctrl+C again.")
-			fmt.Println()
-			fmt.Print("EW_cli > ")
-			CtlCounter++
-			if CtlCounter > 1 {
-				os.Exit(130)
-			}
-		}
-	}()
 
+	for range c {
+		fmt.Println()
+		fmt.Println("Ctrl+C Trapped! Use quit to exit or Ctrl+C again.")
+		fmt.Println()
+		fmt.Print("EW_cli > ")
+		CtlCounter++
+		if CtlCounter > 1 {
+			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			if err != nil {
+				logger.Fatal(err)
+			}
+			conn.Close()
+			os.Exit(130)
+		}
+	}
+
+}
+
+func listen(conn *websocket.Conn, logger *logrus.Logger) {
+        done := make(chan struct{})
+        defer close(done)
+        for {
+	    //this is where we'll get our HELOs 
+            _, message, err := conn.ReadMessage()
+            if err != nil {
+                logger.Error("Error reading message:", err)
+                return
+            }   
+
+	    //this is where we'll do our work
+	    fmt.Println()
+	    fmt.Println()
+            fmt.Printf("Received: %s\n", message)
+		fmt.Print("EW_cli > ")
+
+        } 
+}
+
+func main() {
 	//configuration stuff
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
@@ -93,9 +121,33 @@ func main() {
 	// Establish a WebSocket connection
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		logger.Fatal(err)
+	    fmt.Println("Could not establish WebSocket connection with ", u.String())
+	    return
 	}
 	defer conn.Close()
+
+	//trap control-c
+	go trap(conn, logger)
+
+	//check if user var is empty
+	if configuration.Server.User == "" { fmt.Println("Can't start without a user..."); return }
+
+	//connect to exchange with our username for mapping
+	//need to use our structs and marshall JSON
+	//message := []byte("{\"Type\":\"bootup\", \"user\":\"bar\"}")
+	message := &Message{Type:"bootup", User:configuration.Server.User}
+	b, err := json.Marshal(message)
+	    if err != nil {
+        fmt.Println(err)
+        return
+    }
+	err = conn.WriteMessage(websocket.TextMessage, b)
+	if err != nil {
+	    logger.Fatal(err)
+	}   
+
+	//listen on conn
+	go listen(conn, logger)
 
 	//this is the interactive part of the EW_cli
 	reader := bufio.NewReader(os.Stdin)
@@ -108,6 +160,11 @@ func main() {
 		case "":
 
 		case "exit", "quit":
+			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			if err != nil {
+				logger.Fatal(err)
+			}
+			conn.Close()
 			return
 
 		case "help":
@@ -124,6 +181,7 @@ func main() {
 			fmt.Println()
 
 		case "send":
+		    /*
 			if len(input) <= 2 {
 				fmt.Println("Not enough fields in send call")
 				fmt.Println("Usage: send <user> <message>")
@@ -146,8 +204,9 @@ func main() {
 
 			start := time.Now()
 			//this is going to have to change too
-			ew_client(logger, configuration, msg, input[1])
+			ew_client(logger, configuration, conn, msg, input[1])
 			logger.Info("Sending message duration: ", time.Since(start))
+			*/
 
 		default:
 			fmt.Println("Didn't understand input, try again")
