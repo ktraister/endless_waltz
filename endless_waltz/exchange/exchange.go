@@ -9,31 +9,26 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-type Chat struct {
-	ID        string `json:"id"`
-	From      string `json:"from"`
-	To        string `json:"to"`
-	Msg       string `json:"message"`
-}
-
 type Client struct {
 	Conn     *websocket.Conn
 	Username string
 }
 
 type Message struct {
-	Type string     `json:"type"`
-	User string     `json:"user,omitempty"`
-	Chat Chat `json:"chat,omitempty"`
-}
+        Type string `json:"type"`    
+        User string `json:"user,omitempty"`
+        To   string `json:"to,omitempty"`
+        From string `json:"from,omitempty"`
+        Msg  string `json:"msg,omitempty"`
+} 
 
 var clients = make(map[*Client]bool)
-var broadcast = make(chan Chat)
+var broadcast = make(chan Message)
 
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
+	ReadBufferSize:  400000000,
+	WriteBufferSize: 400000000,
 
 	//mod to check API key sent with request
 	CheckOrigin: func(r *http.Request) bool { return true },
@@ -86,10 +81,9 @@ func receiver(client *Client) {
 			client.Username = m.User
 			fmt.Println("client successfully mapped", &client, client, client.Username)
 		} else {
-			fmt.Println("received message", m.Type, m.Chat)
-			c := m.Chat
+			fmt.Println("received message", m.Type, m.Msg)
 			//broadcast <- &c
-			broadcast <- c
+			broadcast <- *m
 
 		}
 	}

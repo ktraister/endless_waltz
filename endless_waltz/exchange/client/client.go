@@ -36,6 +36,7 @@ func main() {
                 log.Println("Error reading message:", err)
                 return
             }
+
             fmt.Printf("Received: %s\n", message)
         }
     }()

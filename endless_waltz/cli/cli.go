@@ -40,34 +40,13 @@ func trap(conn *websocket.Conn, logger *logrus.Logger) {
 
 }
 
-func listen(conn *websocket.Conn, logger *logrus.Logger) {
+func listen(conn *websocket.Conn, logger *logrus.Logger, configuration Configurations) {
 	done := make(chan struct{})
 	defer close(done)
 	for {
-		//PROTOCODE
-		//this is where we'll get our HELOs
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			logger.Error("Error reading message:", err)
-			return
-		}
-
-		var dat map[string]interface{}
-		err = json.Unmarshal([]byte(message), &dat)
-		if err != nil {
-			logger.Error("Error unmarshalling json:", err)
-			return
-		}
-
-		//this is where we'll do our work
-		fmt.Println()
-		fmt.Println()
-		fmt.Printf("Received: %s\n", dat["message"])
-		fmt.Print("EW_cli > ")
-		//END PROTOCODE
-
 		//We need to run our "server" function here
 		//server function will need to be able to map incoming message to correct action
+		handleConnection(conn, logger, configuration)
 	}
 }
 
@@ -93,6 +72,7 @@ func main() {
 	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
 	logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
 	logger.Debug("exchangeURL is\t\t", configuration.Server.ExchangeURL)
+	logger.Debug("user is\t\t", configuration.Server.User)
 	logger.Debug("API_Key is\t\t", configuration.Server.API_Key)
 
 	//check and make sure inserted API key works
@@ -159,7 +139,7 @@ func main() {
 	}
 
 	//listen on conn
-	go listen(conn, logger)
+	go listen(conn, logger, configuration)
 
 	//this is the interactive part of the EW_cli
 	reader := bufio.NewReader(os.Stdin)
@@ -193,32 +173,30 @@ func main() {
 			fmt.Println()
 
 		case "send":
-			/*
-				if len(input) <= 2 {
-					fmt.Println("Not enough fields in send call")
-					fmt.Println("Usage: send <user> <message>")
-					fmt.Println()
-					continue
-				}
+			if len(input) <= 2 {
+				fmt.Println("Not enough fields in send call")
+				fmt.Println("Usage: send <user> <message>")
+				fmt.Println()
+				continue
+			}
 
-				msg := ""
-				if strings.HasPrefix(input[2], "\"") {
-					for i, werd := range input[2:] {
-						if i == 0 {
-							msg = werd
-						} else {
-							msg = msg + " " + werd
-						}
+			msg := ""
+			if strings.HasPrefix(input[2], "\"") {
+				for i, werd := range input[2:] {
+					if i == 0 {
+						msg = werd
+					} else {
+						msg = msg + " " + werd
 					}
-				} else {
-					msg = input[2]
 				}
+			} else {
+				msg = input[2]
+			}
 
-				start := time.Now()
-				//this is going to have to change too
-				ew_client(logger, configuration, conn, msg, input[1])
-				logger.Info("Sending message duration: ", time.Since(start))
-			*/
+			start := time.Now()
+			//this is going to have to change too
+			ew_client(logger, configuration, conn, msg, input[1])
+			logger.Info("Sending message duration: ", time.Since(start))
 			ew_client(logger, configuration, conn, msg, input[1])
 
 		default:
