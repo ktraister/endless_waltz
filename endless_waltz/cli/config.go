@@ -7,9 +7,11 @@ type Configurations struct {
 
 // ServerConfigurations exported
 type ServerConfigurations struct {
-	Key       string
-	Cert      string
-	RandomURL string
-	LogLevel  string
-	API_Key   string
+	Key         string
+	Cert        string
+	RandomURL   string
+	LogLevel    string
+	API_Key     string
+	ExchangeURL string
+	User        string
 }

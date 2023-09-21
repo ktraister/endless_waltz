@@ -69,16 +69,16 @@ func unpack_message(INPUT string) string {
 }
 
 func transform_pad(PAD string, PRIVKEY string) ([]string, error) {
-        privKeyInt, _ := big.NewInt(0).SetString(PRIVKEY, 0)
-        tmpBigInt := big.NewInt(0)
+	privKeyInt, _ := big.NewInt(0).SetString(PRIVKEY, 0)
+	tmpBigInt := big.NewInt(0)
 	otp := strings.Split(PAD, " ")
 	final := []string{}
 
 	for _, s := range otp {
-	    tmpBigInt, _ = tmpBigInt.SetString(s, 0)
-	    tmpBigInt.Mod(privKeyInt, tmpBigInt)
-	    final = append(final, tmpBigInt.String())
-        }
+		tmpBigInt, _ = tmpBigInt.SetString(s, 0)
+		tmpBigInt.Mod(privKeyInt, tmpBigInt)
+		final = append(final, tmpBigInt.String())
+	}
 
 	return final, nil
 }
@@ -99,13 +99,6 @@ func pad_encrypt(MSG string, PAD string, PRIVKEY string) string {
 
 	//encrypt the message
 	for i := 0; i < len(asc_chars); i++ {
-	        /*
-		//if chars - pad < 255
-		val := asc_chars[i] - asc_pad[i]
-		if val < 0 {
-			val = val + 255
-		}
-		*/
 		tmpBigInt.SetString(asc_pad[i], 0)
 		//sticking with subtract logic for now
 		tmpBigInt.Add(tmpBigInt, big.NewInt(int64(asc_chars[i])))

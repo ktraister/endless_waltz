@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bufio"
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"math/big"
-	"net"
 	"strconv"
 	"strings"
 
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
 
@@ -73,7 +73,7 @@ func checkPrivKey(key string) bool {
 	return true
 }
 
-func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (string, error) {
+func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Configurations, conn_type string, user string) (string, error) {
 	//prime := big.NewInt(1)
 	prime := big.NewInt(424889)
 	tempkey := big.NewInt(1)
@@ -84,39 +84,49 @@ func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (strin
 
 	switch {
 	case conn_type == "server":
-		//prime will need to be *big.Int, int cant store the number
-		//possible gen values 2047,3071,4095, 6143, 7679, 8191
-
-		//replace this with reading from list
-		//prime, err = rand.Prime(rand.Reader, 19)
+		//grab a random dh pair from rn.go
 		prime, generator = fetchValues()
 
 		logger.Debug("Server DH Prime:", prime)
 		logger.Debug("Server DH Generator: ", generator)
 
-		//send the values across the conn
-		n, err := conn.Write([]byte(fmt.Sprintf("%d:%d\n", prime, generator)))
+		outgoing := &Message{Type: "DH",
+			User: configuration.Server.User,
+			From: configuration.Server.User,
+			To:   user,
+			Msg:  fmt.Sprintf("%d:%d", prime, generator),
+		}
+		b, err := json.Marshal(outgoing)
 		if err != nil {
-			logger.Error(n, err)
+			fmt.Println(err)
+			return "", err
+		}
+
+		logger.Debug(fmt.Sprintf("Server sending dh pair %s", b))
+		err = conn.WriteMessage(websocket.TextMessage, b)
+		if err != nil {
+			logger.Fatal("Unable to write message to websocket: ", err)
 			return "", err
 		}
 	default:
-		//wait to receive values
-		var data string
-
-		reader := bufio.NewReader(conn)
-		// Read until a newline character is encountered
-		data, err := reader.ReadString('\n')
+		//read in response from server
+		_, incoming, err := conn.ReadMessage()
 		if err != nil {
-			logger.Error("Error:", err)
+			logger.Error("Error reading message:", err)
 			return "", err
 		}
 
-		values := strings.Split(data, ":")
+		err = json.Unmarshal([]byte(incoming), &dat)
+		if err != nil {
+			logger.Error("Error unmarshalling json:", err)
+			return "", err
+		}
+
+		values := strings.Split(dat["msg"].(string), ":")
 
 		prime, ok = prime.SetString(values[0], 0)
 		if !ok {
-			logger.Error("Couldn't convert response prime to int")
+			logger.Error(fmt.Sprintf("Couldn't convert response prime %s to bigInt", values[0]))
 			return "", err
 		}
 		generator, err = strconv.Atoi(strings.Trim(values[1], "\n"))
@@ -156,14 +166,6 @@ func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (strin
 	if myint.Cmp(two) <= 0 {
 		myint.Add(myint, big.NewInt(2))
 	}
-	/*
-		//this code is crazy computationally expensive.
-		//Lets try changing its base from 10 to 2
-		if len(myint.String()) > 5 {
-			myint.SetString(myint.String()[:5], 0)
-			logger.Debug(fmt.Sprintf("Reset private int to %s due to length", myint.String()))
-		}
-	*/
 
 	//changing base to get some kind of speed boost or something
 	prime.Text(2)
@@ -173,61 +175,89 @@ func dh_handshake(conn net.Conn, logger *logrus.Logger, conn_type string) (strin
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
 	tempkey.Exp(big.NewInt(int64(generator)), myint, nil).Mod(tempkey, prime)
-	logger.Debug("Done with exp operation...")
-	//tempkey.Mod(tempkey, prime)
-	logger.Debug("Done with mod operation!")
 
 	switch {
 	case conn_type == "server":
 		//send the pubkey across the conn
 		logger.Debug("Sending pubkey TO client: ", tempkey)
-		n, err := conn.Write([]byte(fmt.Sprintf("%s\n", tempkey.String())))
+		outgoing := &Message{Type: "DH",
+			User: configuration.Server.User,
+			From: configuration.Server.User,
+			To:   user,
+			Msg:  tempkey.String(),
+		}
+		b, err := json.Marshal(outgoing)
 		if err != nil {
-			logger.Error(n, err)
+			fmt.Println(err)
 			return "", err
 		}
 
-		var data string
-
-		reader := bufio.NewReader(conn)
-		data, err = reader.ReadString('\n')
+		err = conn.WriteMessage(websocket.TextMessage, b)
 		if err != nil {
-			fmt.Println("Error:", err)
-			break
+			logger.Fatal("Unable to write message to websocket: ", err)
+			return "", err
 		}
-		data = strings.Replace(data, "\n", "", -1)
 
-		logger.Debug("Received pubkey FROM client: ", data)
-		tempkey, ok = tempkey.SetString(data, 0)
+		//get client pubkey
+		_, incoming, err := conn.ReadMessage()
+		if err != nil {
+			logger.Error("Error reading message:", err)
+			return "", err
+		}
+
+		err = json.Unmarshal([]byte(incoming), &dat)
+		if err != nil {
+			logger.Error("Error unmarshalling json:", err)
+			return "", err
+		}
+
+		logger.Debug("Received pubkey FROM client: ", dat["msg"])
+		tempkey, ok = tempkey.SetString(dat["msg"].(string), 0)
 		if !ok {
 			logger.Error("Couldn't convert response tempPubKey to int")
 			err = fmt.Errorf("Couldn't convert response tempPubKey to int")
 			return "", err
 		}
 	default:
-		var data string
-		reader := bufio.NewReader(conn)
-		data, err := reader.ReadString('\n')
+		//get client pubkey
+		_, incoming, err := conn.ReadMessage()
 		if err != nil {
-			fmt.Println("Error:", err)
-			break
-		}
-		data = strings.Replace(data, "\n", "", -1)
-
-		logger.Debug("Received pubkey FROM server: ", data)
-
-		//send the tempkey across the conn
-		logger.Debug("Sending pubkey TO server: ", tempkey)
-		n, err := conn.Write([]byte(fmt.Sprintf("%s\n", tempkey.String())))
-		if err != nil {
-			logger.Error(n, err)
+			logger.Error("Error reading message:", err)
 			return "", err
 		}
 
-		tempkey, ok = tempkey.SetString(data, 0)
+		err = json.Unmarshal([]byte(incoming), &dat)
+		if err != nil {
+			logger.Error("Error unmarshalling json:", err)
+			return "", err
+		}
+
+		logger.Debug("Received pubkey FROM server: ", dat["msg"])
+
+		//send the tempkey across the conn
+		logger.Debug("Sending pubkey TO server: ", tempkey.String())
+		outgoing := &Message{Type: "DH",
+			User: configuration.Server.User,
+			From: configuration.Server.User,
+			To:   user,
+			Msg:  tempkey.String(),
+		}
+		b, err := json.Marshal(outgoing)
+		if err != nil {
+			fmt.Println(err)
+			return "", err
+		}
+
+		err = conn.WriteMessage(websocket.TextMessage, b)
+		if err != nil {
+			logger.Fatal("Unable to write message to websocket: ", err)
+			return "", err
+		}
+
+		tempkey, ok = tempkey.SetString(dat["msg"].(string), 0)
 		if !ok {
-			logger.Error("Couldn't convert response tempPubKey to int: ", data)
-			err = fmt.Errorf("Couldn't convert response tempPubKey to int: %s", data)
+			logger.Error("Couldn't convert response tempPubKey to int: ", dat["msg"])
+			err = fmt.Errorf("Couldn't convert response tempPubKey to int: %s", dat["msg"])
 			return "", err
 		}
 

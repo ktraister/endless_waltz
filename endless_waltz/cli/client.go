@@ -2,30 +2,30 @@ package main
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/json"
-	//"flag"
 	"fmt"
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"time"
 )
+
+type Message struct {
+	Type string `json:"type"`
+	User string `json:"user,omitempty"`
+	To   string `json:"to,omitempty"`
+	From string `json:"from,omitempty"`
+	Msg  string `json:"msg,omitempty"`
+}
 
 type Random_Req struct {
 	Host string `json:"Host"`
 	UUID string `json:"UUID"`
 }
 
-func ew_client(logger *logrus.Logger, configuration Configurations, message string, host string) {
-	//lets setup our flags here
-	/*
-		msgPtr := flag.String("message", "", "a message to encrypt and send")
-		hostPtr := flag.String("host", "localhost", "the server to send the message to")
-		randPtr := flag.String("random", "localhost", "the aandom server to use for pad")
-		apiKeyPtr := flag.String("API-Key", "", "The API key for the randomAPI server")
-		logLvlPtr := flag.String("logLevel", "Warn", "the random server to use for pad")
-		flag.Parse()
-	*/
+var dat map[string]interface{}
 
+func ew_client(logger *logrus.Logger, configuration Configurations, conn *websocket.Conn, message string, user string) {
 	api_key := configuration.Server.API_Key
 	random := configuration.Server.RandomURL
 
@@ -35,35 +35,61 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message stri
 	}
 
 	if api_key == "" {
-		logger.Fatal("Random Servers require an API key")
+		logger.Fatal("authorized API keys are required")
 		return
 	}
 
-	//set up certificates
-	cert, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
-	if err != nil {
-		logger.Fatal(err)
+	//send HELO to target user
+	//n, err := conn.Write([]byte("HELO\n"))
+	helo := &Message{Type: "helo",
+		User: configuration.Server.User,
+		From: configuration.Server.User,
+		To:   user,
+		Msg:  "HELO",
 	}
-
-	conf := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		// FIx tHis ItS BADDDD
-		InsecureSkipVerify: true,
-	}
-
-	conn, err := tls.Dial("tcp", fmt.Sprintf("%s:6000", host), conf)
+	b, err := json.Marshal(helo)
 	if err != nil {
-		fmt.Println(fmt.Sprintf("Could not connect to host '%s'", host))
+		fmt.Println(err)
 		return
 	}
 
-	n, err := conn.Write([]byte("HELO\n"))
+	err = conn.WriteMessage(websocket.TextMessage, b)
 	if err != nil {
-		logger.Fatal(n, err)
+		logger.Fatal("Client:Unable to write message to websocket: ", err)
+		return
+	}
+	logger.Debug("Client:Sent init HELO")
+
+	heloFlag := 0
+	//HELO should be received within 5 seconds to proceed OR exit
+	for start := time.Now(); time.Since(start) < time.Second*5; {
+		_, incoming, err := conn.ReadMessage()
+		if err != nil {
+			logger.Error("Client:Error reading message:", err)
+			return
+		}
+
+		err = json.Unmarshal([]byte(incoming), &dat)
+		if err != nil {
+			logger.Error("Client:Error unmarshalling json:", err)
+			return
+		}
+
+		if dat["msg"] == "HELO" &&
+			dat["from"] == user {
+			logger.Debug("Client received HELO from ", dat["from"].(string))
+			heloFlag = 1
+			break
+		}
+	}
+
+	if heloFlag == 0 {
+		logger.Error(fmt.Sprintf("Didn't receive HELO from %s in time, try again later", user))
 		return
 	}
 
-	private_key, err := dh_handshake(conn, logger, "client")
+	//perform DH handshake with the other user
+	private_key, err := dh_handshake(conn, logger, configuration, "client", user)
 	if err != nil {
 		logger.Fatal("Private Key Error!")
 		return
@@ -72,18 +98,25 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message stri
 	logger.Info("Private DH Key: ", private_key)
 
 	//read in response from server
-	buf := make([]byte, 100)
-	n, err = conn.Read(buf)
+	_, incoming, err := conn.ReadMessage()
 	if err != nil {
-		logger.Fatal(n, err)
+		logger.Error("Error reading message:", err)
 		return
 	}
-	logger.Debug(fmt.Sprintf("got response from server %s", string(buf[:n])))
 
+	err = json.Unmarshal([]byte(incoming), &dat)
+	if err != nil {
+		logger.Error("Error unmarshalling json:", err)
+		return
+	}
+
+	logger.Debug(fmt.Sprintf("got response from server %s", dat["msg"]))
+
+	//this will all have to stay the same -- we get the UUID from the "server" above
 	//reach out to server and request Pad
 	data := Random_Req{
 		Host: "client",
-		UUID: fmt.Sprintf("%v", string(buf[:n])),
+		UUID: fmt.Sprintf("%v", dat["msg"]),
 	}
 	rapi_data, _ := json.Marshal(data)
 	if err != nil {
@@ -98,20 +131,28 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message stri
 		logger.Fatal(error)
 		return
 	}
-	var res map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&res)
-	logger.Debug("got response from RandomAPI: ", res)
-	raw_pad := fmt.Sprintf("%v", res["Pad"])
+	json.NewDecoder(resp.Body).Decode(&dat)
+	logger.Debug("got response from RandomAPI: ", dat)
+	raw_pad := fmt.Sprintf("%v", dat["Pad"])
 	cipherText := pad_encrypt(message, raw_pad, private_key)
 	logger.Debug(fmt.Sprintf("Ciphertext: %v\n", cipherText))
 
-	n, err = conn.Write([]byte(fmt.Sprintf("%v\n", cipherText)))
+	//send the ciphertext to the other user throught the websocket
+	outgoing := &Message{Type: "cipher",
+		User: configuration.Server.User,
+		From: configuration.Server.User,
+		To:   user,
+		Msg:  cipherText,
+	}
+	b, err = json.Marshal(outgoing)
 	if err != nil {
-		logger.Fatal(n, err)
+		fmt.Println(err)
 		return
 	}
 
-	//notify client of successful send
+	err = conn.WriteMessage(websocket.TextMessage, b)
+
+	/* Cert stuff needs to change
 	certs := conn.ConnectionState().PeerCertificates
 
 	var clientCommonName string
@@ -123,6 +164,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message stri
 
 	fmt.Println()
 	fmt.Println(fmt.Sprintf("Sent message successfully to %s at %s", clientCommonName, host))
+	*/
 
 	conn.Close()
 

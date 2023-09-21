@@ -2,13 +2,15 @@ package main
 
 import (
 	"bufio"
-	"crypto/tls"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"os/signal"
@@ -16,66 +18,39 @@ import (
 
 var CtlCounter = 0
 
-func listenForMsg(logger *logrus.Logger, configuration Configurations) {
-	cert, err := tls.LoadX509KeyPair(configuration.Server.Cert, configuration.Server.Key)
+func trap(conn *websocket.Conn, logger *logrus.Logger) {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
 
-	if err != nil {
-		logger.Fatal(err)
-		return
+	for range c {
+		fmt.Println()
+		fmt.Println("Ctrl+C Trapped! Use quit to exit or Ctrl+C again.")
+		fmt.Println()
+		fmt.Print("EW_cli > ")
+		CtlCounter++
+		if CtlCounter > 1 {
+			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			if err != nil {
+				logger.Fatal(err)
+			}
+			conn.Close()
+			os.Exit(130)
+		}
 	}
 
-	config := &tls.Config{
-		Certificates: []tls.Certificate{cert},
-		// FIx tHis ItS BADDDD
-		InsecureSkipVerify: true,
-		//ClientAuth:   tls.RequireAndVerifyClientCert,
-		ClientAuth: tls.RequireAnyClientCert,
-	}
+}
 
-	//change this to be configurable via config file
-	ln, err := tls.Listen("tcp", ":6000", config)
-	if err != nil {
-		logger.Fatal(err)
-		return
-	}
-	defer ln.Close()
-
-	logger.Info("EW Server is coming online!")
+func listen(conn *websocket.Conn, logger *logrus.Logger, configuration Configurations) {
+	done := make(chan struct{})
+	defer close(done)
 	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			logger.Error(err)
-			continue
-		}
-
-		// Convert the net.Conn into a TLS connection
-		tlsConn, ok := conn.(*tls.Conn)
-		if !ok {
-			fmt.Println("Connection is not a TLS connection.")
-			return
-		}
-
-		handleConnection(tlsConn, logger, configuration.Server.RandomURL, configuration.Server.API_Key)
+		//We need to run our "server" function here
+		//server function will need to be able to map incoming message to correct action
+		handleConnection(conn, logger, configuration)
 	}
 }
 
 func main() {
-	//trap control-c
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			fmt.Println()
-			fmt.Println("Ctrl+C Trapped! Use quit to exit or Ctrl+C again.")
-			fmt.Println()
-			fmt.Print("EW_cli > ")
-			CtlCounter++
-			if CtlCounter > 1 {
-				os.Exit(130)
-			}
-		}
-	}()
-
 	//configuration stuff
 	viper.SetConfigName("config")
 	viper.AddConfigPath(".")
@@ -95,10 +70,13 @@ func main() {
 	logger.Debug("Reading variables using the model..")
 	logger.Debug("keypath is\t\t", configuration.Server.Key)
 	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
-	logger.Debug("serverpath is\t\t", configuration.Server.RandomURL)
+	logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
+	logger.Debug("exchangeURL is\t", configuration.Server.ExchangeURL)
+	logger.Debug("user is\t\t", configuration.Server.User)
 	logger.Debug("API_Key is\t\t", configuration.Server.API_Key)
 
 	//check and make sure inserted API key works
+	//Random and Exchange will use same mongo, so the API key will be valid for both
 	logger.Debug("Checking api key...")
 	health_url := fmt.Sprintf("%s%s", strings.Split(configuration.Server.RandomURL, "/otp")[0], "/healthcheck")
 	req, err := http.NewRequest("GET", health_url, nil)
@@ -109,7 +87,7 @@ func main() {
 	if err != nil {
 		fmt.Println("Could not connect to configured randomAPI ", configuration.Server.RandomURL)
 		fmt.Println("Quietly exiting now. Please reconfigure.")
-                return
+		return
 	}
 	if resp == nil {
 		fmt.Println("Could not connect to configured randomAPI ", configuration.Server.RandomURL)
@@ -124,12 +102,44 @@ func main() {
 	}
 	logger.Debug("API Key passed check!")
 
-	//goroutine to listen for message
-	go listenForMsg(logger, configuration)
+	//do some checks and connect to exchange server here
+	// Parse the WebSocket URL
+	u, err := url.Parse(configuration.Server.ExchangeURL)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
-	reader := bufio.NewReader(os.Stdin)
+	// Establish a WebSocket connection
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	if err != nil {
+		logger.Fatal("Could not establish WebSocket connection with", u.String())
+		return
+	}
+	defer conn.Close()
+
+	//trap control-c
+	go trap(conn, logger)
+
+	//check if user var is empty
+	if configuration.Server.User == "" {
+		fmt.Println("Can't start without a user...")
+		return
+	}
+
+	//connect to exchange with our username for mapping
+	message := &Message{Type: "startup", User: configuration.Server.User}
+	b, err := json.Marshal(message)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = conn.WriteMessage(websocket.TextMessage, b)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	//this is the interactive part of the EW_cli
+	reader := bufio.NewReader(os.Stdin)
 	for {
 		fmt.Print("EW_cli > ")
 		raw_input, _ := reader.ReadString('\n')
@@ -139,7 +149,19 @@ func main() {
 		case "":
 
 		case "exit", "quit":
+			err := conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			if err != nil {
+				logger.Fatal(err)
+			}
+			conn.Close()
 			return
+
+		case "listen":
+			//listen on conn
+			fmt.Println("Listening for incoming messages...")
+			for {
+				listen(conn, logger, configuration)
+			}
 
 		case "help":
 			fmt.Println()
@@ -150,14 +172,14 @@ func main() {
 			fmt.Println()
 
 			fmt.Println("exit, quit            ---> leave the CLI")
-			fmt.Println("send <host> <message> ---> send a message to an active EW host")
+			fmt.Println("send <user> <message> ---> send a message to an active EW user")
 			fmt.Println("help                  ---> print this message")
 			fmt.Println()
 
 		case "send":
 			if len(input) <= 2 {
 				fmt.Println("Not enough fields in send call")
-				fmt.Println("Usage: send <host> <message>")
+				fmt.Println("Usage: send <user> <message>")
 				fmt.Println()
 				continue
 			}
@@ -176,9 +198,9 @@ func main() {
 			}
 
 			start := time.Now()
-			ew_client(logger, configuration, msg, input[1])
+			//this is going to have to change too
+			ew_client(logger, configuration, conn, msg, input[1])
 			logger.Info("Sending message duration: ", time.Since(start))
-
 		default:
 			fmt.Println("Didn't understand input, try again")
 		}
