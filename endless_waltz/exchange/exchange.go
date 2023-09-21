@@ -75,7 +75,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	// through on our WebSocket connection
 	receiver(client, logger)
 
-	fmt.Println("exiting", ws.RemoteAddr().String())
+	Logger.Info("exiting", ws.RemoteAddr().String())
 	delete(clients, client)
 }
 
@@ -98,13 +98,13 @@ func receiver(client *Client, logger *logrus.Logger) {
 			continue
 		}
 
-		fmt.Println("host", client.Conn.RemoteAddr())
+		logger.Info("host", client.Conn.RemoteAddr())
 		if m.Type == "startup" {
 			// do mapping on startup
 			client.Username = m.User
-			fmt.Println("client successfully mapped", &client, client, client.Username)
+			logger.Info("client successfully mapped", &client, client, client.Username)
 		} else {
-			fmt.Println("received message", m.Type, m.Msg)
+			logger.Info("received message", m.Type, m.Msg)
 			//broadcast <- &c
 			broadcast <- *m
 
@@ -115,15 +115,8 @@ func receiver(client *Client, logger *logrus.Logger) {
 func broadcaster() {
 	for {
 		message := <-broadcast
-		// send to every client that is currently connected
-		fmt.Println("new message", message)
-
 		for client := range clients {
 			// send message only to involved users
-			fmt.Println("username:", client.Username,
-				"from:", message.From,
-				"to:", message.To)
-
 			if client.Username == message.To {
 				err := client.Conn.WriteJSON(message)
 				if err != nil {
