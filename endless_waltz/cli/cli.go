@@ -156,9 +156,9 @@ func main() {
 			conn.Close()
 			return
 
-                case "listen":
-		//listen on conn
-		listen(conn, logger, configuration)
+		case "listen":
+			//listen on conn
+			listen(conn, logger, configuration)
 
 		case "help":
 			fmt.Println()

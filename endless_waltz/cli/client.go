@@ -7,7 +7,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	//"time"
+	"time"
 )
 
 type Message struct {
@@ -60,58 +60,32 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	}
 	logger.Debug("Client:Sent init HELO")
 
-	//commenting out the HELO loop -- seems to be causing problems
-	/*
-		heloFlag := 0
-		//HELO should be received within 5 seconds to proceed OR exit
-		for start := time.Now(); time.Since(start) < time.Second*5; {
-			_, incoming, err := conn.ReadMessage()
-			if err != nil {
-			    logger.Error("Client:Error reading message:", err)
-				return
-			}
-
-			err = json.Unmarshal([]byte(incoming), &dat)
-			if err != nil {
-			    logger.Error("Client:Error unmarshalling json:", err)
-				return
-			}
-
-			if dat["msg"] == "HELO" &&
-				dat["from"] == user {
-				logger.Debug("Client received HELO from ", dat["from"].(string))
-				heloFlag = 1
-			} else {
-				break
-			}
-		}
-
-		if heloFlag == 0 {
-			logger.Error(fmt.Sprintf("Didn't receive HELO from %s in time, try again later", user))
+	heloFlag := 0
+	//HELO should be received within 5 seconds to proceed OR exit
+	for start := time.Now(); time.Since(start) < time.Second*5; {
+		_, incoming, err := conn.ReadMessage()
+		if err != nil {
+			logger.Error("Client:Error reading message:", err)
 			return
 		}
-	*/
 
-	_, incoming, err := conn.ReadMessage()
-	if err != nil {
-		logger.Error("Client:Error reading message:", err)
-		return
+		err = json.Unmarshal([]byte(incoming), &dat)
+		if err != nil {
+			logger.Error("Client:Error unmarshalling json:", err)
+			return
+		}
+
+		if dat["msg"] == "HELO" &&
+			dat["from"] == user {
+			logger.Debug("Client received HELO from ", dat["from"].(string))
+			heloFlag = 1
+			break
+		} 
 	}
-	logger.Debug(incoming)
 
-	err = json.Unmarshal([]byte(incoming), &dat)
-	if err != nil {
-		logger.Error("Client:Error unmarshalling json:", err)
-		return
-	}
-
-	if dat["msg"] == "HELO" &&
-		dat["from"] == user {
-		logger.Debug("Client received HELO from ", dat["from"].(string))
-	} else {
+	if heloFlag == 0 {
 		logger.Error(fmt.Sprintf("Didn't receive HELO from %s in time, try again later", user))
 		return
-
 	}
 
 	//perform DH handshake with the other user
@@ -124,7 +98,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	logger.Info("Private DH Key: ", private_key)
 
 	//read in response from server
-	_, incoming, err = conn.ReadMessage()
+	_, incoming, err := conn.ReadMessage()
 	if err != nil {
 		logger.Error("Error reading message:", err)
 		return
