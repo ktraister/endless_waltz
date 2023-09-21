@@ -138,9 +138,6 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	//listen on conn
-	go listen(conn, logger, configuration)
-
 	//this is the interactive part of the EW_cli
 	reader := bufio.NewReader(os.Stdin)
 	for {
@@ -158,6 +155,10 @@ func main() {
 			}
 			conn.Close()
 			return
+
+                case "listen":
+		//listen on conn
+		listen(conn, logger, configuration)
 
 		case "help":
 			fmt.Println()
