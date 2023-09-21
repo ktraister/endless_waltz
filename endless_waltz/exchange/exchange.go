@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 )
 
 type Client struct {
@@ -15,27 +19,46 @@ type Client struct {
 }
 
 type Message struct {
-        Type string `json:"type"`    
-        User string `json:"user,omitempty"`
-        To   string `json:"to,omitempty"`
-        From string `json:"from,omitempty"`
-        Msg  string `json:"msg,omitempty"`
-} 
+	Type string `json:"type"`
+	User string `json:"user,omitempty"`
+	To   string `json:"to,omitempty"`
+	From string `json:"from,omitempty"`
+	Msg  string `json:"msg,omitempty"`
+}
 
 var clients = make(map[*Client]bool)
 var broadcast = make(chan Message)
-
+var MongoURI string
+var MongoUser string
+var MongoPass string
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  400000000,
-	WriteBufferSize: 400000000,
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+}
 
-	//mod to check API key sent with request
-	CheckOrigin: func(r *http.Request) bool { return true },
+// Custom middleware function to inject a logger into the request context
+func LoggerMiddleware(logger *logrus.Logger) mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Inject the logger into the request context
+			ctx := r.Context()
+			ctx = context.WithValue(ctx, "logger", logger)
+			r = r.WithContext(ctx)
+
+			// Call the next middleware or handler in the chain
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r.Host, r.URL.Query())
+	logger, ok := r.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
 
 	// upgrade this connection to a WebSocket
 	ws, err := upgrader.Upgrade(w, r, nil)
@@ -46,17 +69,17 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	client := &Client{Conn: ws}
 	// register client
 	clients[client] = true
-	fmt.Println("clients", len(clients), clients, ws.RemoteAddr())
+	logger.Debug("clients", len(clients), clients, ws.RemoteAddr())
 
 	// listen indefinitely for new messages coming
 	// through on our WebSocket connection
-	receiver(client)
+	receiver(client, logger)
 
 	fmt.Println("exiting", ws.RemoteAddr().String())
 	delete(clients, client)
 }
 
-func receiver(client *Client) {
+func receiver(client *Client, logger *logrus.Logger) {
 	for {
 		// read in a message
 		// readMessage returns messageType, message, err
@@ -113,13 +136,20 @@ func broadcaster() {
 	}
 }
 
-func setupRoutes() {
-	// map our `/ws` endpoint to the `serveWs` function
-	http.HandleFunc("/ws", serveWs)
-}
-
 func main() {
+	MongoURI = os.Getenv("MongoURI")
+	MongoUser = os.Getenv("MongoUser")
+	MongoPass = os.Getenv("MongoPass")
+	LogLevel := os.Getenv("LogLevel")
+	LogType := os.Getenv("LogType")
+
+	logger := createLogger(LogLevel, LogType)
+	logger.Info("Exchange Server finished starting up!")
+
 	go broadcaster()
-	setupRoutes()
-	http.ListenAndServe(":8081", nil)
+
+	router := mux.NewRouter()
+	router.Use(LoggerMiddleware(logger))
+	router.HandleFunc("/ws", serveWs)
+	http.ListenAndServe(":8081", router)
 }

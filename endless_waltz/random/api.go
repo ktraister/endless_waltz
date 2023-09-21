@@ -64,7 +64,7 @@ func checkAPIKey(remote_key string, logger *logrus.Logger) bool {
 		return true
 	} else if err == mongo.ErrNoDocuments {
 		logger.Warn("No API key found, unauthorized")
-	        return false
+		return false
 	} else {
 		logger.Error(err)
 		return false
@@ -88,12 +88,12 @@ func LoggerMiddleware(logger *logrus.Logger) mux.MiddlewareFunc {
 
 func health_handler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
-
 	if !ok {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		fmt.Println("ERROR: Could not configure logger!")
+		logger.Error("Could not configure logger!")
 		return
 	}
+
 	ok = checkAPIKey(req.Header.Get("API-Key"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)

@@ -112,7 +112,7 @@ func main() {
 	// Establish a WebSocket connection
 	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
-		fmt.Println("Could not establish WebSocket connection with ", u.String())
+		logger.Fatal("Could not establish WebSocket connection with", u.String())
 		return
 	}
 	defer conn.Close()
@@ -158,7 +158,10 @@ func main() {
 
 		case "listen":
 			//listen on conn
-			listen(conn, logger, configuration)
+			fmt.Println("Listening for incoming messages...")
+			for {
+				listen(conn, logger, configuration)
+			}
 
 		case "help":
 			fmt.Println()
@@ -198,8 +201,6 @@ func main() {
 			//this is going to have to change too
 			ew_client(logger, configuration, conn, msg, input[1])
 			logger.Info("Sending message duration: ", time.Since(start))
-			ew_client(logger, configuration, conn, msg, input[1])
-
 		default:
 			fmt.Println("Didn't understand input, try again")
 		}

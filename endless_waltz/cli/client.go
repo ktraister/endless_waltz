@@ -80,7 +80,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 			logger.Debug("Client received HELO from ", dat["from"].(string))
 			heloFlag = 1
 			break
-		} 
+		}
 	}
 
 	if heloFlag == 0 {

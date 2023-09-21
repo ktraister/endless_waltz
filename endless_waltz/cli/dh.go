@@ -84,11 +84,7 @@ func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Con
 
 	switch {
 	case conn_type == "server":
-		//prime will need to be *big.Int, int cant store the number
-		//possible gen values 2047,3071,4095, 6143, 7679, 8191
-
-		//replace this with reading from list
-		//prime, err = rand.Prime(rand.Reader, 19)
+		//grab a random dh pair from rn.go
 		prime, generator = fetchValues()
 
 		logger.Debug("Server DH Prime:", prime)
@@ -106,16 +102,16 @@ func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Con
 			return "", err
 		}
 
+		logger.Debug(fmt.Sprintf("Server sending dh pair %s", b))
 		err = conn.WriteMessage(websocket.TextMessage, b)
 		if err != nil {
-			logger.Fatal("DHSRV111:Unable to write message to websocket: ", err)
+			logger.Fatal("Unable to write message to websocket: ", err)
 			return "", err
 		}
 	default:
 		//read in response from server
 		_, incoming, err := conn.ReadMessage()
 		if err != nil {
-			fmt.Println("ERROR line 118")
 			logger.Error("Error reading message:", err)
 			return "", err
 		}
@@ -130,7 +126,7 @@ func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Con
 
 		prime, ok = prime.SetString(values[0], 0)
 		if !ok {
-			logger.Error("Couldn't convert response prime to int")
+			logger.Error(fmt.Sprintf("Couldn't convert response prime %s to bigInt", values[0]))
 			return "", err
 		}
 		generator, err = strconv.Atoi(strings.Trim(values[1], "\n"))
@@ -170,14 +166,6 @@ func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Con
 	if myint.Cmp(two) <= 0 {
 		myint.Add(myint, big.NewInt(2))
 	}
-	/*
-		//this code is crazy computationally expensive.
-		//Lets try changing its base from 10 to 2
-		if len(myint.String()) > 5 {
-			myint.SetString(myint.String()[:5], 0)
-			logger.Debug(fmt.Sprintf("Reset private int to %s due to length", myint.String()))
-		}
-	*/
 
 	//changing base to get some kind of speed boost or something
 	prime.Text(2)
@@ -187,9 +175,6 @@ func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Con
 	//mod and exchange values
 	//compute pubkeys A and B - E.X.) A = g^a mod p : 102 mod 541 = 100
 	tempkey.Exp(big.NewInt(int64(generator)), myint, nil).Mod(tempkey, prime)
-	logger.Debug("Done with exp operation...")
-	//tempkey.Mod(tempkey, prime)
-	logger.Debug("Done with mod operation!")
 
 	switch {
 	case conn_type == "server":
@@ -209,7 +194,7 @@ func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Con
 
 		err = conn.WriteMessage(websocket.TextMessage, b)
 		if err != nil {
-			logger.Fatal("DHSRVUnable to write message to websocket: ", err)
+			logger.Fatal("Unable to write message to websocket: ", err)
 			return "", err
 		}
 
