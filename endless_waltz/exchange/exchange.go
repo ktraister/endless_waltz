@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 	"os"
 
@@ -63,7 +61,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	// upgrade this connection to a WebSocket
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println(err)
+		logger.Error(err)
 	}
 
 	client := &Client{Conn: ws}
@@ -75,7 +73,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	// through on our WebSocket connection
 	receiver(client, logger)
 
-	Logger.Info("exiting", ws.RemoteAddr().String())
+	logger.Info("exiting", ws.RemoteAddr().String())
 	delete(clients, client)
 }
 
@@ -86,7 +84,7 @@ func receiver(client *Client, logger *logrus.Logger) {
 		// messageType: 1-> Text Message, 2 -> Binary Message
 		_, p, err := client.Conn.ReadMessage()
 		if err != nil {
-			log.Println(err)
+			logger.Error(err)
 			return
 		}
 
@@ -94,7 +92,7 @@ func receiver(client *Client, logger *logrus.Logger) {
 
 		err = json.Unmarshal(p, m)
 		if err != nil {
-			log.Println("error while unmarshaling chat", err)
+			logger.Error("error while unmarshaling chat", err)
 			continue
 		}
 
@@ -112,7 +110,7 @@ func receiver(client *Client, logger *logrus.Logger) {
 	}
 }
 
-func broadcaster() {
+func broadcaster(logger *logrus.Logger) {
 	for {
 		message := <-broadcast
 		for client := range clients {
@@ -120,7 +118,7 @@ func broadcaster() {
 			if client.Username == message.To {
 				err := client.Conn.WriteJSON(message)
 				if err != nil {
-					log.Printf("Websocket error: %s", err)
+					logger.Error("Websocket error: ", err)
 					client.Conn.Close()
 					delete(clients, client)
 				}
@@ -139,7 +137,7 @@ func main() {
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Exchange Server finished starting up!")
 
-	go broadcaster()
+	go broadcaster(logger)
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
