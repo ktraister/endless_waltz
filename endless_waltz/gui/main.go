@@ -1,11 +1,13 @@
 package main
 
 import (
+    "image/color"
     "fyne.io/fyne/v2"
     "fyne.io/fyne/v2/app"
     "fyne.io/fyne/v2/container"
     "fyne.io/fyne/v2/widget"
     "fyne.io/fyne/v2/layout"
+    "fyne.io/fyne/v2/canvas"
 )
 
 //different layouts avail
@@ -25,8 +27,18 @@ func main() {
     messageEntry := widget.NewMultiLineEntry()
     messageEntry.SetPlaceHolder("Type your message...")
 
-    text := widget.NewLabel("Online Users")
+    text := widget.NewLabel("    Online Users    ")
+    topLine := canvas.NewLine(color.RGBA{0, 0, 0, 255})
+    topLine.StrokeWidth = 5
+    bLine := canvas.NewLine(color.RGBA{0, 0, 0, 255})
+    bLine.StrokeWidth = 2
+    sideLine := canvas.NewLine(color.RGBA{0, 0, 0, 255})
+    sideLine.StrokeWidth = 5
+    sideLine2 := canvas.NewLine(color.RGBA{0, 0, 0, 255})
+    sideLine2.StrokeWidth = 5
     onlineUsers := container.NewHBox(text)
+    onlineUsers = container.NewBorder(topLine, bLine, nil, sideLine2, onlineUsers)
+    onlineUsers = container.NewBorder(onlineUsers, nil, nil, sideLine)
 
     //add to above entry field this enter feature
     //https://developer.fyne.io/explore/layouts.html#border
@@ -60,19 +72,20 @@ func main() {
     //layout.NewBorderLayout(toolbarLines, nil, middleLines, nil)
 
     // Create a container for the message entry and send button
-    messageContainer := container.New(layout.NewMaxLayout(), messageEntry)
-    sendContainer := container.New(layout.NewVBoxLayout(), sendButton)
-    clearContainer := container.New(layout.NewVBoxLayout(), clearButton)
+    //messageContainer := container.New(layout.NewMaxLayout(), messageEntry)
+    //sendContainer := container.New(layout.NewVBoxLayout(), sendButton)
+    //clearContainer := container.New(layout.NewVBoxLayout(), clearButton)
     onlineContainer := container.New(layout.NewHBoxLayout(), onlineUsers)
+    sendContainer := container.NewBorder(clearButton, sendButton, nil, nil, messageEntry)
 
     // Create a vertical split container for chat and input
-    splitContainer := container.NewVSplit(messageContainer, sendContainer)
-    splitContainer = container.NewVSplit(clearContainer, splitContainer)
-    splitContainer = container.NewVSplit(scrollContainer, splitContainer)
+    //splitContainer := container.NewVSplit(messageContainer, sendContainer)
+    //splitContainer = container.NewVSplit(clearContainer, splitContainer)
+    splitContainer := container.NewVSplit(scrollContainer, sendContainer)
     //Create another vertical split for chat and input
-    splitContainer = container.NewHSplit(onlineContainer, splitContainer)
+    finalContainer := container.NewBorder(nil, nil, onlineContainer, nil, splitContainer)
 
-    myWindow.SetContent(splitContainer)
+    myWindow.SetContent(finalContainer)
     myWindow.Resize(fyne.NewSize(600,800))
     myWindow.ShowAndRun()
 }
