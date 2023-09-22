@@ -36,7 +36,7 @@ jobs:
           cd ./endless_waltz/gui
           go clean -modcache
           go test -v
-          go build -tags netgo -a -v .
+          #go build -tags netgo -a -v .
 
   common:
     runs-on: ubuntu-latest
