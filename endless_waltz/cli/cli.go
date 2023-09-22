@@ -173,7 +173,8 @@ func main() {
 
 			start := time.Now()
 			//this is going to have to change too
-			ew_client(logger, configuration, conn, msg, input[1])
+			ok := ew_client(logger, configuration, conn, msg, input[1])
+			if !ok { fmt.Println("Sending Failed") }
 			logger.Info("Sending message duration: ", time.Since(start))
 		default:
 			fmt.Println("Didn't understand input, try again")

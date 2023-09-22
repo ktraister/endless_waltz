@@ -10,10 +10,11 @@ import (
 	"image/color"
 	//"fyne.io/fyne/v2/dialog"
 
-	"net/http"
-	"net/url"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"net/http"
+	"net/url"
+	"time"
 )
 
 //this is how you show dialog box
@@ -32,7 +33,8 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	messageEntry := widget.NewMultiLineEntry()
 	messageEntry.SetPlaceHolder("Type your message...")
 
-	text := widget.NewLabel("    Online Users    ")
+	//add a box at top/bottom left for currentUser
+	text := widget.NewLabelWithStyle("    Online Users    ", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
 	topLine := canvas.NewLine(color.RGBA{0, 0, 0, 255})
 	topLine.StrokeWidth = 5
 	bLine := canvas.NewLine(color.RGBA{0, 0, 0, 255})
@@ -45,20 +47,29 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	onlineUsers = container.NewBorder(topLine, bLine, nil, sideLine2, onlineUsers)
 	onlineUsers = container.NewBorder(onlineUsers, nil, nil, sideLine)
 
-	//add to above entry field this enter feature
-	//https://developer.fyne.io/explore/layouts.html#border
+	//add a goroutine here to read ExchangeAPI for live users and populate with labels
+	onlineUsers.Add(widget.NewLabel("TestUser"))
+
+	//need to add a goroutine here to listen for messages, a goroutine to populate new labels, and a chan to communicate
 
 	sendButton := widget.NewButton("Send", func() {
 		// Get the message text from the entry field
 		message := messageEntry.Text
 		if message != "" {
-		        //ohh shit we have to configure the user too
-		        //send the message thru the EW circut
-                        go ew_client(logger, configuration, conn, message, "Kayleigh")
+			//ohh shit we have to configure the user too
+			//send the message thru the EW circut
+			//add something here to return false if the send fails, true if success
+			ok := ew_client(logger, configuration, conn, message, "Kayleigh")
 
-			// Create a label widget for the message and add it to the chat container
-			messageLabel := widget.NewLabel("You: " + message)
-			chatContainer.Add(messageLabel)
+			if ok {
+				// Create a label widget for the message and add it to the chat container
+				messageLabel := widget.NewLabel("You: " + message)
+				chatContainer.Add(messageLabel)
+			} else {
+				messageLabel := widget.NewLabel("FAILED TO SEND: " + message)
+				messageLabel.Importance = widget.DangerImportance
+				chatContainer.Add(messageLabel)
+			}
 
 			// Clear the message entry field after sending
 			messageEntry.SetText("")
@@ -94,47 +105,50 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 }
 
 func main() {
-        //configuration stuff
-        configuration, err := fetchConfig()
-        if err != nil {
-                return
-        }  
-        logger := createLogger(configuration.Server.LogLevel, "normal")
-           
-        // Reading variables using the model
-        logger.Debug("Reading variables using the model..")
-        logger.Debug("keypath is\t\t", configuration.Server.Key)
-        logger.Debug("crtpath is\t\t", configuration.Server.Cert)
-        logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
-        logger.Debug("exchangeURL is\t", configuration.Server.ExchangeURL)
-        logger.Debug("user is\t\t", configuration.Server.User)
-        logger.Debug("Passwd is\t\t", configuration.Server.Passwd)
-           
-        //have the user login every time -- it's no longer APIKeyAuth
-        logger.Debug("Checking creds...")
-        ok := checkCreds(configuration)
-        if !ok {
-                return
-        }  
-        logger.Debug("creds passed check!")
+        //add "starting up" message while loading
 
-        // Parse the WebSocket URL
-        u, err := url.Parse(configuration.Server.ExchangeURL)
-        if err != nil {
-                logger.Fatal(err)
-        }  
+	//configuration stuff
+	configuration, err := fetchConfig()
+	if err != nil {
+		return
+	}
+	logger := createLogger(configuration.Server.LogLevel, "normal")
 
-        // Establish a WebSocket connection
-        conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Passwd": []string{configuration.Server.Passwd}, "User": []string{configuration.Server.User}})                                                                                                                 
-        if err != nil {
-                logger.Fatal("Could not establish WebSocket connection with ", u.String())
-                return
-        }  
-        logger.Debug("Connected to exchange server!")
-           
-        defer conn.Close()
+	// Reading variables using the model
+	logger.Debug("Reading variables using the model..")
+	logger.Debug("keypath is\t\t", configuration.Server.Key)
+	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
+	logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
+	logger.Debug("exchangeURL is\t", configuration.Server.ExchangeURL)
+	logger.Debug("user is\t\t", configuration.Server.User)
+	logger.Debug("Passwd is\t\t", configuration.Server.Passwd)
 
-	myApp := app.New()
+	//have the user login every time -- it's no longer APIKeyAuth
+	logger.Debug("Checking creds...")
+	ok := checkCreds(configuration)
+	if !ok {
+		return
+	}
+	logger.Debug("creds passed check!")
+
+	// Parse the WebSocket URL
+	u, err := url.Parse(configuration.Server.ExchangeURL)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	// Establish a WebSocket connection
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Passwd": []string{configuration.Server.Passwd}, "User": []string{configuration.Server.User}})
+	if err != nil {
+		logger.Fatal("Could not establish WebSocket connection with ", u.String())
+		return
+	}
+	logger.Debug("Connected to exchange server!")
+
+	defer conn.Close()
+
+	myApp := app.NewWithID("Main")
+	myApp.Preferences().SetString("AppTimeout", string(time.Minute))
 	myWindow := myApp.NewWindow("EW Messenger")
 	configureGUI(myWindow, logger, configuration, conn)
 	myWindow.ShowAndRun()

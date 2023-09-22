@@ -29,24 +29,24 @@ type Random_Req struct {
 
 var dat map[string]interface{}
 
-func ew_client(logger *logrus.Logger, configuration Configurations, conn *websocket.Conn, message string, targetUser string) {
+func ew_client(logger *logrus.Logger, configuration Configurations, conn *websocket.Conn, message string, targetUser string) bool {
 	user := configuration.Server.User
 	passwd := configuration.Server.Passwd
 	random := configuration.Server.RandomURL
 
 	if len(message) > 4096 {
 		logger.Fatal("We dont support this yet!")
-		return
+		return false
 	}
 
 	if passwd == "" || user == "" {
 		logger.Fatal("authorized Creds are required")
-		return
+		return false
 	}
 
 	if targetUser == user {
 		fmt.Println("Sending messages to yourself is not allowed")
-		return
+		return false
 	}
 
 	//send HELO to target user
@@ -60,66 +60,66 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	b, err := json.Marshal(helo)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return false
 	}
 
 	err = conn.WriteMessage(websocket.TextMessage, b)
 	if err != nil {
 		logger.Fatal("Client:Unable to write message to websocket: ", err)
-		return
+		return false
 	}
 	logger.Debug("Client:Sent init HELO")
 
 	heloFlag := 0
 	//HELO should be received within 5 seconds to proceed OR exit
-	for start := time.Now(); time.Since(start) < time.Second*5; {
-	        logger.Debug("looping in helo check...")
-		_, incoming, err := conn.ReadMessage()
-		fmt.Println("Read message!")
-		if err != nil {
-			logger.Error("Client:Error reading message:", err)
-			return
-		}
+	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	_, incoming, err := conn.ReadMessage()
+	logger.Debug("Client:Read init HELO response")
+	if err != nil {
+		logger.Error("Client:Error reading message:", err)
+		return false
+	}
 
-		err = json.Unmarshal([]byte(incoming), &dat)
-		if err != nil {
-			logger.Error("Client:Error unmarshalling json:", err)
-			return
-		}
+	err = json.Unmarshal([]byte(incoming), &dat)
+	if err != nil {
+		logger.Error("Client:Error unmarshalling json:", err)
+		return false
+	}
 
-		if dat["msg"] == "HELO" &&
-			dat["from"] == targetUser {
-			logger.Debug("Client received HELO from ", dat["from"].(string))
-			heloFlag = 1
-			break
-		}
+	if dat["msg"] == "HELO" &&
+		dat["from"] == targetUser {
+		logger.Debug("Client received HELO from ", dat["from"].(string))
+		heloFlag = 1
 	}
 
 	if heloFlag == 0 {
 		logger.Error(fmt.Sprintf("Didn't receive HELO from %s in time, try again later", targetUser))
-		return
+		return false
 	}
+
+	//reset conn read deadline
+	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 	//perform DH handshake with the other user
 	private_key, err := dh_handshake(conn, logger, configuration, "client", targetUser)
 	if err != nil {
 		logger.Fatal("Private Key Error!")
-		return
+		return false
 	}
 
 	logger.Info("Private DH Key: ", private_key)
 
 	//read in response from server
-	_, incoming, err := conn.ReadMessage()
+	_, incoming, err = conn.ReadMessage()
 	if err != nil {
 		logger.Error("Error reading message:", err)
-		return
+		return false
 	}
 
 	err = json.Unmarshal([]byte(incoming), &dat)
 	if err != nil {
 		logger.Error("Error unmarshalling json:", err)
-		return
+		return false
 	}
 
 	logger.Debug(fmt.Sprintf("got response from server %s", dat["msg"]))
@@ -142,7 +142,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	resp, error := client.Do(req)
 	if error != nil {
 		logger.Fatal(error)
-		return
+		return false
 	}
 	json.NewDecoder(resp.Body).Decode(&dat)
 	logger.Debug("got response from RandomAPI: ", dat)
@@ -160,7 +160,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	b, err = json.Marshal(outgoing)
 	if err != nil {
 		fmt.Println(err)
-		return
+		return false
 	}
 
 	err = conn.WriteMessage(websocket.TextMessage, b)
@@ -179,8 +179,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	fmt.Println(fmt.Sprintf("Sent message successfully to %s at %s", clientCommonName, host))
 	*/
 
-	conn.Close()
-
+	return true
 }
 
 func fetchConfig() (Configurations, error) {
