@@ -26,9 +26,6 @@ type Message struct {
 
 var clients = make(map[*Client]bool)
 var broadcast = make(chan Message)
-var MongoURI string
-var MongoUser string
-var MongoPass string
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,

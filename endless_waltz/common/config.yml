@@ -1,0 +1,8 @@
+server:
+  key: "./certs/server.key"
+  cert: "./certs/server.crt"
+  randomURL: "http://localhost:8090/api/otp"
+  exchangeURL: "ws://localhost:8081/ws"
+  logLevel: "Debug"
+  user: "KayleighToo"
+  Passwd: "arandomnumber"

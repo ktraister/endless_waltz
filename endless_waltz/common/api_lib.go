@@ -14,6 +14,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var MongoURI string
+var MongoUser string
+var MongoPass string
+
 func checkAuth(user string, passwd string, logger *logrus.Logger) bool {
 	//creating context to connect to mongo
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
