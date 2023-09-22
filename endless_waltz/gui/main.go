@@ -5,7 +5,13 @@ import (
     "fyne.io/fyne/v2/app"
     "fyne.io/fyne/v2/container"
     "fyne.io/fyne/v2/widget"
+    "fyne.io/fyne/v2/layout"
 )
+
+//different layouts avail
+//https://developer.fyne.io/explore/layouts.html#border
+
+//its starting to really look like I want a custom layout for my GUI. I'll sketch it out in my notes for TN
 
 func main() {
     myApp := app.New()
@@ -16,8 +22,11 @@ func main() {
     scrollContainer := container.NewVScroll(chatContainer)
 
     // Create an entry field for typing messages
-    messageEntry := widget.NewEntry()
+    messageEntry := widget.NewMultiLineEntry()
     messageEntry.SetPlaceHolder("Type your message...")
+
+    //add to above entry field this enter feature
+    //https://developer.fyne.io/explore/layouts.html#border
 
     sendButton := widget.NewButton("Send", func() {
         // Get the message text from the entry field
@@ -32,15 +41,18 @@ func main() {
         }
     })
 
+    //layout.NewBorderLayout(toolbarLines, nil, middleLines, nil)
+
     // Create a container for the message entry and send button
-    messageContainer := container.NewVBox(messageEntry)
-    messageContainer.Resize(fyne.NewSize(300, 350))
-    sendContainer := container.NewHBox(sendButton)
-    inputContainer := container.NewHBox(messageContainer, sendContainer)
-    inputContainer.Resize(fyne.NewSize(300,400))
+    messageContainer := container.New(layout.NewBorderLayout(nil, nil, nil, nil), messageEntry)
+    sendContainer := container.New(layout.NewVBoxLayout(), sendButton)
+
+    //Will eventually need an online container in Border lefthand orientation
 
     // Create a vertical split container for chat and input
-    splitContainer := container.NewVSplit(scrollContainer, inputContainer)
+    splitContainer := container.NewVSplit(messageContainer, sendContainer)
+    //Create another vertical split for chat and input
+    splitContainer = container.NewVSplit(scrollContainer, splitContainer)
 
     myWindow.SetContent(splitContainer)
     myWindow.Resize(fyne.NewSize(600,800))
