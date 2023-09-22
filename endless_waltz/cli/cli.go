@@ -12,7 +12,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"os/signal"
 )
 
@@ -52,18 +51,10 @@ func listen(conn *websocket.Conn, logger *logrus.Logger, configuration Configura
 
 func main() {
 	//configuration stuff
-	viper.SetConfigName("config")
-	viper.AddConfigPath(".")
-	viper.SetConfigType("yml")
-	var configuration Configurations
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Printf("Error reading config file, %s", err)
-	}
-	err := viper.Unmarshal(&configuration)
+	configuration, err := fetchConfig()
 	if err != nil {
-		fmt.Printf("Unable to decode into struct, %v", err)
+		return
 	}
-
 	logger := createLogger(configuration.Server.LogLevel, "normal")
 
 	// Reading variables using the model
@@ -75,30 +66,10 @@ func main() {
 	logger.Debug("user is\t\t", configuration.Server.User)
 	logger.Debug("Passwd is\t\t", configuration.Server.Passwd)
 
-	//check and make sure inserted API key works
-	//Random and Exchange will use same mongo, so the API key will be valid for both
+	//have the user login every time -- it's no longer APIKeyAuth
 	logger.Debug("Checking creds...")
-	health_url := fmt.Sprintf("%s%s", strings.Split(configuration.Server.RandomURL, "/otp")[0], "/healthcheck")
-	req, err := http.NewRequest("GET", health_url, nil)
-	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Set("User", configuration.Server.User)
-	req.Header.Set("Passwd", configuration.Server.Passwd)
-	client := http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Could not connect to configured randomAPI ", configuration.Server.RandomURL)
-		fmt.Println("Quietly exiting now. Please reconfigure.")
-		return
-	}
-	if resp == nil {
-		fmt.Println("Could not connect to configured randomAPI ", configuration.Server.RandomURL)
-		fmt.Println("Quietly exiting now. Please reconfigure.")
-		return
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("creds entered are invalid for randomAPI")
-		fmt.Printf("Request failed with status: %s\n", resp.Status)
+	ok := checkCreds(configuration)
+	if !ok {
 		return
 	}
 	logger.Debug("creds randomAPI passed check!")

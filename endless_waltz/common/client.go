@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"net/http"
+	"os"
+	"os/user"
+	"strings"
 	"time"
 )
 
@@ -41,7 +45,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	}
 
 	if targetUser == user {
-	        fmt.Println("Sending messages to yourself is not allowed")
+		fmt.Println("Sending messages to yourself is not allowed")
 		return
 	}
 
@@ -175,4 +179,93 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 
 	conn.Close()
 
+}
+
+func fetchConfig() (Configurations, error) {
+	var configuration Configurations
+	//contents of temp config file
+	contents := "server:\n  key: \"./certs/server.key\"\n  cert: \"./certs/server.crt\"\n  randomURL: \"http://localhost:8090/api/otp\"\n  exchangeURL: \"ws://localhost:8081/ws\"\n  logLevel: \"Debug\"\n  user: \"KayleighToo\"\n  Passwd: \"arandomnumber\""
+
+	currentUser, err := user.Current()
+	if err != nil {
+		fmt.Println("Unable to get current user: ", err)
+		return configuration, err
+	}
+
+	// Get the user's home directory
+	configDir := fmt.Sprintf("%s/.ew", currentUser.HomeDir)
+	configFile := fmt.Sprintf("%s/config.yml", configDir)
+
+	//check if directory exists and create if not
+	if _, err := os.Stat(configDir); os.IsNotExist(err) {
+		fmt.Println("no config dir found, creating...")
+		if err := os.Mkdir(configDir, os.ModePerm); err != nil {
+			fmt.Println("Unable to create config home dir: ", err)
+			return configuration, err
+		}
+	}
+
+	//check if actual config file exists, create if not
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
+		fmt.Println("no config file found, creating...")
+		file, err := os.Create(configFile)
+		if err != nil {
+			fmt.Println("Unable to create config file", err)
+			return configuration, err
+		}
+
+		// Write contents to the file
+		_, err = file.WriteString(contents)
+		if err != nil {
+			fmt.Println("Unable to write temp contents to config file", err)
+			return configuration, err
+		}
+		file.Close()
+	}
+
+	viper.SetConfigName("config")
+	viper.AddConfigPath("$HOME/.ew/")
+	viper.SetConfigType("yml")
+
+	if err := viper.ReadInConfig(); err != nil {
+		fmt.Println("Viper:Error reading config file: ", err)
+		return configuration, err
+	}
+	err = viper.Unmarshal(&configuration)
+	if err != nil {
+		fmt.Println("Viper:Unable to decode into struct: ", err)
+		return configuration, err
+	}
+
+	return configuration, nil
+}
+
+func checkCreds(configuration Configurations) bool {
+	//check and make sure inserted creds
+	//Random and Exchange will use same mongo, so the creds will be valid for both
+
+	health_url := fmt.Sprintf("%s%s", strings.Split(configuration.Server.RandomURL, "/otp")[0], "/healthcheck")
+	req, err := http.NewRequest("GET", health_url, nil)
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Set("User", configuration.Server.User)
+	req.Header.Set("Passwd", configuration.Server.Passwd)
+	client := http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Println("Could not connect to configured randomAPI ", configuration.Server.RandomURL)
+		fmt.Println("Quietly exiting now. Please reconfigure.")
+		return false
+	}
+	if resp == nil {
+		fmt.Println("Could not connect to configured randomAPI ", configuration.Server.RandomURL)
+		fmt.Println("Quietly exiting now. Please reconfigure.")
+		return false
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		fmt.Println("creds entered are invalid for randomAPI")
+		fmt.Printf("Request failed with status: %s\n", resp.Status)
+		return false
+	}
+	return true
 }
