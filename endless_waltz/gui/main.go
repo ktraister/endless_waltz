@@ -25,7 +25,8 @@ func main() {
     messageEntry := widget.NewMultiLineEntry()
     messageEntry.SetPlaceHolder("Type your message...")
 
-    onlineUsers := container.NewHBox()
+    text := widget.NewLabel("Online Users")
+    onlineUsers := container.NewHBox(text)
 
     //add to above entry field this enter feature
     //https://developer.fyne.io/explore/layouts.html#border
@@ -63,8 +64,6 @@ func main() {
     sendContainer := container.New(layout.NewVBoxLayout(), sendButton)
     clearContainer := container.New(layout.NewVBoxLayout(), clearButton)
     onlineContainer := container.New(layout.NewHBoxLayout(), onlineUsers)
-
-    //Will eventually need an online container in Border lefthand orientation
 
     // Create a vertical split container for chat and input
     splitContainer := container.NewVSplit(messageContainer, sendContainer)
