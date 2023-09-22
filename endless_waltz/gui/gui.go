@@ -8,13 +8,14 @@ import (
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"image/color"
-	//"fyne.io/fyne/v2/dialog"
+	"fyne.io/fyne/v2/dialog"
 
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
-	"time"
+	//"time"
+	"fmt"
 )
 
 //this is how you show dialog box
@@ -106,6 +107,25 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 
 func main() {
         //add "starting up" message while loading
+	login := app.NewWithID("login")
+	w := login.NewWindow("EW Messenger Login")
+	username := widget.NewEntry()
+	password := widget.NewPasswordEntry()
+        w.SetContent( widget.NewButton("Login", func() {
+			content := widget.NewForm(widget.NewFormItem("Username", username),
+				widget.NewFormItem("Password", password))
+
+			dialog.ShowCustomConfirm("Login...", "Log In", "Cancel", content, func(b bool) {
+				if !b {
+					return
+				}
+
+				fmt.Println("Please Authenticate", username.Text, password.Text)
+                                login.Quit()
+			}, w)}))
+	w.ShowAndRun()
+
+	fmt.Println(username.Text)
 
 	//configuration stuff
 	configuration, err := fetchConfig()
@@ -148,7 +168,7 @@ func main() {
 	defer conn.Close()
 
 	myApp := app.NewWithID("Main")
-	myApp.Preferences().SetString("AppTimeout", string(time.Minute))
+	//myApp.Preferences().SetString("AppTimeout", string(time.Minute))
 	myWindow := myApp.NewWindow("EW Messenger")
 	configureGUI(myWindow, logger, configuration, conn)
 	myWindow.ShowAndRun()
