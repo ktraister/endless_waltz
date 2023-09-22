@@ -32,7 +32,7 @@ jobs:
         run: | 
           export GOOS=linux
           export GOARCH=amd64
-          export CGO_ENABLED=0
+          #export CGO_ENABLED=0
           cd ./endless_waltz/gui
           go clean -modcache
           go test -v
