@@ -73,15 +73,16 @@ func main() {
 	logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
 	logger.Debug("exchangeURL is\t", configuration.Server.ExchangeURL)
 	logger.Debug("user is\t\t", configuration.Server.User)
-	logger.Debug("API_Key is\t\t", configuration.Server.API_Key)
+	logger.Debug("Passwd is\t\t", configuration.Server.Passwd)
 
 	//check and make sure inserted API key works
 	//Random and Exchange will use same mongo, so the API key will be valid for both
-	logger.Debug("Checking api key...")
+	logger.Debug("Checking creds...")
 	health_url := fmt.Sprintf("%s%s", strings.Split(configuration.Server.RandomURL, "/otp")[0], "/healthcheck")
 	req, err := http.NewRequest("GET", health_url, nil)
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Set("API-Key", configuration.Server.API_Key)
+	req.Header.Set("User", configuration.Server.User)
+	req.Header.Set("Passwd", configuration.Server.Passwd)
 	client := http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -96,11 +97,11 @@ func main() {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		fmt.Println("API Key entered is invalid for randomAPI")
+		fmt.Println("creds entered are invalid for randomAPI")
 		fmt.Printf("Request failed with status: %s\n", resp.Status)
 		return
 	}
-	logger.Debug("API Key passed check!")
+	logger.Debug("creds randomAPI passed check!")
 
 	//do some checks and connect to exchange server here
 	// Parse the WebSocket URL
@@ -110,11 +111,13 @@ func main() {
 	}
 
 	// Establish a WebSocket connection
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Passwd": []string{configuration.Server.Passwd}, "User": []string{configuration.Server.User}})
 	if err != nil {
-		logger.Fatal("Could not establish WebSocket connection with", u.String())
+		logger.Fatal("Could not establish WebSocket connection with ", u.String())
 		return
 	}
+	logger.Debug("Connected to exchange server!")
+
 	defer conn.Close()
 
 	//trap control-c

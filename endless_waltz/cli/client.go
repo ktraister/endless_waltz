@@ -25,8 +25,9 @@ type Random_Req struct {
 
 var dat map[string]interface{}
 
-func ew_client(logger *logrus.Logger, configuration Configurations, conn *websocket.Conn, message string, user string) {
-	api_key := configuration.Server.API_Key
+func ew_client(logger *logrus.Logger, configuration Configurations, conn *websocket.Conn, message string, targetUser string) {
+	user := configuration.Server.User
+	passwd := configuration.Server.Passwd
 	random := configuration.Server.RandomURL
 
 	if len(message) > 4096 {
@@ -34,8 +35,8 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 		return
 	}
 
-	if api_key == "" {
-		logger.Fatal("authorized API keys are required")
+	if passwd == "" || user == "" {
+		logger.Fatal("authorized Creds are required")
 		return
 	}
 
@@ -44,7 +45,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	helo := &Message{Type: "helo",
 		User: configuration.Server.User,
 		From: configuration.Server.User,
-		To:   user,
+		To:   targetUser,
 		Msg:  "HELO",
 	}
 	b, err := json.Marshal(helo)
@@ -76,7 +77,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 		}
 
 		if dat["msg"] == "HELO" &&
-			dat["from"] == user {
+			dat["from"] == targetUser {
 			logger.Debug("Client received HELO from ", dat["from"].(string))
 			heloFlag = 1
 			break
@@ -84,12 +85,12 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	}
 
 	if heloFlag == 0 {
-		logger.Error(fmt.Sprintf("Didn't receive HELO from %s in time, try again later", user))
+		logger.Error(fmt.Sprintf("Didn't receive HELO from %s in time, try again later", targetUser))
 		return
 	}
 
 	//perform DH handshake with the other user
-	private_key, err := dh_handshake(conn, logger, configuration, "client", user)
+	private_key, err := dh_handshake(conn, logger, configuration, "client", targetUser)
 	if err != nil {
 		logger.Fatal("Private Key Error!")
 		return
@@ -124,7 +125,8 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	}
 	req, err := http.NewRequest("POST", random, bytes.NewBuffer(rapi_data))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Set("API-Key", api_key)
+	req.Header.Set("User", configuration.Server.User)
+	req.Header.Set("Passwd", passwd)
 	client := &http.Client{}
 	resp, error := client.Do(req)
 	if error != nil {
@@ -141,7 +143,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	outgoing := &Message{Type: "cipher",
 		User: configuration.Server.User,
 		From: configuration.Server.User,
-		To:   user,
+		To:   targetUser,
 		Msg:  cipherText,
 	}
 	b, err = json.Marshal(outgoing)

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -35,21 +35,6 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
-// Custom middleware function to inject a logger into the request context
-func LoggerMiddleware(logger *logrus.Logger) mux.MiddlewareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Inject the logger into the request context
-			ctx := r.Context()
-			ctx = context.WithValue(ctx, "logger", logger)
-			r = r.WithContext(ctx)
-
-			// Call the next middleware or handler in the chain
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
 func serveWs(w http.ResponseWriter, r *http.Request) {
 	logger, ok := r.Context().Value("logger").(*logrus.Logger)
 	if !ok {
@@ -58,26 +43,42 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ok = checkAuth(r.Header.Get("User"), r.Header.Get("Passwd"), logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	// Ensure client not already connected!
+	// Bad things happen :)
+	for c, _ := range clients {
+		if c.Username == r.Header.Get("User") {
+			logger.Warn(fmt.Sprintf("Client %s is already connected, bouncing", c.Username))
+			return
+		}
+	}
+
 	// upgrade this connection to a WebSocket
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		logger.Error(err)
 	}
 
-	client := &Client{Conn: ws}
 	// register client
+	client := &Client{Conn: ws}
 	clients[client] = true
 	logger.Debug("clients", len(clients), clients, ws.RemoteAddr())
 
 	// listen indefinitely for new messages coming
 	// through on our WebSocket connection
-	receiver(client, logger)
+	receiver(r.Header.Get("User"), client, logger)
 
 	logger.Info("exiting", ws.RemoteAddr().String())
 	delete(clients, client)
 }
 
-func receiver(client *Client, logger *logrus.Logger) {
+func receiver(user string, client *Client, logger *logrus.Logger) {
 	for {
 		// read in a message
 		// readMessage returns messageType, message, err

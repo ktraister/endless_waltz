@@ -11,7 +11,7 @@ services:
       MongoURI: mongodb://mongo:27017
       MongoUser: adminuser
       MongoPass: password123
-      LogLevel: Info
+      LogLevel: Debug
         
   exchange:
     build:
@@ -19,17 +19,10 @@ services:
     ports:
       - "8081:8081"
     environment:
+      MongoURI: mongodb://mongo:27017
+      MongoUser: adminuser
+      MongoPass: password123
       LogLevel: Info
-
-  mongo:
-    image: mongo
-    restart: always
-    ports:
-      - "27017:27017"
-    environment:
-        # provide your credentials here
-        - MONGO_INITDB_ROOT_USERNAME=adminuser
-        - MONGO_INITDB_ROOT_PASSWORD=password123
 
   reaper:
     depends_on:
@@ -42,3 +35,14 @@ services:
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
+
+  mongo:
+    image: mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+        # provide your credentials here
+        - MONGO_INITDB_ROOT_USERNAME=adminuser
+        - MONGO_INITDB_ROOT_PASSWORD=password123
+

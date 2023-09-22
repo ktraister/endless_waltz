@@ -37,55 +37,6 @@ type Error_Resp struct {
 	Error string
 }
 
-func checkAPIKey(remote_key string, logger *logrus.Logger) bool {
-	//creating context to connect to mongo
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	credential := options.Credential{
-		Username: MongoUser,
-		Password: MongoPass,
-	}
-	//actually connect to mongo
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
-	if err != nil {
-		logger.Error(err)
-		return false
-	}
-
-	auth_db := client.Database("auth").Collection("keys")
-
-	// Check if the item exists in the collection
-	logger.Debug(fmt.Sprintf("checking remote key %s", remote_key))
-	filter := bson.M{"API-Key": remote_key}
-	var result bson.M
-	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
-	if err == nil {
-		logger.Info("Found API key in db, authorized")
-		return true
-	} else if err == mongo.ErrNoDocuments {
-		logger.Warn("No API key found, unauthorized")
-		return false
-	} else {
-		logger.Error(err)
-		return false
-	}
-}
-
-// Custom middleware function to inject a logger into the request context
-func LoggerMiddleware(logger *logrus.Logger) mux.MiddlewareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Inject the logger into the request context
-			ctx := r.Context()
-			ctx = context.WithValue(ctx, "logger", logger)
-			r = r.WithContext(ctx)
-
-			// Call the next middleware or handler in the chain
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
 func health_handler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
@@ -94,7 +45,7 @@ func health_handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAPIKey(req.Header.Get("API-Key"), logger)
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -114,7 +65,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		fmt.Println("ERROR: Could not configure logger!")
 		return
 	}
-	ok = checkAPIKey(req.Header.Get("API-Key"), logger)
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")

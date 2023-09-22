@@ -82,7 +82,8 @@ func handleConnection(conn *websocket.Conn, logger *logrus.Logger, configuration
 	//reach out and get random pad and UUID
 	req, err := http.NewRequest("POST", configuration.Server.RandomURL, bytes.NewBuffer(data))
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Set("API-Key", configuration.Server.API_Key)
+	req.Header.Set("User", configuration.Server.User)
+	req.Header.Set("Passwd", configuration.Server.Passwd)
 	client := &http.Client{}
 	resp, error := client.Do(req)
 	if error != nil {

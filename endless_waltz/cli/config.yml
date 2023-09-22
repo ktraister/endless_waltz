@@ -4,5 +4,5 @@ server:
   randomURL: "http://localhost:8090/api/otp"
   exchangeURL: "ws://localhost:8081/ws"
   logLevel: "Debug"
-  user: "Kayleigh"
-  API_Key: "arandomnumber"
+  user: "KayleighToo"
+  Passwd: "arandomnumber"
