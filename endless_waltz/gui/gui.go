@@ -9,6 +9,11 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"image/color"
 	//"fyne.io/fyne/v2/dialog"
+
+	"net/http"
+	"net/url"
+	"github.com/gorilla/websocket"
+	"github.com/sirupsen/logrus"
 )
 
 //this is how you show dialog box
@@ -17,7 +22,7 @@ import (
 //different layouts avail
 //https://developer.fyne.io/explore/layouts.html#border
 
-func configureGUI(myWindow fyne.Window) {
+func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Configurations, conn *websocket.Conn) {
 	// Create a scrollable container for chat messages
 	chatContainer := container.NewVBox()
 	scrollContainer := container.NewVScroll(chatContainer)
@@ -47,6 +52,10 @@ func configureGUI(myWindow fyne.Window) {
 		// Get the message text from the entry field
 		message := messageEntry.Text
 		if message != "" {
+		        //ohh shit we have to configure the user too
+		        //send the message thru the EW circut
+                        go ew_client(logger, configuration, conn, message, "Kayleigh")
+
 			// Create a label widget for the message and add it to the chat container
 			messageLabel := widget.NewLabel("You: " + message)
 			chatContainer.Add(messageLabel)
@@ -85,9 +94,48 @@ func configureGUI(myWindow fyne.Window) {
 }
 
 func main() {
+        //configuration stuff
+        configuration, err := fetchConfig()
+        if err != nil {
+                return
+        }  
+        logger := createLogger(configuration.Server.LogLevel, "normal")
+           
+        // Reading variables using the model
+        logger.Debug("Reading variables using the model..")
+        logger.Debug("keypath is\t\t", configuration.Server.Key)
+        logger.Debug("crtpath is\t\t", configuration.Server.Cert)
+        logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
+        logger.Debug("exchangeURL is\t", configuration.Server.ExchangeURL)
+        logger.Debug("user is\t\t", configuration.Server.User)
+        logger.Debug("Passwd is\t\t", configuration.Server.Passwd)
+           
+        //have the user login every time -- it's no longer APIKeyAuth
+        logger.Debug("Checking creds...")
+        ok := checkCreds(configuration)
+        if !ok {
+                return
+        }  
+        logger.Debug("creds passed check!")
+
+        // Parse the WebSocket URL
+        u, err := url.Parse(configuration.Server.ExchangeURL)
+        if err != nil {
+                logger.Fatal(err)
+        }  
+
+        // Establish a WebSocket connection
+        conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Passwd": []string{configuration.Server.Passwd}, "User": []string{configuration.Server.User}})                                                                                                                 
+        if err != nil {
+                logger.Fatal("Could not establish WebSocket connection with ", u.String())
+                return
+        }  
+        logger.Debug("Connected to exchange server!")
+           
+        defer conn.Close()
+
 	myApp := app.New()
 	myWindow := myApp.NewWindow("EW Messenger")
-	configureGUI(myWindow)
-
+	configureGUI(myWindow, logger, configuration, conn)
 	myWindow.ShowAndRun()
 }

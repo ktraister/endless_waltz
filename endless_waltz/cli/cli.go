@@ -72,7 +72,7 @@ func main() {
 	if !ok {
 		return
 	}
-	logger.Debug("creds randomAPI passed check!")
+	logger.Debug("creds passed check!")
 
 	//do some checks and connect to exchange server here
 	// Parse the WebSocket URL

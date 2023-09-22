@@ -73,7 +73,9 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	heloFlag := 0
 	//HELO should be received within 5 seconds to proceed OR exit
 	for start := time.Now(); time.Since(start) < time.Second*5; {
+	        logger.Debug("looping in helo check...")
 		_, incoming, err := conn.ReadMessage()
+		fmt.Println("Read message!")
 		if err != nil {
 			logger.Error("Client:Error reading message:", err)
 			return
