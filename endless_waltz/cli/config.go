@@ -11,7 +11,7 @@ type ServerConfigurations struct {
 	Cert        string
 	RandomURL   string
 	LogLevel    string
-	API_Key     string
+	Passwd      string
 	ExchangeURL string
 	User        string
 }
