@@ -30,8 +30,8 @@ jobs:
 
       - name: Go Build and Test
         run: | 
-          export GOOS=linux
-          export GOARCH=amd64
+          #export GOOS=linux
+          #export GOARCH=amd64
           #export CGO_ENABLED=0
           cd ./endless_waltz/gui
           go clean -modcache
