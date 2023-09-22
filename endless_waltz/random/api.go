@@ -18,10 +18,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var MongoURI string
-var MongoUser string
-var MongoPass string
-
 var jsonMap map[string]interface{} // XXX is this data in a well defined JSON structure? does it change often?
 
 type Server_Resp struct {
