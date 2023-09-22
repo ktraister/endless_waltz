@@ -40,6 +40,11 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 		return
 	}
 
+	if targetUser == user {
+	        fmt.Println("Sending messages to yourself is not allowed")
+		return
+	}
+
 	//send HELO to target user
 	//n, err := conn.Write([]byte("HELO\n"))
 	helo := &Message{Type: "helo",

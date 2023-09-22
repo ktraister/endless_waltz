@@ -114,6 +114,10 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 func broadcaster(logger *logrus.Logger) {
 	for {
 		message := <-broadcast
+		//don't use my relays to send shit to yourself
+		if message.To == message.From {
+		    continue
+		}
 		for client := range clients {
 			// send message only to involved users
 			if client.Username == message.To {
