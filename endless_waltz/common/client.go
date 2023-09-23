@@ -52,7 +52,6 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	}
 
 	//send HELO to target user
-	//n, err := conn.Write([]byte("HELO\n"))
 	helo := &Message{Type: "helo",
 		User: configuration.Server.User,
 		From: configuration.Server.User,
@@ -88,6 +87,12 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 		logger.Error("Client:Error unmarshalling json:", err)
 		return false
 	}
+	
+	if dat["msg"] == "User not found" {
+		logger.Error("Exchange couldn't route a message to ", targetUser)
+		return false
+	}
+
 
 	if dat["msg"] == "HELO" &&
 		dat["from"] == targetUser {

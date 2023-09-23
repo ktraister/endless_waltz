@@ -116,6 +116,7 @@ func broadcaster(logger *logrus.Logger) {
 			continue
 		}
 		sendFlag := 0
+		clientStr := ""
 		for client := range clients {
 			// send message only to involved users
 			if client.Username == message.To {
@@ -128,8 +129,25 @@ func broadcaster(logger *logrus.Logger) {
 				}
 				sendFlag = 1
 			}
+			clientStr = clientStr + "," + client.Username
 		}
-		if sendFlag == 0 {logger.Info(fmt.Sprintf("Message '%s' was blackholed because '%s' was not matched in '%s'", message, message.To, clients))}
+		if sendFlag == 0 {
+			logger.Info(fmt.Sprintf("Message '%s' was blackholed because '%s' was not matched in '%s'", message, message.To, clientStr))
+			//let the client know here
+			for client := range clients {
+				// send message only to involved users
+				if client.Username == message.From {
+					logger.Info(fmt.Sprintf("Sending blackhole message to client '%s'", client.Username))
+					message = Message{From: "SYSTEM", To: message.From, Msg: "User not found"}
+					err := client.Conn.WriteJSON(message)
+					if err != nil {
+						logger.Error("Websocket error: ", err)
+						client.Conn.Close()
+						delete(clients, client)
+					}
+				}
+			}
+		}
 	}
 }
 
