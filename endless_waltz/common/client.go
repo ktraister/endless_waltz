@@ -34,6 +34,8 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	passwd := configuration.Server.Passwd
 	random := configuration.Server.RandomURL
 
+	logger.Debug(fmt.Sprintf("Sending msg %s from user %s to user %s!!", message, user, targetUser))
+
 	if len(message) > 4096 {
 		logger.Fatal("We dont support this yet!")
 		return false
@@ -57,6 +59,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 		To:   targetUser,
 		Msg:  "HELO",
 	}
+	logger.Debug(helo)
 	b, err := json.Marshal(helo)
 	if err != nil {
 		fmt.Println(err)
@@ -72,13 +75,13 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 
 	heloFlag := 0
 	//HELO should be received within 5 seconds to proceed OR exit
-	conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	//conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	_, incoming, err := conn.ReadMessage()
-	logger.Debug("Client:Read init HELO response")
 	if err != nil {
 		logger.Error("Client:Error reading message:", err)
 		return false
 	}
+	logger.Debug("Client:Read init HELO response")
 
 	err = json.Unmarshal([]byte(incoming), &dat)
 	if err != nil {

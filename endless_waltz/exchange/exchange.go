@@ -94,13 +94,12 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 			continue
 		}
 
-		logger.Info("host", client.Conn.RemoteAddr())
 		if m.Type == "startup" {
 			// do mapping on startup
 			client.Username = m.User
-			logger.Info("client successfully mapped", &client, client, client.Username)
+			logger.Info("client successfully mapped", &client, client)
 		} else {
-			logger.Info("received message", m.Type, m.Msg)
+			logger.Info("received message, broadcasting: ", m)
 			//broadcast <- &c
 			broadcast <- *m
 
@@ -113,19 +112,24 @@ func broadcaster(logger *logrus.Logger) {
 		message := <-broadcast
 		//don't use my relays to send shit to yourself
 		if message.To == message.From {
-		    continue
+			logger.Info(fmt.Sprintf("Possible abuse from %s: refusing to self send message on relay", message.To))
+			continue
 		}
+		sendFlag := 0
 		for client := range clients {
 			// send message only to involved users
 			if client.Username == message.To {
+				logger.Info(fmt.Sprintf("Sending message '%s' to client '%s'", message, client.Username))
 				err := client.Conn.WriteJSON(message)
 				if err != nil {
 					logger.Error("Websocket error: ", err)
 					client.Conn.Close()
 					delete(clients, client)
 				}
+				sendFlag = 1
 			}
 		}
+		if sendFlag == 0 {logger.Info(fmt.Sprintf("Message '%s' was blackholed because '%s' was not matched in '%s'", message, message.To, clients))}
 	}
 }
 

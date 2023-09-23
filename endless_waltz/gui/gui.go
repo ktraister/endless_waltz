@@ -12,9 +12,11 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"time"
+	"fmt"
 )
 
 //this is how you show dialog box
@@ -146,6 +148,18 @@ func main() {
 	logger.Debug("Connected to exchange server!")
 
 	defer conn.Close()
+
+        //connect to exchange with our username for mapping
+        message := &Message{Type: "startup", User: configuration.Server.User}
+        b, err := json.Marshal(message)
+        if err != nil {
+                fmt.Println(err)
+                return
+        }  
+        err = conn.WriteMessage(websocket.TextMessage, b)
+        if err != nil {
+                logger.Fatal(err)
+        } 
 
 	myApp := app.NewWithID("Main")
 	myApp.Preferences().SetString("AppTimeout", string(time.Minute))
