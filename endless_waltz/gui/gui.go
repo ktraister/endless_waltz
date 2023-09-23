@@ -10,13 +10,14 @@ import (
 	"image/color"
 	//"fyne.io/fyne/v2/dialog"
 
+	"strings"
+	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"time"
-	"fmt"
 )
 
 //this is how you show dialog box
@@ -28,6 +29,23 @@ import (
 var users = []string{"Kayleigh", "KayleighToo"}
 var targetUser = ""
 
+func listen(conn *websocket.Conn, logger *logrus.Logger, configuration Configurations) {
+	for {
+		//here's our server function, but it needs to write to gui
+		handleConnection(conn, logger, configuration)
+	}
+}
+
+func post(container *fyne.Container) {
+    for {
+	   message := <-incomingMsgChan
+           msg := strings.Split(message, ":")
+  	   messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", msg[0], msg[1]))
+           container.Add(messageLabel)
+	   fmt.Println("Received message ", message)
+        }
+}
+
 func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Configurations, conn *websocket.Conn) {
 	// Create a scrollable container for chat messages
 	chatContainer := container.NewVBox()
@@ -37,6 +55,10 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	// Create an entry field for typing messages
 	messageEntry := widget.NewMultiLineEntry()
 	messageEntry.SetPlaceHolder("Type your message...")
+
+	//listen for incoming messages here
+	go listen(conn, logger, configuration)
+        go post(chatContainer)
 
 	// TODO: add a box at top/bottom left for currentUser
 
@@ -51,43 +73,43 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	sideLine2 := canvas.NewLine(color.RGBA{0, 0, 0, 255})
 	sideLine2.StrokeWidth = 5
 
-        // add onlineUsers panel to show and select users
+	// add onlineUsers panel to show and select users
 	onlineUsers := container.NewHBox(text)
 	onlineUsers = container.NewBorder(topLine, bLine, nil, sideLine2, onlineUsers)
 	onlineUsers = container.NewBorder(onlineUsers, nil, nil, sideLine)
 
 	//add a goroutine here to read ExchangeAPI for live users and populate with labels
-        
+
 	/*
-	//actually add the users to the panel
-	onlineUsers.Add(widget.NewLabel("TestUser"))
+		//actually add the users to the panel
+		onlineUsers.Add(widget.NewLabel("TestUser"))
 	*/
 
 	//below is code from the example fyne page
 	//use it to expand this functionality
-        userList := widget.NewList(
-	        //length
-                func() int {
+	userList := widget.NewList(
+		//length
+		func() int {
 			return len(users)
-                },  
+		},
 		//create Item
-                func() fyne.CanvasObject {
-                        label := widget.NewLabel("Text")
-                        return container.NewBorder(nil, nil, nil, nil, label)
-                },  
+		func() fyne.CanvasObject {
+			label := widget.NewLabel("Text")
+			return container.NewBorder(nil, nil, nil, nil, label)
+		},
 		//updateItem
-                func(id widget.ListItemID, obj fyne.CanvasObject) {
-                        text := obj.(*fyne.Container).Objects[0].(*widget.Label)
-                        text.SetText(users[id])
-                })
-        userList.OnSelected = func(id widget.ListItemID) {
-	    fmt.Println(users[id])
-	    targetUser = users[id]
-	    //clear the chat when switching users
-            chatContainer.Objects = chatContainer.Objects[:0]
- 	    chatContainer.Refresh()
-	    messageEntry.SetText("")
-        } 
+		func(id widget.ListItemID, obj fyne.CanvasObject) {
+			text := obj.(*fyne.Container).Objects[0].(*widget.Label)
+			text.SetText(users[id])
+		})
+	userList.OnSelected = func(id widget.ListItemID) {
+		fmt.Println(users[id])
+		targetUser = users[id]
+		//clear the chat when switching users
+		chatContainer.Objects = chatContainer.Objects[:0]
+		chatContainer.Refresh()
+		messageEntry.SetText("")
+	}
 
 	//actually add the users to the panel
 	onlineUsers.Add(userList)
@@ -121,7 +143,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	sendButton.Importance = widget.HighImportance
 
 	clearButton := widget.NewButton("Clear", func() {
-	        //clear chatContainer and messageEntry
+		//clear chatContainer and messageEntry
 		chatContainer.Objects = chatContainer.Objects[:0]
 		chatContainer.Refresh()
 		messageEntry.SetText("")
@@ -144,7 +166,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 }
 
 func main() {
-        //add "starting up" message while loading
+	//add "starting up" message while loading
 
 	//configuration stuff
 	configuration, err := fetchConfig()
@@ -186,17 +208,17 @@ func main() {
 
 	defer conn.Close()
 
-        //connect to exchange with our username for mapping
-        message := &Message{Type: "startup", User: configuration.Server.User}
-        b, err := json.Marshal(message)
-        if err != nil {
-                fmt.Println(err)
-                return
-        }  
-        err = conn.WriteMessage(websocket.TextMessage, b)
-        if err != nil {
-                logger.Fatal(err)
-        } 
+	//connect to exchange with our username for mapping
+	message := &Message{Type: "startup", User: configuration.Server.User}
+	b, err := json.Marshal(message)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	err = conn.WriteMessage(websocket.TextMessage, b)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
 	myApp := app.NewWithID("Main")
 	myApp.Preferences().SetString("AppTimeout", string(time.Minute))

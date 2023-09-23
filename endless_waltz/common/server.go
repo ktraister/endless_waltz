@@ -24,6 +24,8 @@ type Client_Resp struct {
 	UUID string
 }
 
+var incomingMsgChan = make(chan string)
+
 // Change handleConnection to act as the "server side" in this transaction
 // we'll pass around the websocket to accomplish this
 func handleConnection(conn *websocket.Conn, logger *logrus.Logger, configuration Configurations) {
@@ -149,11 +151,6 @@ func handleConnection(conn *websocket.Conn, logger *logrus.Logger, configuration
 		}
 	*/
 
-	fmt.Println()
-	fmt.Println()
-	fmt.Println(fmt.Sprintf("Receiving msg from user %s ...", dat["from"]))
-	fmt.Println(pad_decrypt(dat["msg"].(string), pad, private_key))
-	fmt.Println()
-	fmt.Print("EW_cli > ")
-
+	incomingMsgStr := fmt.Sprintf("%s:%s", dat["from"], pad_decrypt(dat["msg"].(string), pad, private_key))
+	incomingMsgChan <- incomingMsgStr
 }
