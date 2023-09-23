@@ -221,7 +221,7 @@ func main() {
 	}
 
 	myApp := app.NewWithID("Main")
-	myApp.Preferences().SetString("AppTimeout", string(time.Minute))
+	myApp.Preferences().SetString("AppTimeout", fmt.Sprint(time.Minute))
 	myWindow := myApp.NewWindow("EW Messenger")
 	configureGUI(myWindow, logger, configuration, conn)
 	myWindow.ShowAndRun()
