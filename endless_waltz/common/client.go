@@ -13,6 +13,12 @@ import (
 	"time"
 )
 
+type Post struct {
+        User string `json:"user"`
+        Msg  string `json:"msg"`
+        ok   bool   `json:"ok"`
+}
+
 type Message struct {
 	Type string `json:"type"`
 	User string `json:"user,omitempty"`

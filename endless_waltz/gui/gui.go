@@ -21,12 +21,6 @@ import (
 //different layouts avail
 //https://developer.fyne.io/explore/layouts.html#border
 
-type Post struct {
-        User string `json:"user"`
-        Msg  string `json:"msg"`
-	ok   bool   `json:"ok"`
-}
-
 var users = []string{"Kayleigh", "KayleighToo"}
 var targetUser = ""
 
