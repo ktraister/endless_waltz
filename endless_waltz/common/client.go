@@ -29,7 +29,7 @@ type Random_Req struct {
 var dat map[string]interface{}
 
 func ew_client(logger *logrus.Logger, configuration Configurations, cm *ConnectionManager, message string, targetUser string) bool {
-	user := configuration.Server.User
+	user := fmt.Sprintf("%s_%s", configuration.Server.User, "client")
 	passwd := configuration.Server.Passwd
 	random := configuration.Server.RandomURL
 
@@ -53,7 +53,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 	//send HELO to target user
 	helo := &Message{Type: "helo",
 		User: configuration.Server.User,
-		From: configuration.Server.User,
+		From: user,
 		To:   targetUser,
 		Msg:  "HELO",
 	}
@@ -82,6 +82,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 	logger.Debug("Client:Read init HELO response")
 
 	err = json.Unmarshal([]byte(incoming), &dat)
+	fmt.Println(dat)
 	if err != nil {
 		logger.Error("Client:Error unmarshalling json:", err)
 		return false
@@ -159,7 +160,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 	//send the ciphertext to the other user throught the websocket
 	outgoing := &Message{Type: "cipher",
 		User: configuration.Server.User,
-		From: configuration.Server.User,
+		From: user,
 		To:   targetUser,
 		Msg:  cipherText,
 	}

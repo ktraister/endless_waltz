@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -40,7 +41,9 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok = checkAuth(r.Header.Get("User"), r.Header.Get("Passwd"), logger)
+	user := strings.Split(r.Header.Get("User"), "_")[0]
+
+	ok = checkAuth(user, r.Header.Get("Passwd"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")

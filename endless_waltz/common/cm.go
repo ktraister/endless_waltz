@@ -70,8 +70,6 @@ func exConnect(logger *logrus.Logger, configuration Configurations, ctype string
 	}
 	logger.Debug("Connected to exchange server!")
 
-	defer conn.Close()
-
         connectionManager := &ConnectionManager{
                 conn: conn, 
         }

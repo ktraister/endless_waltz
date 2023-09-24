@@ -29,6 +29,7 @@ var outgoingMsgChan = make(chan string)
 func listen(logger *logrus.Logger, configuration Configurations) {
 	cm, err := exConnect(logger, configuration, "server")
 	if err != nil {return}
+	defer cm.Close()
 	for {
 		//here's our server function, but it needs to write to gui
 		handleConnection(cm, logger, configuration)
@@ -38,10 +39,14 @@ func listen(logger *logrus.Logger, configuration Configurations) {
 func send(logger *logrus.Logger, configuration Configurations) {
 	cm, err := exConnect(logger, configuration, "client")
 	if err != nil {return}
+        defer cm.Close()
 	for {
 	        message := <-outgoingMsgChan
-                msg := strings.Split(message, ":")
-                ew_client(logger, configuration, cm, msg[0], msg[1])
+		fmt.Println(message)
+		tmp := strings.Split(message, ":")
+                msg := string(tmp[0])
+		targetUser := fmt.Sprintf("%s_%s", string(tmp[1]), "server")
+                ew_client(logger, configuration, cm, msg, targetUser)
 	}
 }
 
@@ -136,6 +141,8 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 			//send the message thru the EW circut
 
 			outgoingMsgChan <- fmt.Sprintf("%s:%s", message, targetUser)
+			incomingMsgChan <- fmt.Sprintf("%s:%s", message, targetUser)
+
 			//stripping out this for now to refactor a bit
 			/*
 			ok := ew_client(logger, configuration, conn, message, targetUser)
