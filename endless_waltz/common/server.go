@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,9 +27,9 @@ var incomingMsgChan = make(chan string)
 
 // Change handleConnection to act as the "server side" in this transaction
 // we'll pass around the websocket to accomplish this
-func handleConnection(conn *websocket.Conn, logger *logrus.Logger, configuration Configurations) {
+func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations) {
 
-	_, incoming, err := conn.ReadMessage()
+	_, incoming, err := cm.Read()
 	if err != nil {
 		logger.Println("Error reading message:", err)
 		return
@@ -63,7 +62,7 @@ func handleConnection(conn *websocket.Conn, logger *logrus.Logger, configuration
 		return
 	}
 
-	err = conn.WriteMessage(websocket.TextMessage, b)
+	err = cm.Send(b)
 	if err != nil {
 		logger.Fatal("Server:Unable to write message to websocket: ", err)
 		return
@@ -71,7 +70,7 @@ func handleConnection(conn *websocket.Conn, logger *logrus.Logger, configuration
 	logger.Debug("Responded with HELO")
 
 	user := dat["from"].(string)
-	private_key, err := dh_handshake(conn, logger, configuration, "server", user)
+	private_key, err := dh_handshake(cm, logger, configuration, "server", user)
 	if err != nil {
 		logger.Warn("Private Key Error!")
 		return
@@ -109,7 +108,7 @@ func handleConnection(conn *websocket.Conn, logger *logrus.Logger, configuration
 		return
 	}
 
-	err = conn.WriteMessage(websocket.TextMessage, b)
+	err = cm.Send(b)
 	if err != nil {
 		logger.Fatal("Unable to write message to websocket: ", err)
 		return
@@ -118,7 +117,7 @@ func handleConnection(conn *websocket.Conn, logger *logrus.Logger, configuration
 	logger.Debug("We've just sent off the UUID to client...")
 
 	//receive the encrypted text
-	_, incoming, err = conn.ReadMessage()
+	_, incoming, err = cm.Read()
 	if err != nil {
 		logger.Println("Error reading message:", err)
 		return

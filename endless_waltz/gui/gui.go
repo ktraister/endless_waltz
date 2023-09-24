@@ -29,10 +29,10 @@ import (
 var users = []string{"Kayleigh", "KayleighToo"}
 var targetUser = ""
 
-func listen(conn *websocket.Conn, logger *logrus.Logger, configuration Configurations) {
+func listen(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations) {
 	for {
 		//here's our server function, but it needs to write to gui
-		handleConnection(conn, logger, configuration)
+		handleConnection(cm, logger, configuration)
 	}
 }
 
@@ -46,7 +46,7 @@ func post(container *fyne.Container) {
         }
 }
 
-func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Configurations, conn *websocket.Conn) {
+func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Configurations, cm *ConnectionManager) {
 	// Create a scrollable container for chat messages
 	chatContainer := container.NewVBox()
 	scrollContainer := container.NewVScroll(chatContainer)
@@ -57,7 +57,9 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	messageEntry.SetPlaceHolder("Type your message...")
 
 	//listen for incoming messages here
-	go listen(conn, logger, configuration)
+	//doing the listen like this causes a race condition in the websocket
+	//THIS IS WHAT MUTEXES ARE FOR PROTOCODE IN DIR
+	go listen(cm, logger, configuration)
         go post(chatContainer)
 
 	// TODO: add a box at top/bottom left for currentUser
@@ -123,7 +125,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 			//ohh shit we have to configure the user too
 			//send the message thru the EW circut
 			//add something here to return false if the send fails, true if success
-			ok := ew_client(logger, configuration, conn, message, targetUser)
+			ok := ew_client(logger, configuration, cm, message, targetUser)
 
 			if ok {
 				// Create a label widget for the message and add it to the chat container
@@ -208,21 +210,26 @@ func main() {
 
 	defer conn.Close()
 
+        connectionManager := &ConnectionManager{
+                conn: conn, 
+        }
+
 	//connect to exchange with our username for mapping
 	message := &Message{Type: "startup", User: configuration.Server.User}
 	b, err := json.Marshal(message)
 	if err != nil {
-		fmt.Println(err)
+		logger.Fatal(err)
 		return
 	}
-	err = conn.WriteMessage(websocket.TextMessage, b)
+	err = connectionManager.Send(b)
 	if err != nil {
 		logger.Fatal(err)
+		return
 	}
 
 	myApp := app.NewWithID("Main")
 	myApp.Preferences().SetString("AppTimeout", fmt.Sprint(time.Minute))
 	myWindow := myApp.NewWindow("EW Messenger")
-	configureGUI(myWindow, logger, configuration, conn)
+	configureGUI(myWindow, logger, configuration, connectionManager)
 	myWindow.ShowAndRun()
 }

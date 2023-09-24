@@ -105,7 +105,7 @@ func main() {
 
 	//trap control-c
 	go trap(conn, logger)
-	//listen for incoming messages by default :) 
+	//listen for incoming messages by default :)
 	//go listen(conn, logger, configuration)
 
 	//check if user var is empty
@@ -157,8 +157,8 @@ func main() {
 			fmt.Println("help                  ---> print this message")
 			fmt.Println()
 
-                case "listen":
-	                listen(conn, logger, configuration)
+		case "listen":
+			listen(conn, logger, configuration)
 
 		case "send":
 			if len(input) <= 2 {

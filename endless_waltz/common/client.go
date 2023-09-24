@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"net/http"
@@ -29,7 +28,7 @@ type Random_Req struct {
 
 var dat map[string]interface{}
 
-func ew_client(logger *logrus.Logger, configuration Configurations, conn *websocket.Conn, message string, targetUser string) bool {
+func ew_client(logger *logrus.Logger, configuration Configurations, cm *ConnectionManager, message string, targetUser string) bool {
 	user := configuration.Server.User
 	passwd := configuration.Server.Passwd
 	random := configuration.Server.RandomURL
@@ -65,7 +64,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 		return false
 	}
 
-	err = conn.WriteMessage(websocket.TextMessage, b)
+	err = cm.Send(b)
 	if err != nil {
 		logger.Fatal("Client:Unable to write message to websocket: ", err)
 		return false
@@ -74,8 +73,8 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 
 	heloFlag := 0
 	//HELO should be received within 5 seconds to proceed OR exit
-	//conn.SetReadDeadline(time.Now().Add(5 * time.Second))
-	_, incoming, err := conn.ReadMessage()
+	cm.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	_, incoming, err := cm.Read()
 	if err != nil {
 		logger.Error("Client:Error reading message:", err)
 		return false
@@ -87,12 +86,11 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 		logger.Error("Client:Error unmarshalling json:", err)
 		return false
 	}
-	
+
 	if dat["msg"] == "User not found" {
 		logger.Error("Exchange couldn't route a message to ", targetUser)
 		return false
 	}
-
 
 	if dat["msg"] == "HELO" &&
 		dat["from"] == targetUser {
@@ -106,10 +104,10 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	}
 
 	//reset conn read deadline
-	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	cm.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 	//perform DH handshake with the other user
-	private_key, err := dh_handshake(conn, logger, configuration, "client", targetUser)
+	private_key, err := dh_handshake(cm, logger, configuration, "client", targetUser)
 	if err != nil {
 		logger.Fatal("Private Key Error!")
 		return false
@@ -118,7 +116,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 	logger.Info("Private DH Key: ", private_key)
 
 	//read in response from server
-	_, incoming, err = conn.ReadMessage()
+	_, incoming, err = cm.Read()
 	if err != nil {
 		logger.Error("Error reading message:", err)
 		return false
@@ -171,7 +169,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, conn *websoc
 		return false
 	}
 
-	err = conn.WriteMessage(websocket.TextMessage, b)
+	err = cm.Send(b)
 
 	/* Cert stuff needs to change
 	certs := conn.ConnectionState().PeerCertificates
