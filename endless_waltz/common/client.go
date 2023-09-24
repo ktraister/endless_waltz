@@ -26,6 +26,7 @@ type Random_Req struct {
 	UUID string `json:"UUID"`
 }
 
+var outgoingMsgChan = make(chan Post)
 var dat map[string]interface{}
 
 func ew_client(logger *logrus.Logger, configuration Configurations, cm *ConnectionManager, message string, targetUser string) bool {

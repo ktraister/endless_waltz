@@ -23,7 +23,7 @@ type Client_Resp struct {
 	UUID string
 }
 
-var incomingMsgChan = make(chan string)
+var incomingMsgChan = make(chan Post)
 
 // Change handleConnection to act as the "server side" in this transaction
 // we'll pass around the websocket to accomplish this
@@ -150,6 +150,6 @@ func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuratio
 		}
 	*/
 
-	incomingMsgStr := fmt.Sprintf("%s:%s", dat["from"], pad_decrypt(dat["msg"].(string), pad, private_key))
-	incomingMsgChan <- incomingMsgStr
+	incomingMsg := Post{User: dat["user"].(string), Msg: pad_decrypt(dat["msg"].(string), pad, private_key), ok: true}
+	incomingMsgChan <- incomingMsg
 }

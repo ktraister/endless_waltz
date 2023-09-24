@@ -10,7 +10,6 @@ import (
 	"image/color"
 	//"fyne.io/fyne/v2/dialog"
 
-	"strings"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -22,9 +21,14 @@ import (
 //different layouts avail
 //https://developer.fyne.io/explore/layouts.html#border
 
+type Post struct {
+        User string `json:"user"`
+        Msg  string `json:"msg"`
+	ok   bool   `json:"ok"`
+}
+
 var users = []string{"Kayleigh", "KayleighToo"}
 var targetUser = ""
-var outgoingMsgChan = make(chan string)
 
 func listen(logger *logrus.Logger, configuration Configurations) {
 	cm, err := exConnect(logger, configuration, "server")
@@ -42,19 +46,15 @@ func send(logger *logrus.Logger, configuration Configurations) {
         defer cm.Close()
 	for {
 	        message := <-outgoingMsgChan
-		fmt.Println(message)
-		tmp := strings.Split(message, ":")
-                msg := string(tmp[0])
-		targetUser := fmt.Sprintf("%s_%s", string(tmp[1]), "server")
-                ew_client(logger, configuration, cm, msg, targetUser)
+		targetUser := fmt.Sprintf("%s_%s", string(message.User), "server")
+                ew_client(logger, configuration, cm, message.Msg, targetUser)
 	}
 }
 
 func post(container *fyne.Container) {
     for {
 	   message := <-incomingMsgChan
-           msg := strings.Split(message, ":")
-  	   messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", msg[0], msg[1]))
+  	   messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", message.User, message.Msg))
            container.Add(messageLabel)
 	   fmt.Println("Received message ", message)
         }
@@ -140,8 +140,8 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 			//ohh shit we have to configure the user too
 			//send the message thru the EW circut
 
-			outgoingMsgChan <- fmt.Sprintf("%s:%s", message, targetUser)
-			incomingMsgChan <- fmt.Sprintf("%s:%s", message, targetUser)
+			outgoingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
+			incomingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
 
 			//stripping out this for now to refactor a bit
 			/*
