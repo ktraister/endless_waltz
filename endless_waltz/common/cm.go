@@ -4,6 +4,10 @@ import (
     "sync"
     "fmt"
     "github.com/gorilla/websocket"
+    "github.com/sirupsen/logrus"
+    "net/url"
+    "net/http"
+    "encoding/json"
 )
 
 //start CM
@@ -49,3 +53,41 @@ func (cm *ConnectionManager) Close() {
         }   
 } 
 
+func exConnect(logger *logrus.Logger, configuration Configurations, ctype string) (*ConnectionManager, error){
+	user := configuration.Server.User + "_" + ctype
+
+        // Parse the WebSocket URL
+        u, err := url.Parse(configuration.Server.ExchangeURL)    
+        if err != nil {
+                logger.Fatal(err)
+        }  
+
+	// Establish a WebSocket connection
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Passwd": []string{configuration.Server.Passwd}, "User": []string{user}})
+	if err != nil {
+		logger.Fatal("Could not establish WebSocket connection with ", u.String())
+		return &ConnectionManager{}, err
+	}
+	logger.Debug("Connected to exchange server!")
+
+	defer conn.Close()
+
+        connectionManager := &ConnectionManager{
+                conn: conn, 
+        }
+
+	//connect to exchange with our username for mapping
+	message := &Message{Type: "startup", User: user}
+	b, err := json.Marshal(message)
+	if err != nil {
+		logger.Fatal(err)
+ 	        return &ConnectionManager{}, err
+	}
+	err = connectionManager.Send(b)
+	if err != nil {
+		logger.Fatal(err)
+	        return &ConnectionManager{}, err
+	}
+
+	return connectionManager, nil
+}

@@ -11,12 +11,8 @@ import (
 	//"fyne.io/fyne/v2/dialog"
 
 	"strings"
-	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -30,14 +26,18 @@ var users = []string{"Kayleigh", "KayleighToo"}
 var targetUser = ""
 var outgoingMsgChan = make(chan string)
 
-func listen(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations) {
+func listen(logger *logrus.Logger, configuration Configurations) {
+	cm, err := exConnect(logger, configuration, "server")
+	if err != nil {return}
 	for {
 		//here's our server function, but it needs to write to gui
 		handleConnection(cm, logger, configuration)
 	}
 }
 
-func send(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations) {
+func send(logger *logrus.Logger, configuration Configurations) {
+	cm, err := exConnect(logger, configuration, "client")
+	if err != nil {return}
 	for {
 	        message := <-outgoingMsgChan
                 msg := strings.Split(message, ":")
@@ -55,7 +55,7 @@ func post(container *fyne.Container) {
         }
 }
 
-func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Configurations, cm *ConnectionManager) {
+func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Configurations) {
 	// Create a scrollable container for chat messages
 	chatContainer := container.NewVBox()
 	scrollContainer := container.NewVScroll(chatContainer)
@@ -68,8 +68,8 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	//listen for incoming messages here
 	//doing the listen like this causes a race condition in the websocket
 	//THIS IS WHAT MUTEXES ARE FOR PROTOCODE IN DIR
-	go listen(cm, logger, configuration)
-	go send(cm, logger, configuration)
+	go listen(logger, configuration)
+	go send(logger, configuration)
         go post(chatContainer)
 
 	// TODO: add a box at top/bottom left for currentUser
@@ -208,42 +208,9 @@ func main() {
 	}
 	logger.Debug("creds passed check!")
 
-	// Parse the WebSocket URL
-	u, err := url.Parse(configuration.Server.ExchangeURL)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	// Establish a WebSocket connection
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Passwd": []string{configuration.Server.Passwd}, "User": []string{configuration.Server.User}})
-	if err != nil {
-		logger.Fatal("Could not establish WebSocket connection with ", u.String())
-		return
-	}
-	logger.Debug("Connected to exchange server!")
-
-	defer conn.Close()
-
-        connectionManager := &ConnectionManager{
-                conn: conn, 
-        }
-
-	//connect to exchange with our username for mapping
-	message := &Message{Type: "startup", User: configuration.Server.User}
-	b, err := json.Marshal(message)
-	if err != nil {
-		logger.Fatal(err)
-		return
-	}
-	err = connectionManager.Send(b)
-	if err != nil {
-		logger.Fatal(err)
-		return
-	}
-
 	myApp := app.NewWithID("Main")
 	myApp.Preferences().SetString("AppTimeout", fmt.Sprint(time.Minute))
 	myWindow := myApp.NewWindow("EW Messenger")
-	configureGUI(myWindow, logger, configuration, connectionManager)
+	configureGUI(myWindow, logger, configuration)
 	myWindow.ShowAndRun()
 }
