@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -40,7 +41,9 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok = checkAuth(r.Header.Get("User"), r.Header.Get("Passwd"), logger)
+	user := strings.Split(r.Header.Get("User"), "_")[0]
+
+	ok = checkAuth(user, r.Header.Get("Passwd"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -94,13 +97,12 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 			continue
 		}
 
-		logger.Info("host", client.Conn.RemoteAddr())
 		if m.Type == "startup" {
 			// do mapping on startup
 			client.Username = m.User
-			logger.Info("client successfully mapped", &client, client, client.Username)
+			logger.Info("client successfully mapped", &client, client)
 		} else {
-			logger.Info("received message", m.Type, m.Msg)
+			logger.Info("received message, broadcasting: ", m)
 			//broadcast <- &c
 			broadcast <- *m
 
@@ -113,16 +115,39 @@ func broadcaster(logger *logrus.Logger) {
 		message := <-broadcast
 		//don't use my relays to send shit to yourself
 		if message.To == message.From {
-		    continue
+			logger.Info(fmt.Sprintf("Possible abuse from %s: refusing to self send message on relay", message.To))
+			continue
 		}
+		sendFlag := 0
+		clientStr := ""
 		for client := range clients {
 			// send message only to involved users
 			if client.Username == message.To {
+				logger.Info(fmt.Sprintf("Sending message '%s' to client '%s'", message, client.Username))
 				err := client.Conn.WriteJSON(message)
 				if err != nil {
 					logger.Error("Websocket error: ", err)
 					client.Conn.Close()
 					delete(clients, client)
+				}
+				sendFlag = 1
+			}
+			clientStr = clientStr + "," + client.Username
+		}
+		if sendFlag == 0 {
+			logger.Info(fmt.Sprintf("Message '%s' was blackholed because '%s' was not matched in '%s'", message, message.To, clientStr))
+			//let the client know here
+			for client := range clients {
+				// send message only to involved users
+				if client.Username == message.From {
+					logger.Info(fmt.Sprintf("Sending blackhole message to client '%s'", client.Username))
+					message = Message{From: "SYSTEM", To: message.From, Msg: "User not found"}
+					err := client.Conn.WriteJSON(message)
+					if err != nil {
+						logger.Error("Websocket error: ", err)
+						client.Conn.Close()
+						delete(clients, client)
+					}
 				}
 			}
 		}

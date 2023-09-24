@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 )
 
@@ -73,7 +72,7 @@ func checkPrivKey(key string) bool {
 	return true
 }
 
-func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Configurations, conn_type string, user string) (string, error) {
+func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations, conn_type string, user string) (string, error) {
 	//prime := big.NewInt(1)
 	prime := big.NewInt(424889)
 	tempkey := big.NewInt(1)
@@ -103,14 +102,14 @@ func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Con
 		}
 
 		logger.Debug(fmt.Sprintf("Server sending dh pair %s", b))
-		err = conn.WriteMessage(websocket.TextMessage, b)
+		err = cm.Send(b)
 		if err != nil {
 			logger.Fatal("Unable to write message to websocket: ", err)
 			return "", err
 		}
 	default:
 		//read in response from server
-		_, incoming, err := conn.ReadMessage()
+		_, incoming, err := cm.Read()
 		if err != nil {
 			logger.Error("Error reading message:", err)
 			return "", err
@@ -192,14 +191,14 @@ func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Con
 			return "", err
 		}
 
-		err = conn.WriteMessage(websocket.TextMessage, b)
+		err = cm.Send(b)
 		if err != nil {
 			logger.Fatal("Unable to write message to websocket: ", err)
 			return "", err
 		}
 
 		//get client pubkey
-		_, incoming, err := conn.ReadMessage()
+		_, incoming, err := cm.Read()
 		if err != nil {
 			logger.Error("Error reading message:", err)
 			return "", err
@@ -220,7 +219,7 @@ func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Con
 		}
 	default:
 		//get client pubkey
-		_, incoming, err := conn.ReadMessage()
+		_, incoming, err := cm.Read()
 		if err != nil {
 			logger.Error("Error reading message:", err)
 			return "", err
@@ -248,7 +247,7 @@ func dh_handshake(conn *websocket.Conn, logger *logrus.Logger, configuration Con
 			return "", err
 		}
 
-		err = conn.WriteMessage(websocket.TextMessage, b)
+		err = cm.Send(b)
 		if err != nil {
 			logger.Fatal("Unable to write message to websocket: ", err)
 			return "", err

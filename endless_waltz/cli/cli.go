@@ -40,12 +40,24 @@ func trap(conn *websocket.Conn, logger *logrus.Logger) {
 }
 
 func listen(conn *websocket.Conn, logger *logrus.Logger, configuration Configurations) {
-	done := make(chan struct{})
-	defer close(done)
+	//listen on conn
+	fmt.Println("Listening for incoming messages by default :)")
+	go func() {
+		for {
+			handleConnection(conn, logger, configuration)
+		}
+	}()
 	for {
-		//We need to run our "server" function here
-		//server function will need to be able to map incoming message to correct action
-		handleConnection(conn, logger, configuration)
+		message := <-incomingMsgChan
+		msg := strings.Split(message, ":")
+		fmt.Println()
+		fmt.Println()
+		fmt.Println(fmt.Sprintf("Receiving msg from user %s ...", msg[0]))
+		fmt.Println(msg[1])
+
+		fmt.Println()
+		fmt.Print("EW_cli > ")
+
 	}
 }
 
@@ -93,6 +105,8 @@ func main() {
 
 	//trap control-c
 	go trap(conn, logger)
+	//listen for incoming messages by default :)
+	//go listen(conn, logger, configuration)
 
 	//check if user var is empty
 	if configuration.Server.User == "" {
@@ -130,13 +144,6 @@ func main() {
 			conn.Close()
 			return
 
-		case "listen":
-			//listen on conn
-			fmt.Println("Listening for incoming messages...")
-			for {
-				listen(conn, logger, configuration)
-			}
-
 		case "help":
 			fmt.Println()
 			fmt.Println("Help Text")
@@ -149,6 +156,9 @@ func main() {
 			fmt.Println("send <user> <message> ---> send a message to an active EW user")
 			fmt.Println("help                  ---> print this message")
 			fmt.Println()
+
+		case "listen":
+			listen(conn, logger, configuration)
 
 		case "send":
 			if len(input) <= 2 {
@@ -174,7 +184,9 @@ func main() {
 			start := time.Now()
 			//this is going to have to change too
 			ok := ew_client(logger, configuration, conn, msg, input[1])
-			if !ok { fmt.Println("Sending Failed") }
+			if !ok {
+				fmt.Println("Sending Failed")
+			}
 			logger.Info("Sending message duration: ", time.Since(start))
 		default:
 			fmt.Println("Didn't understand input, try again")

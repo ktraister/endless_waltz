@@ -10,10 +10,8 @@ import (
 	"image/color"
 	//"fyne.io/fyne/v2/dialog"
 
-	"github.com/gorilla/websocket"
+	"fmt"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"net/url"
 	"time"
 )
 
@@ -23,7 +21,40 @@ import (
 //different layouts avail
 //https://developer.fyne.io/explore/layouts.html#border
 
-func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Configurations, conn *websocket.Conn) {
+var users = []string{"Kayleigh", "KayleighToo"}
+var targetUser = ""
+
+func listen(logger *logrus.Logger, configuration Configurations) {
+	cm, err := exConnect(logger, configuration, "server")
+	if err != nil {return}
+	defer cm.Close()
+	for {
+		//here's our server function, but it needs to write to gui
+		handleConnection(cm, logger, configuration)
+	}
+}
+
+func send(logger *logrus.Logger, configuration Configurations) {
+	cm, err := exConnect(logger, configuration, "client")
+	if err != nil {return}
+        defer cm.Close()
+	for {
+	        message := <-outgoingMsgChan
+		targetUser := fmt.Sprintf("%s_%s", string(message.User), "server")
+                ew_client(logger, configuration, cm, message.Msg, targetUser)
+	}
+}
+
+func post(container *fyne.Container) {
+    for {
+	   message := <-incomingMsgChan
+  	   messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", message.User, message.Msg))
+           container.Add(messageLabel)
+	   fmt.Println("Received message ", message)
+        }
+}
+
+func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Configurations) {
 	// Create a scrollable container for chat messages
 	chatContainer := container.NewVBox()
 	scrollContainer := container.NewVScroll(chatContainer)
@@ -33,7 +64,16 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	messageEntry := widget.NewMultiLineEntry()
 	messageEntry.SetPlaceHolder("Type your message...")
 
-	//add a box at top/bottom left for currentUser
+	//listen for incoming messages here
+	//doing the listen like this causes a race condition in the websocket
+	//THIS IS WHAT MUTEXES ARE FOR PROTOCODE IN DIR
+	go listen(logger, configuration)
+	go send(logger, configuration)
+        go post(chatContainer)
+
+	// TODO: add a box at top/bottom left for currentUser
+
+	// add lines to use with onlinePanel
 	text := widget.NewLabelWithStyle("    Online Users    ", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
 	topLine := canvas.NewLine(color.RGBA{0, 0, 0, 255})
 	topLine.StrokeWidth = 5
@@ -43,12 +83,47 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	sideLine.StrokeWidth = 5
 	sideLine2 := canvas.NewLine(color.RGBA{0, 0, 0, 255})
 	sideLine2.StrokeWidth = 5
+
+	// add onlineUsers panel to show and select users
 	onlineUsers := container.NewHBox(text)
 	onlineUsers = container.NewBorder(topLine, bLine, nil, sideLine2, onlineUsers)
 	onlineUsers = container.NewBorder(onlineUsers, nil, nil, sideLine)
 
 	//add a goroutine here to read ExchangeAPI for live users and populate with labels
-	onlineUsers.Add(widget.NewLabel("TestUser"))
+
+	/*
+		//actually add the users to the panel
+		onlineUsers.Add(widget.NewLabel("TestUser"))
+	*/
+
+	//below is code from the example fyne page
+	//use it to expand this functionality
+	userList := widget.NewList(
+		//length
+		func() int {
+			return len(users)
+		},
+		//create Item
+		func() fyne.CanvasObject {
+			label := widget.NewLabel("Text")
+			return container.NewBorder(nil, nil, nil, nil, label)
+		},
+		//updateItem
+		func(id widget.ListItemID, obj fyne.CanvasObject) {
+			text := obj.(*fyne.Container).Objects[0].(*widget.Label)
+			text.SetText(users[id])
+		})
+	userList.OnSelected = func(id widget.ListItemID) {
+		fmt.Println(users[id])
+		targetUser = users[id]
+		//clear the chat when switching users
+		chatContainer.Objects = chatContainer.Objects[:0]
+		chatContainer.Refresh()
+		messageEntry.SetText("")
+	}
+
+	//actually add the users to the panel
+	onlineUsers.Add(userList)
 
 	//need to add a goroutine here to listen for messages, a goroutine to populate new labels, and a chan to communicate
 
@@ -58,8 +133,13 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 		if message != "" {
 			//ohh shit we have to configure the user too
 			//send the message thru the EW circut
-			//add something here to return false if the send fails, true if success
-			ok := ew_client(logger, configuration, conn, message, "Kayleigh")
+
+			outgoingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
+			incomingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
+
+			//stripping out this for now to refactor a bit
+			/*
+			ok := ew_client(logger, configuration, conn, message, targetUser)
 
 			if ok {
 				// Create a label widget for the message and add it to the chat container
@@ -70,6 +150,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 				messageLabel.Importance = widget.DangerImportance
 				chatContainer.Add(messageLabel)
 			}
+			*/
 
 			// Clear the message entry field after sending
 			messageEntry.SetText("")
@@ -79,12 +160,9 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	sendButton.Importance = widget.HighImportance
 
 	clearButton := widget.NewButton("Clear", func() {
-		// Create a label widget for the message and add it to the chat container
+		//clear chatContainer and messageEntry
 		chatContainer.Objects = chatContainer.Objects[:0]
-		//ensure UI change is written
 		chatContainer.Refresh()
-
-		// Clear the message entry field after sending
 		messageEntry.SetText("")
 	})
 	clearButton.Importance = widget.DangerImportance
@@ -105,7 +183,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 }
 
 func main() {
-        //add "starting up" message while loading
+	//add "starting up" message while loading
 
 	//configuration stuff
 	configuration, err := fetchConfig()
@@ -131,25 +209,9 @@ func main() {
 	}
 	logger.Debug("creds passed check!")
 
-	// Parse the WebSocket URL
-	u, err := url.Parse(configuration.Server.ExchangeURL)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	// Establish a WebSocket connection
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Passwd": []string{configuration.Server.Passwd}, "User": []string{configuration.Server.User}})
-	if err != nil {
-		logger.Fatal("Could not establish WebSocket connection with ", u.String())
-		return
-	}
-	logger.Debug("Connected to exchange server!")
-
-	defer conn.Close()
-
 	myApp := app.NewWithID("Main")
-	myApp.Preferences().SetString("AppTimeout", string(time.Minute))
+	myApp.Preferences().SetString("AppTimeout", fmt.Sprint(time.Minute))
 	myWindow := myApp.NewWindow("EW Messenger")
-	configureGUI(myWindow, logger, configuration, conn)
+	configureGUI(myWindow, logger, configuration)
 	myWindow.ShowAndRun()
 }
