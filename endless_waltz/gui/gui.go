@@ -28,11 +28,20 @@ import (
 
 var users = []string{"Kayleigh", "KayleighToo"}
 var targetUser = ""
+var outgoingMsgChan = make(chan string)
 
 func listen(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations) {
 	for {
 		//here's our server function, but it needs to write to gui
 		handleConnection(cm, logger, configuration)
+	}
+}
+
+func send(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations) {
+	for {
+	        message := <-outgoingMsgChan
+                msg := strings.Split(message, ":")
+                ew_client(logger, configuration, cm, msg[0], msg[1])
 	}
 }
 
@@ -60,6 +69,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	//doing the listen like this causes a race condition in the websocket
 	//THIS IS WHAT MUTEXES ARE FOR PROTOCODE IN DIR
 	go listen(cm, logger, configuration)
+	go send(cm, logger, configuration)
         go post(chatContainer)
 
 	// TODO: add a box at top/bottom left for currentUser
@@ -124,8 +134,11 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 		if message != "" {
 			//ohh shit we have to configure the user too
 			//send the message thru the EW circut
-			//add something here to return false if the send fails, true if success
-			ok := ew_client(logger, configuration, cm, message, targetUser)
+
+			outgoingMsgChan <- fmt.Sprintf("%s:%s", message, targetUser)
+			//stripping out this for now to refactor a bit
+			/*
+			ok := ew_client(logger, configuration, conn, message, targetUser)
 
 			if ok {
 				// Create a label widget for the message and add it to the chat container
@@ -136,6 +149,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 				messageLabel.Importance = widget.DangerImportance
 				chatContainer.Add(messageLabel)
 			}
+			*/
 
 			// Clear the message entry field after sending
 			messageEntry.SetText("")
