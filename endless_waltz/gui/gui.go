@@ -21,7 +21,7 @@ import (
 //different layouts avail
 //https://developer.fyne.io/explore/layouts.html#border
 
-var users = []string{"Kayleigh", "KayleighToo"}
+var users = []string{}
 var targetUser = ""
 
 func listen(logger *logrus.Logger, configuration Configurations) {
@@ -58,6 +58,14 @@ func post(container *fyne.Container) {
 	       container.Add(messageLabel)
            }
         }
+}
+
+func refreshUsers(logger *logrus.Logger, configuration Configurations, container *fyne.Container) {
+    for {
+	users, _ = getExUsers(logger, configuration)
+	container.Refresh()
+	time.Sleep(5 * time.Second)
+    }
 }
 
 func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Configurations) {
@@ -101,15 +109,10 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	onlineUsers = container.NewBorder(topLine, bLine, nil, sideLine2, onlineUsers)
 	onlineUsers = container.NewBorder(onlineUsers, nil, nil, sideLine)
 
-	//add a goroutine here to read ExchangeAPI for live users and populate with labels
+        //add a goroutine here to read ExchangeAPI for live users and populate with labels
+        go refreshUsers(logger, configuration, onlineUsers)  
 
-	/*
-		//actually add the users to the panel
-		onlineUsers.Add(widget.NewLabel("TestUser"))
-	*/
-
-	//below is code from the example fyne page
-	//use it to expand this functionality
+	//build our user list
 	userList := widget.NewList(
 		//length
 		func() int {
