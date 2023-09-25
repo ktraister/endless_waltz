@@ -52,11 +52,6 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 		return false
 	}
 
-	if targetUser == user {
-		fmt.Println("Sending messages to yourself is not allowed")
-		return false
-	}
-
 	//send HELO to target user
 	helo := &Message{Type: "helo",
 		User: configuration.Server.User,

@@ -41,16 +41,22 @@ func send(logger *logrus.Logger, configuration Configurations) {
 	for {
 	        message := <-outgoingMsgChan
 		targetUser := fmt.Sprintf("%s_%s", string(message.User), "server")
-                ew_client(logger, configuration, cm, message.Msg, targetUser)
+		ok := ew_client(logger, configuration, cm, message.Msg, targetUser)
+		incomingMsgChan <- Post{Msg: message.Msg, User: configuration.Server.User, ok: ok}
 	}
 }
 
 func post(container *fyne.Container) {
     for {
 	   message := <-incomingMsgChan
-  	   messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", message.User, message.Msg))
-           container.Add(messageLabel)
-	   fmt.Println("Received message ", message)
+	   if message.ok {
+	       messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", message.User, message.Msg))
+	       container.Add(messageLabel)
+           } else {
+	       messageLabel := widget.NewLabel(fmt.Sprintf("ERROR SENDING MSG %s", message.Msg))
+               messageLabel.Importance = widget.DangerImportance
+	       container.Add(messageLabel)
+           }
         }
 }
 
@@ -59,6 +65,12 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	chatContainer := container.NewVBox()
 	scrollContainer := container.NewVScroll(chatContainer)
 	scrollContainer.Resize(fyne.NewSize(500, 0))
+
+	//set greeting warning lable
+        messageLabel := widget.NewLabel("Select user to start sending messages")
+        messageLabel.Importance = widget.MediumImportance
+        chatContainer.Add(messageLabel)
+
 
 	// Create an entry field for typing messages
 	messageEntry := widget.NewMultiLineEntry()
@@ -118,7 +130,8 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 		targetUser = users[id]
 		//clear the chat when switching users
 		chatContainer.Objects = chatContainer.Objects[:0]
-		chatContainer.Refresh()
+ 	        chatContainer.Refresh()
+		incomingMsgChan <- Post{Msg: users[id], User: "Sending messages to", ok: true}
 		messageEntry.SetText("")
 	}
 
@@ -134,8 +147,12 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 			//ohh shit we have to configure the user too
 			//send the message thru the EW circut
 
+			if targetUser == configuration.Server.User {  
+				incomingMsgChan <- Post{Msg: "Sending messages to yourself is not allowed", User: "foo", ok: false}
+				return
+			} 
+
 			outgoingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
-			incomingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
 
 			//stripping out this for now to refactor a bit
 			/*
@@ -167,6 +184,9 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	})
 	clearButton.Importance = widget.DangerImportance
 
+	myText := widget.NewLabelWithStyle("Logged in as: " + configuration.Server.User, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+	myText.Importance = widget.WarningImportance
+
 	// Create a container for the message entry and send button
 	onlineContainer := container.New(layout.NewHBoxLayout(), onlineUsers)
 	sendContainer := container.NewBorder(clearButton, sendButton, nil, nil, messageEntry)
@@ -175,7 +195,8 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	splitContainer := container.NewVSplit(scrollContainer, sendContainer)
 	splitContainer.Offset = .7
 	//Create another vertical split for chat and input
-	finalContainer := container.NewBorder(nil, nil, onlineContainer, nil, splitContainer)
+	finalContainer := container.NewBorder(topLine, nil, onlineContainer, nil, splitContainer)
+	finalContainer = container.NewBorder(myText, nil, nil, nil, finalContainer)
 
 	myWindow.SetContent(finalContainer)
 	myWindow.Resize(fyne.NewSize(600, 800))
