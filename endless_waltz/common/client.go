@@ -14,9 +14,9 @@ import (
 )
 
 type Post struct {
-        User string `json:"user"`
-        Msg  string `json:"msg"`
-        ok   bool   `json:"ok"`
+	User string `json:"user"`
+	Msg  string `json:"msg"`
+	ok   bool   `json:"ok"`
 }
 
 type Message struct {

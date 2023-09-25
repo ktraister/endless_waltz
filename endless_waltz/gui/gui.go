@@ -21,12 +21,14 @@ import (
 //different layouts avail
 //https://developer.fyne.io/explore/layouts.html#border
 
-var users = []string{"Kayleigh", "KayleighToo"}
+var users = []string{}
 var targetUser = ""
 
 func listen(logger *logrus.Logger, configuration Configurations) {
 	cm, err := exConnect(logger, configuration, "server")
-	if err != nil {return}
+	if err != nil {
+		return
+	}
 	defer cm.Close()
 	for {
 		//here's our server function, but it needs to write to gui
@@ -36,10 +38,12 @@ func listen(logger *logrus.Logger, configuration Configurations) {
 
 func send(logger *logrus.Logger, configuration Configurations) {
 	cm, err := exConnect(logger, configuration, "client")
-	if err != nil {return}
-        defer cm.Close()
+	if err != nil {
+		return
+	}
+	defer cm.Close()
 	for {
-	        message := <-outgoingMsgChan
+		message := <-outgoingMsgChan
 		targetUser := fmt.Sprintf("%s_%s", string(message.User), "server")
 		ok := ew_client(logger, configuration, cm, message.Msg, targetUser)
 		incomingMsgChan <- Post{Msg: message.Msg, User: configuration.Server.User, ok: ok}
@@ -47,17 +51,27 @@ func send(logger *logrus.Logger, configuration Configurations) {
 }
 
 func post(container *fyne.Container) {
-    for {
-	   message := <-incomingMsgChan
-	   if message.ok {
-	       messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", message.User, message.Msg))
-	       container.Add(messageLabel)
-           } else {
-	       messageLabel := widget.NewLabel(fmt.Sprintf("ERROR SENDING MSG %s", message.Msg))
-               messageLabel.Importance = widget.DangerImportance
-	       container.Add(messageLabel)
-           }
-        }
+	for {
+		message := <-incomingMsgChan
+		if message.ok {
+			messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", message.User, message.Msg))
+			container.Add(messageLabel)
+		} else {
+			messageLabel := widget.NewLabel(fmt.Sprintf("ERROR SENDING MSG %s", message.Msg))
+			messageLabel.Importance = widget.DangerImportance
+			container.Add(messageLabel)
+		}
+	}
+}
+
+func refreshUsers(logger *logrus.Logger, configuration Configurations, container *fyne.Container) {
+	for {
+		users = []string{}
+		users, _ = getExUsers(logger, configuration)
+		logger.Debug("refreshUsers --> ", users)
+		container.Refresh()
+		time.Sleep(5 * time.Second)
+	}
 }
 
 func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Configurations) {
@@ -67,10 +81,9 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	scrollContainer.Resize(fyne.NewSize(500, 0))
 
 	//set greeting warning lable
-        messageLabel := widget.NewLabel("Select user to start sending messages")
-        messageLabel.Importance = widget.MediumImportance
-        chatContainer.Add(messageLabel)
-
+	messageLabel := widget.NewLabel("Select user to start sending messages")
+	messageLabel.Importance = widget.MediumImportance
+	chatContainer.Add(messageLabel)
 
 	// Create an entry field for typing messages
 	messageEntry := widget.NewMultiLineEntry()
@@ -81,7 +94,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	//THIS IS WHAT MUTEXES ARE FOR PROTOCODE IN DIR
 	go listen(logger, configuration)
 	go send(logger, configuration)
-        go post(chatContainer)
+	go post(chatContainer)
 
 	// TODO: add a box at top/bottom left for currentUser
 
@@ -102,14 +115,9 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	onlineUsers = container.NewBorder(onlineUsers, nil, nil, sideLine)
 
 	//add a goroutine here to read ExchangeAPI for live users and populate with labels
+	go refreshUsers(logger, configuration, onlineUsers)
 
-	/*
-		//actually add the users to the panel
-		onlineUsers.Add(widget.NewLabel("TestUser"))
-	*/
-
-	//below is code from the example fyne page
-	//use it to expand this functionality
+	//build our user list
 	userList := widget.NewList(
 		//length
 		func() int {
@@ -130,7 +138,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 		targetUser = users[id]
 		//clear the chat when switching users
 		chatContainer.Objects = chatContainer.Objects[:0]
- 	        chatContainer.Refresh()
+		chatContainer.Refresh()
 		incomingMsgChan <- Post{Msg: users[id], User: "Sending messages to", ok: true}
 		messageEntry.SetText("")
 	}
@@ -147,26 +155,26 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 			//ohh shit we have to configure the user too
 			//send the message thru the EW circut
 
-			if targetUser == configuration.Server.User {  
+			if targetUser == configuration.Server.User {
 				incomingMsgChan <- Post{Msg: "Sending messages to yourself is not allowed", User: "foo", ok: false}
 				return
-			} 
+			}
 
 			outgoingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
 
 			//stripping out this for now to refactor a bit
 			/*
-			ok := ew_client(logger, configuration, conn, message, targetUser)
+				ok := ew_client(logger, configuration, conn, message, targetUser)
 
-			if ok {
-				// Create a label widget for the message and add it to the chat container
-				messageLabel := widget.NewLabel("You: " + message)
-				chatContainer.Add(messageLabel)
-			} else {
-				messageLabel := widget.NewLabel("FAILED TO SEND: " + message)
-				messageLabel.Importance = widget.DangerImportance
-				chatContainer.Add(messageLabel)
-			}
+				if ok {
+					// Create a label widget for the message and add it to the chat container
+					messageLabel := widget.NewLabel("You: " + message)
+					chatContainer.Add(messageLabel)
+				} else {
+					messageLabel := widget.NewLabel("FAILED TO SEND: " + message)
+					messageLabel.Importance = widget.DangerImportance
+					chatContainer.Add(messageLabel)
+				}
 			*/
 
 			// Clear the message entry field after sending
@@ -184,7 +192,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	})
 	clearButton.Importance = widget.DangerImportance
 
-	myText := widget.NewLabelWithStyle("Logged in as: " + configuration.Server.User, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+	myText := widget.NewLabelWithStyle("Logged in as: "+configuration.Server.User, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
 	myText.Importance = widget.WarningImportance
 
 	// Create a container for the message entry and send button

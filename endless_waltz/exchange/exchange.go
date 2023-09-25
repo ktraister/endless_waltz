@@ -33,6 +33,35 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+func listUsers(w http.ResponseWriter, req *http.Request) {
+        logger, ok := req.Context().Value("logger").(*logrus.Logger)
+        if !ok {
+                http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+                logger.Error("Could not configure logger!")
+                return
+        }
+ 
+        ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
+        if !ok {
+                http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+                logger.Info("request denied 403 unauthorized")
+                return
+        }
+
+	userList := ""
+	for c, _ := range clients {
+	    user := strings.Split(c.Username, "_")[0]
+	    if ! strings.Contains(userList, user) {
+		userList = userList + ":" + user
+		logger.Debug("Adding to userlist: ", user)
+            }
+        }
+ 
+	logger.Debug(fmt.Sprintf("Returning userlist '%v'", userList))
+        w.Write([]byte(userList))
+        logger.Info("Someone hit the listUsers route...")
+}
+
 func serveWs(w http.ResponseWriter, r *http.Request) {
 	logger, ok := r.Context().Value("logger").(*logrus.Logger)
 	if !ok {
@@ -168,6 +197,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
+	router.HandleFunc("/listUsers", listUsers)
 	router.HandleFunc("/ws", serveWs)
 	http.ListenAndServe(":8081", router)
 }

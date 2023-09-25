@@ -28,7 +28,7 @@ var incomingMsgChan = make(chan Post)
 // Change handleConnection to act as the "server side" in this transaction
 // we'll pass around the websocket to accomplish this
 func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations) {
-        localUser := fmt.Sprintf("%s_%s", configuration.Server.User, "server")
+	localUser := fmt.Sprintf("%s_%s", configuration.Server.User, "server")
 	_, incoming, err := cm.Read()
 	if err != nil {
 		logger.Println("Error reading message:", err)
