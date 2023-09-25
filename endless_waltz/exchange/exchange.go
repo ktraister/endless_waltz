@@ -57,7 +57,7 @@ func listUsers(w http.ResponseWriter, req *http.Request) {
             }
         }
  
-	logger.Debug(fmt.Sprintf("Returning userlist %v", userList))
+	logger.Debug(fmt.Sprintf("Returning userlist '%v'", userList))
         w.Write([]byte(userList))
         logger.Info("Someone hit the listUsers route...")
 }
