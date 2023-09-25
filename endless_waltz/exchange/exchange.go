@@ -53,9 +53,11 @@ func listUsers(w http.ResponseWriter, req *http.Request) {
 	    user := strings.Split(c.Username, "_")[0]
 	    if ! strings.Contains(userList, user) {
 		userList = userList + ":" + user
+		logger.Debug("Adding to userlist: ", user)
             }
         }
  
+	logger.Debug(fmt.Sprintf("Returning userlist %v", userList))
         w.Write([]byte(userList))
         logger.Info("Someone hit the listUsers route...")
 }

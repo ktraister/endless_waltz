@@ -63,6 +63,7 @@ func post(container *fyne.Container) {
 func refreshUsers(logger *logrus.Logger, configuration Configurations, container *fyne.Container) {
     for {
 	users, _ = getExUsers(logger, configuration)
+	logger.Debug(fmt.Sprintf("API returned %v users", users))
 	container.Refresh()
 	time.Sleep(5 * time.Second)
     }
