@@ -6,6 +6,6 @@ This project is intended to serve as a POC of a One-Time Pad implementation usin
 ## Architecture
 **This is out of date and needs to be updated**
 
-![alt text](./.png/EndlessWaltz.png)
+![alt text](./.png/EndlessWaltzPOC.png)
 
 
