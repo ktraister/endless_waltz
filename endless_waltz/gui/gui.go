@@ -1,6 +1,9 @@
 package main
 
 import (
+	"crypto/sha512"
+	"encoding/hex"
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
@@ -8,10 +11,8 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"image/color"
-
-	"fmt"
 	"github.com/sirupsen/logrus"
+	"image/color"
 	"time"
 )
 
@@ -247,10 +248,19 @@ func main() {
 
 		dialog.ShowCustomConfirm("Login...", "Log In", "Cancel", content, func(b bool) {
 			logger.Debug("Checking creds...")
+
+			//create our hasher to hash our pass
+			hash := sha512.New()
+			hash.Write([]byte(password.Text))
+			hashSum := hash.Sum(nil)
+			hashString := hex.EncodeToString(hashSum)
+
 			//set values we just took in with login widget
 			configuration.Server.User = username.Text
-			configuration.Server.Passwd = password.Text
+			configuration.Server.Passwd = hashString
+			logger.Debug(hashString)
 
+			//pass the hash lol
 			ok := checkCreds(configuration)
 
 			if !ok || !b {
