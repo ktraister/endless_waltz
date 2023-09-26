@@ -50,7 +50,6 @@ func health_handler(w http.ResponseWriter, req *http.Request) {
 
 	w.Write([]byte("HEALTHY"))
 	logger.Info("Someone hit the health check route...")
-
 }
 
 func otp_handler(w http.ResponseWriter, req *http.Request) {
@@ -68,9 +67,10 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	reqBody, err := io.ReadAll(req.Body) // newer versions of go moved ReadAll to io instead of ioutil
+	reqBody, err := io.ReadAll(req.Body) 
 	if err != nil {
 		logger.Error(err)
+		return
 	}
 
 	//logging our header will show IP once server is in AWS
@@ -80,6 +80,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		logger.Debug("Found no body for this request, returning")
 		//lets return a different error code here -- not sure what
 		w.WriteHeader(404)
+		return
 	} else {
 		logger.Debug("Found body for the request, proceeding!\n")
 		json.Unmarshal([]byte(reqBody), &jsonMap)
@@ -108,6 +109,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			err := otp_db.FindOne(ctx, bson.M{"LOCK": nil}).Decode(&server_resp)
 			if err != nil {
 				logger.Error(err)
+				return
 			} else {
 				//lock the item
 				uuid, _ := primitive.ObjectIDFromHex(server_resp.UUID)
@@ -131,7 +133,6 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		case host == "client" && uuid == nil:
 			logger.Warn(fmt.Sprintf("No UUID value in request, informing client"))
 			w.Write([]byte("ERROR: No UUID included in request."))
-			return
 		case host == "client":
 			//mongo
 			//https://www.mongodb.com/blog/post/quick-start-golang--mongodb--how-to-read-documents
@@ -150,6 +151,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			var dbResult []bson.M
 			if err = filterCursor.All(ctx, &dbResult); err != nil {
 				logger.Error(err)
+				return
 			}
 
 			otp := fmt.Sprintf("%v", dbResult[0]["Pad"])
@@ -165,7 +167,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 			//this is where we respond to the connection
 			w.Write(resp)
 
-			//add deletion of mongo pad here
+			//delete mongo pad after returning to client
 			if _, err = otp_db.DeleteOne(ctx, bson.M{"UUID": UUID}); err != nil {
 				logger.Error(err)
 				return

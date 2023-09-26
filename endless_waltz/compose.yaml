@@ -8,7 +8,7 @@ services:
     ports:
       - "8090:8090"
     environment:
-      MongoURI: mongodb://mongo:27017
+      MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
@@ -22,7 +22,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      MongoURI: mongodb://mongo:27017
+      MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
@@ -34,7 +34,7 @@ services:
     build:
       context: reaper
     environment:
-      MongoURI: mongodb://mongo:27017
+      MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug

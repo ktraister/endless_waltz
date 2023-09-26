@@ -136,7 +136,7 @@ func main() {
 			for i := int64(0); i < threshold-count; i++ {
 				ok := insertItem(logger, ctx, otp_db)
 				if !ok {
-					continue
+					break
 				} else {
 					logger.Debug("Wrote item ", i, " to DB!")
 				}
