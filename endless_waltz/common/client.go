@@ -140,17 +140,18 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 		UUID: fmt.Sprintf("%v", dat["msg"]),
 	}
 	rapi_data, _ := json.Marshal(data)
-	if err != nil {
-		logger.Warn(err)
-	}
 	req, err := http.NewRequest("POST", random, bytes.NewBuffer(rapi_data))
+	if err != nil {
+		logger.Error(err)
+		return false
+	}
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
 	req.Header.Set("User", configuration.Server.User)
 	req.Header.Set("Passwd", passwd)
 	client := &http.Client{}
-	resp, error := client.Do(req)
-	if error != nil {
-		logger.Fatal(error)
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error(err)
 		return false
 	}
 	json.NewDecoder(resp.Body).Decode(&dat)
@@ -173,21 +174,6 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 	}
 
 	err = cm.Send(b)
-
-	/* Cert stuff needs to change
-	certs := conn.ConnectionState().PeerCertificates
-
-	var clientCommonName string
-	if len(certs) == 0 {
-		clientCommonName = fmt.Sprintf("%sunknown%s", RedColor, ResetColor)
-	} else {
-		clientCommonName = fmt.Sprintf("%s%s%s", GreenColor, certs[0].Issuer.CommonName, ResetColor)
-	}
-
-	fmt.Println()
-	fmt.Println(fmt.Sprintf("Sent message successfully to %s at %s", clientCommonName, host))
-	*/
-
 	return true
 }
 

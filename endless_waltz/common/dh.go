@@ -97,14 +97,14 @@ func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Co
 		}
 		b, err := json.Marshal(outgoing)
 		if err != nil {
-			fmt.Println(err)
+			logger.Error(err)
 			return "", err
 		}
 
 		logger.Debug(fmt.Sprintf("Server sending dh pair %s", b))
 		err = cm.Send(b)
 		if err != nil {
-			logger.Fatal("Unable to write message to websocket: ", err)
+			logger.Error("Unable to write message to websocket: ", err)
 			return "", err
 		}
 	default:
@@ -243,13 +243,13 @@ func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Co
 		}
 		b, err := json.Marshal(outgoing)
 		if err != nil {
-			fmt.Println(err)
+			logger.Error(err)
 			return "", err
 		}
 
 		err = cm.Send(b)
 		if err != nil {
-			logger.Fatal("Unable to write message to websocket: ", err)
+			logger.Error("Unable to write message to websocket: ", err)
 			return "", err
 		}
 
@@ -268,7 +268,7 @@ func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Co
 
 	if checkPrivKey(privkey) == false {
 		// bounce the conn
-		return "", err
+		return "", fmt.Errorf("Connection bounced due to bad PrivKey")
 	}
 
 	//return main secret

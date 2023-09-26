@@ -31,7 +31,7 @@ func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuratio
 	localUser := fmt.Sprintf("%s_%s", configuration.Server.User, "server")
 	_, incoming, err := cm.Read()
 	if err != nil {
-		logger.Println("Error reading message:", err)
+		logger.Error("Error reading message:", err)
 		return
 	}
 
@@ -58,13 +58,13 @@ func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuratio
 	}
 	b, err := json.Marshal(helo)
 	if err != nil {
-		fmt.Println(err)
+		logger.Error(err)
 		return
 	}
 
 	err = cm.Send(b)
 	if err != nil {
-		logger.Fatal("Server:Unable to write message to websocket: ", err)
+		logger.Error("Server:Unable to write message to websocket: ", err)
 		return
 	}
 	logger.Debug("Responded with HELO")
@@ -72,7 +72,7 @@ func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuratio
 	user := dat["from"].(string)
 	private_key, err := dh_handshake(cm, logger, configuration, "server", user)
 	if err != nil {
-		logger.Warn("Private Key Error!")
+		logger.Error("Private Key Error!")
 		return
 	}
 	logger.Debug("Private DH Key: ", private_key)
@@ -89,6 +89,7 @@ func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuratio
 	resp, error := client.Do(req)
 	if error != nil {
 		logger.Error(error)
+		return
 	}
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
@@ -104,13 +105,13 @@ func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuratio
 	}
 	b, err = json.Marshal(outgoing)
 	if err != nil {
-		fmt.Println(err)
+		logger.Error(err)
 		return
 	}
 
 	err = cm.Send(b)
 	if err != nil {
-		logger.Fatal("Unable to write message to websocket: ", err)
+		logger.Error("Unable to write message to websocket: ", err)
 		return
 	}
 
@@ -119,7 +120,7 @@ func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuratio
 	//receive the encrypted text
 	_, incoming, err = cm.Read()
 	if err != nil {
-		logger.Println("Error reading message:", err)
+		logger.Error("Error reading message:", err)
 		return
 	}
 

@@ -25,9 +25,13 @@ func (cm *ConnectionManager) Send(message []byte) error {
 	}
 
 	err := cm.conn.WriteMessage(websocket.TextMessage, []byte(message))
+	if err != nil {
+		return err
+	}
+
 	cm.mu.Unlock()
 
-	return err
+	return nil
 }
 
 func (cm *ConnectionManager) Read() (int, []byte, error) {
@@ -38,9 +42,13 @@ func (cm *ConnectionManager) Read() (int, []byte, error) {
 	}
 
 	i, b, err := cm.conn.ReadMessage()
+	if err != nil {
+		return i, b, err
+	}
+
 	cm.mu.Unlock()
 
-	return i, b, err
+	return i, b, nil
 }
 
 func (cm *ConnectionManager) Close() {
@@ -60,6 +68,7 @@ func exConnect(logger *logrus.Logger, configuration Configurations, ctype string
 	u, err := url.Parse(configuration.Server.ExchangeURL)
 	if err != nil {
 		logger.Fatal(err)
+		return &ConnectionManager{}, err
 	}
 
 	// Establish a WebSocket connection

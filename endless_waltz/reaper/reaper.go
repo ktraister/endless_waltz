@@ -126,6 +126,7 @@ func main() {
 
 		count := otpItemCount(logger, ctx, otp_db)
 		if count == -1 {
+			logger.Warn("Unable to count items in DB!")
 			continue
 		}
 
@@ -136,7 +137,7 @@ func main() {
 			for i := int64(0); i < threshold-count; i++ {
 				ok := insertItem(logger, ctx, otp_db)
 				if !ok {
-					continue
+					break
 				} else {
 					logger.Debug("Wrote item ", i, " to DB!")
 				}
