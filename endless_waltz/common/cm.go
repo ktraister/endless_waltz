@@ -25,6 +25,10 @@ func (cm *ConnectionManager) Send(message []byte) error {
 	}
 
 	err := cm.conn.WriteMessage(websocket.TextMessage, []byte(message))
+	if err != nil {
+		return err
+	}
+
 	cm.mu.Unlock()
 
 	return nil
@@ -38,6 +42,10 @@ func (cm *ConnectionManager) Read() (int, []byte, error) {
 	}
 
 	i, b, err := cm.conn.ReadMessage()
+	if err != nil {
+		return i, b, err
+	}
+
 	cm.mu.Unlock()
 
 	return i, b, nil
