@@ -48,13 +48,20 @@ func listUsers(w http.ResponseWriter, req *http.Request) {
                 return
         }
 
-	userList := ""
+        // Create a map to store the slice values
+        userMap := make(map[string]struct{})
 	for c, _ := range clients {
 	    user := strings.Split(c.Username, "_")[0]
-	    if ! strings.Contains(userList, user) {
-		userList = userList + ":" + user
+	    // Check if an item is in the slice
+	    if _, found := userMap[user]; ! found {
 		logger.Debug("Adding to userlist: ", user)
+		userMap[user] = struct{}{}
             }
+        }
+
+	userList := ""
+	for user, _ := range userMap {
+	    userList = userList + user + ":"
         }
  
 	logger.Debug(fmt.Sprintf("Returning userlist '%v'", userList))

@@ -36,7 +36,7 @@ func listen(logger *logrus.Logger, configuration Configurations) {
 	}
 }
 
-func send(logger *logrus.Logger, configuration Configurations) {
+func send(logger *logrus.Logger, configuration Configurations, sendButton *widget.Button, progressBar *widget.ProgressBarInfinite) {
 	cm, err := exConnect(logger, configuration, "client")
 	if err != nil {
 		return
@@ -44,8 +44,20 @@ func send(logger *logrus.Logger, configuration Configurations) {
 	defer cm.Close()
 	for {
 		message := <-outgoingMsgChan
+
+		//set container to sending progressbar widget
+		sendButton.Hide()
+		progressBar.Show()
+		//set container to sending progressbar widget
+
+		//update user and send message
 		targetUser := fmt.Sprintf("%s_%s", string(message.User), "server")
 		ok := ew_client(logger, configuration, cm, message.Msg, targetUser)
+		//reset container to prior
+		sendButton.Show()
+		progressBar.Hide()
+
+		//post our sent message
 		incomingMsgChan <- Post{Msg: message.Msg, User: configuration.Server.User, ok: ok}
 	}
 }
@@ -88,15 +100,6 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	// Create an entry field for typing messages
 	messageEntry := widget.NewMultiLineEntry()
 	messageEntry.SetPlaceHolder("Type your message...")
-
-	//listen for incoming messages here
-	//doing the listen like this causes a race condition in the websocket
-	//THIS IS WHAT MUTEXES ARE FOR PROTOCODE IN DIR
-	go listen(logger, configuration)
-	go send(logger, configuration)
-	go post(chatContainer)
-
-	// TODO: add a box at top/bottom left for currentUser
 
 	// add lines to use with onlinePanel
 	text := widget.NewLabelWithStyle("    Online Users    ", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
@@ -145,37 +148,22 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 
 	//actually add the users to the panel
 	onlineUsers.Add(userList)
+	//add container to hold the users list
+	onlineContainer := container.New(layout.NewHBoxLayout(), onlineUsers)
 
-	//need to add a goroutine here to listen for messages, a goroutine to populate new labels, and a chan to communicate
-
+	//define the sendbutton and OnClickFunc
 	sendButton := widget.NewButton("Send", func() {
 		// Get the message text from the entry field
 		message := messageEntry.Text
 		if message != "" {
-			//ohh shit we have to configure the user too
-			//send the message thru the EW circut
-
+		        //check, spelled like it sounds
 			if targetUser == configuration.Server.User {
 				incomingMsgChan <- Post{Msg: "Sending messages to yourself is not allowed", User: "foo", ok: false}
 				return
 			}
 
+			//drop msg on correct channel
 			outgoingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
-
-			//stripping out this for now to refactor a bit
-			/*
-				ok := ew_client(logger, configuration, conn, message, targetUser)
-
-				if ok {
-					// Create a label widget for the message and add it to the chat container
-					messageLabel := widget.NewLabel("You: " + message)
-					chatContainer.Add(messageLabel)
-				} else {
-					messageLabel := widget.NewLabel("FAILED TO SEND: " + message)
-					messageLabel.Importance = widget.DangerImportance
-					chatContainer.Add(messageLabel)
-				}
-			*/
 
 			// Clear the message entry field after sending
 			messageEntry.SetText("")
@@ -184,6 +172,13 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	//turn the send button blue
 	sendButton.Importance = widget.HighImportance
 
+	//define progress bar to use when sending a message
+	infinite := widget.NewProgressBarInfinite() 
+	buttonContainer := container.New(layout.NewVBoxLayout(), infinite)
+	buttonContainer.Add(sendButton)
+	infinite.Hide()
+
+	//define the chat clear button
 	clearButton := widget.NewButton("Clear", func() {
 		//clear chatContainer and messageEntry
 		chatContainer.Objects = chatContainer.Objects[:0]
@@ -192,22 +187,29 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	})
 	clearButton.Importance = widget.DangerImportance
 
+	//create the widget to display current user
 	myText := widget.NewLabelWithStyle("Logged in as: "+configuration.Server.User, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
 	myText.Importance = widget.WarningImportance
 
-	// Create a container for the message entry and send button
-	onlineContainer := container.New(layout.NewHBoxLayout(), onlineUsers)
-	sendContainer := container.NewBorder(clearButton, sendButton, nil, nil, messageEntry)
+	// Create a container for the message entry container, clear button widget and send button container
+	sendContainer := container.NewBorder(clearButton, buttonContainer, nil, nil, messageEntry)
 
 	// Create a vertical split container for chat and input
 	splitContainer := container.NewVSplit(scrollContainer, sendContainer)
 	splitContainer.Offset = .7
-	//Create another vertical split for chat and input
+	//Create borders for buttons
 	finalContainer := container.NewBorder(topLine, nil, onlineContainer, nil, splitContainer)
 	finalContainer = container.NewBorder(myText, nil, nil, nil, finalContainer)
 
 	myWindow.SetContent(finalContainer)
 	myWindow.Resize(fyne.NewSize(600, 800))
+
+	//replace button in buttonContainer with progressBar when firing message
+	//https://developer.fyne.io/widget/progressbar
+	//listen for incoming messages here
+	go listen(logger, configuration)
+	go send(logger, configuration, sendButton, infinite)
+	go post(chatContainer)
 
 }
 
