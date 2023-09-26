@@ -36,7 +36,7 @@ func listen(logger *logrus.Logger, configuration Configurations) {
 	}
 }
 
-func send(logger *logrus.Logger, configuration Configurations, container *fyne.Container, sendButton *fyne.Button) {
+func send(logger *logrus.Logger, configuration Configurations, sendButton *widget.Button, progressBar *widget.ProgressBarInfinite) {
 	cm, err := exConnect(logger, configuration, "client")
 	if err != nil {
 		return
@@ -44,11 +44,20 @@ func send(logger *logrus.Logger, configuration Configurations, container *fyne.C
 	defer cm.Close()
 	for {
 		message := <-outgoingMsgChan
+
 		//set container to sending progressbar widget
-		//container.
+		sendButton.Hide()
+		progressBar.Show()
+		//set container to sending progressbar widget
+
+		//update user and send message
 		targetUser := fmt.Sprintf("%s_%s", string(message.User), "server")
 		ok := ew_client(logger, configuration, cm, message.Msg, targetUser)
 		//reset container to prior
+		sendButton.Show()
+		progressBar.Hide()
+
+		//post our sent message
 		incomingMsgChan <- Post{Msg: message.Msg, User: configuration.Server.User, ok: ok}
 	}
 }
@@ -162,7 +171,12 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	})
 	//turn the send button blue
 	sendButton.Importance = widget.HighImportance
-	buttonContainer := container.New(layout.NewVBoxLayout(), sendButton)
+
+	//define progress bar to use when sending a message
+	infinite := widget.NewProgressBarInfinite() 
+	buttonContainer := container.New(layout.NewVBoxLayout(), infinite)
+	buttonContainer.Add(sendButton)
+	infinite.Hide()
 
 	//define the chat clear button
 	clearButton := widget.NewButton("Clear", func() {
@@ -194,7 +208,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	//https://developer.fyne.io/widget/progressbar
 	//listen for incoming messages here
 	go listen(logger, configuration)
-	go send(logger, configuration, buttonContainer, sendButton)
+	go send(logger, configuration, sendButton, infinite)
 	go post(chatContainer)
 
 }
