@@ -186,7 +186,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
-	router.HandleFunc("/api/healthcheck", health_handler).Methods("GET") // XXX is this intended to behave like /ping would? like an et phone home?
+	router.HandleFunc("/api/healthcheck", health_handler).Methods("GET") 
 	router.HandleFunc("/api/otp", otp_handler).Methods("POST")
 
 	http.ListenAndServe(":8090", router)
