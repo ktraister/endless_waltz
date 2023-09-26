@@ -34,39 +34,39 @@ var upgrader = websocket.Upgrader{
 }
 
 func listUsers(w http.ResponseWriter, req *http.Request) {
-        logger, ok := req.Context().Value("logger").(*logrus.Logger)
-        if !ok {
-                http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-                logger.Error("Could not configure logger!")
-                return
-        }
- 
-        ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
-        if !ok {
-                http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
-                logger.Info("request denied 403 unauthorized")
-                return
-        }
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
 
-        // Create a map to store the slice values
-        userMap := make(map[string]struct{})
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	// Create a map to store the slice values
+	userMap := make(map[string]struct{})
 	for c, _ := range clients {
-	    user := strings.Split(c.Username, "_")[0]
-	    // Check if an item is in the slice
-	    if _, found := userMap[user]; ! found {
-		logger.Debug("Adding to userlist: ", user)
-		userMap[user] = struct{}{}
-            }
-        }
+		user := strings.Split(c.Username, "_")[0]
+		// Check if an item is in the slice
+		if _, found := userMap[user]; !found {
+			logger.Debug("Adding to userlist: ", user)
+			userMap[user] = struct{}{}
+		}
+	}
 
 	userList := ""
 	for user, _ := range userMap {
-	    userList = userList + user + ":"
-        }
- 
+		userList = userList + user + ":"
+	}
+
 	logger.Debug(fmt.Sprintf("Returning userlist '%v'", userList))
-        w.Write([]byte(userList))
-        logger.Info("Someone hit the listUsers route...")
+	w.Write([]byte(userList))
+	logger.Info("Someone hit the listUsers route...")
 }
 
 func serveWs(w http.ResponseWriter, r *http.Request) {

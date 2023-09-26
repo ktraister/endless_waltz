@@ -5,10 +5,10 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"image/color"
-	//"fyne.io/fyne/v2/dialog"
 
 	"fmt"
 	"github.com/sirupsen/logrus"
@@ -156,7 +156,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 		// Get the message text from the entry field
 		message := messageEntry.Text
 		if message != "" {
-		        //check, spelled like it sounds
+			//check, spelled like it sounds
 			if targetUser == configuration.Server.User {
 				incomingMsgChan <- Post{Msg: "Sending messages to yourself is not allowed", User: "foo", ok: false}
 				return
@@ -173,7 +173,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	sendButton.Importance = widget.HighImportance
 
 	//define progress bar to use when sending a message
-	infinite := widget.NewProgressBarInfinite() 
+	infinite := widget.NewProgressBarInfinite()
 	buttonContainer := container.New(layout.NewVBoxLayout(), infinite)
 	buttonContainer.Add(sendButton)
 	infinite.Hide()
@@ -201,9 +201,6 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	finalContainer := container.NewBorder(topLine, nil, onlineContainer, nil, splitContainer)
 	finalContainer = container.NewBorder(myText, nil, nil, nil, finalContainer)
 
-	myWindow.SetContent(finalContainer)
-	myWindow.Resize(fyne.NewSize(600, 800))
-
 	//replace button in buttonContainer with progressBar when firing message
 	//https://developer.fyne.io/widget/progressbar
 	//listen for incoming messages here
@@ -211,16 +208,25 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	go send(logger, configuration, sendButton, infinite)
 	go post(chatContainer)
 
+	myWindow.SetContent(finalContainer)
+	myWindow.Resize(fyne.NewSize(600, 800))
+	myWindow.Show()
+}
+
+func afterLogin(logger *logrus.Logger, configuration Configurations, myApp fyne.App, loginWindow fyne.Window) {
+	//myApp.Preferences().SetString("AppTimeout", string(time.Minute))
+	myWindow := myApp.NewWindow("EW Messenger")
+	myWindow.SetMaster()
+	configureGUI(myWindow, logger, configuration)
 }
 
 func main() {
-	//add "starting up" message while loading
-
 	//configuration stuff
 	configuration, err := fetchConfig()
 	if err != nil {
 		return
 	}
+
 	logger := createLogger(configuration.Server.LogLevel, "normal")
 
 	// Reading variables using the model
@@ -229,20 +235,37 @@ func main() {
 	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
 	logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
 	logger.Debug("exchangeURL is\t", configuration.Server.ExchangeURL)
-	logger.Debug("user is\t\t", configuration.Server.User)
-	logger.Debug("Passwd is\t\t", configuration.Server.Passwd)
 
-	//have the user login every time -- it's no longer APIKeyAuth
-	logger.Debug("Checking creds...")
-	ok := checkCreds(configuration)
-	if !ok {
-		return
-	}
-	logger.Debug("creds passed check!")
+	//add "starting up" message while loading
+	myApp := app.NewWithID("EW Messenger")
+	w := myApp.NewWindow("EW Messenger Login")
+	username := widget.NewEntry()
+	password := widget.NewPasswordEntry()
+	w.SetContent(widget.NewButton("Login to the EW Circut", func() {
+		content := widget.NewForm(widget.NewFormItem("Username", username),
+			widget.NewFormItem("Password", password))
 
-	myApp := app.NewWithID("Main")
-	myApp.Preferences().SetString("AppTimeout", fmt.Sprint(time.Minute))
-	myWindow := myApp.NewWindow("EW Messenger")
-	configureGUI(myWindow, logger, configuration)
-	myWindow.ShowAndRun()
+		dialog.ShowCustomConfirm("Login...", "Log In", "Cancel", content, func(b bool) {
+			logger.Debug("Checking creds...")
+			//set values we just took in with login widget
+			configuration.Server.User = username.Text
+			configuration.Server.Passwd = password.Text
+
+			ok := checkCreds(configuration)
+
+			if !ok || !b {
+				return
+			}
+			logger.Debug("creds passed check!")
+
+			//run the next window
+			afterLogin(logger, configuration, myApp, w)
+			w.Close()
+		}, w)
+	}))
+	w.RequestFocus()
+	w.CenterOnScreen()
+	w.Resize(fyne.NewSize(400, 200))
+	w.Show()
+	myApp.Run()
 }
