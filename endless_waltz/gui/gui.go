@@ -13,7 +13,7 @@ import (
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"time"
-    )
+)
 
 //this is how you show dialog box
 //dialog.ShowConfirm("foo", "foo", nil, myWindow)
@@ -156,7 +156,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 		// Get the message text from the entry field
 		message := messageEntry.Text
 		if message != "" {
-		        //check, spelled like it sounds
+			//check, spelled like it sounds
 			if targetUser == configuration.Server.User {
 				incomingMsgChan <- Post{Msg: "Sending messages to yourself is not allowed", User: "foo", ok: false}
 				return
@@ -173,7 +173,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	sendButton.Importance = widget.HighImportance
 
 	//define progress bar to use when sending a message
-	infinite := widget.NewProgressBarInfinite() 
+	infinite := widget.NewProgressBarInfinite()
 	buttonContainer := container.New(layout.NewVBoxLayout(), infinite)
 	buttonContainer.Add(sendButton)
 	infinite.Hide()
