@@ -126,6 +126,7 @@ func main() {
 
 		count := otpItemCount(logger, ctx, otp_db)
 		if count == -1 {
+			logger.Warn("Unable to count items in DB!")
 			continue
 		}
 

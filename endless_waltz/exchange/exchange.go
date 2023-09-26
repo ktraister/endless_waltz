@@ -99,12 +99,13 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		logger.Error(err)
+		return
 	}
 
 	// register client
 	client := &Client{Conn: ws}
 	clients[client] = true
-	logger.Debug("clients", len(clients), clients, ws.RemoteAddr())
+	logger.Info("clients", len(clients), clients, ws.RemoteAddr())
 
 	// listen indefinitely for new messages coming
 	// through on our WebSocket connection
@@ -122,7 +123,7 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 		_, p, err := client.Conn.ReadMessage()
 		if err != nil {
 			logger.Error(err)
-			return
+			continue
 		}
 
 		m := &Message{}
@@ -138,10 +139,8 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 			client.Username = m.User
 			logger.Info("client successfully mapped", &client, client)
 		} else {
-			logger.Info("received message, broadcasting: ", m)
-			//broadcast <- &c
+			logger.Debug("received message, broadcasting: ", m)
 			broadcast <- *m
-
 		}
 	}
 }
@@ -151,7 +150,7 @@ func broadcaster(logger *logrus.Logger) {
 		message := <-broadcast
 		//don't use my relays to send shit to yourself
 		if message.To == message.From {
-			logger.Info(fmt.Sprintf("Possible abuse from %s: refusing to self send message on relay", message.To))
+			logger.Warn(fmt.Sprintf("Possible abuse from %s: refusing to self send message on relay", message.To))
 			continue
 		}
 		sendFlag := 0
