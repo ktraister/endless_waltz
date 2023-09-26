@@ -5,17 +5,15 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
 	"image/color"
-	"fyne.io/fyne/v2/dialog"
 
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
-	//"time"
-	"fmt"
 )
 
 //this is how you show dialog box
@@ -102,55 +100,10 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 
 	myWindow.SetContent(finalContainer)
 	myWindow.Resize(fyne.NewSize(600, 800))
-
+	myWindow.Show()
 }
 
-func main() {
-        //add "starting up" message while loading
-	login := app.NewWithID("login")
-	w := login.NewWindow("EW Messenger Login")
-	username := widget.NewEntry()
-	password := widget.NewPasswordEntry()
-        w.SetContent( widget.NewButton("Login", func() {
-			content := widget.NewForm(widget.NewFormItem("Username", username),
-				widget.NewFormItem("Password", password))
-
-			dialog.ShowCustomConfirm("Login...", "Log In", "Cancel", content, func(b bool) {
-				if !b {
-					return
-				}
-
-				fmt.Println("Please Authenticate", username.Text, password.Text)
-                                login.Quit()
-			}, w)}))
-	w.ShowAndRun()
-
-	fmt.Println(username.Text)
-
-	//configuration stuff
-	configuration, err := fetchConfig()
-	if err != nil {
-		return
-	}
-	logger := createLogger(configuration.Server.LogLevel, "normal")
-
-	// Reading variables using the model
-	logger.Debug("Reading variables using the model..")
-	logger.Debug("keypath is\t\t", configuration.Server.Key)
-	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
-	logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
-	logger.Debug("exchangeURL is\t", configuration.Server.ExchangeURL)
-	logger.Debug("user is\t\t", configuration.Server.User)
-	logger.Debug("Passwd is\t\t", configuration.Server.Passwd)
-
-	//have the user login every time -- it's no longer APIKeyAuth
-	logger.Debug("Checking creds...")
-	ok := checkCreds(configuration)
-	if !ok {
-		return
-	}
-	logger.Debug("creds passed check!")
-
+func afterLogin(logger *logrus.Logger, configuration Configurations, myApp fyne.App, loginWindow fyne.Window) {
 	// Parse the WebSocket URL
 	u, err := url.Parse(configuration.Server.ExchangeURL)
 	if err != nil {
@@ -167,9 +120,58 @@ func main() {
 
 	defer conn.Close()
 
-	myApp := app.NewWithID("Main")
 	//myApp.Preferences().SetString("AppTimeout", string(time.Minute))
 	myWindow := myApp.NewWindow("EW Messenger")
+	myWindow.SetMaster()
 	configureGUI(myWindow, logger, configuration, conn)
-	myWindow.ShowAndRun()
+}
+
+func main() {
+	//configuration stuff
+	configuration, err := fetchConfig()
+	if err != nil {
+		return
+	}
+
+	logger := createLogger(configuration.Server.LogLevel, "normal")
+
+	// Reading variables using the model
+	logger.Debug("Reading variables using the model..")
+	logger.Debug("keypath is\t\t", configuration.Server.Key)
+	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
+	logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
+	logger.Debug("exchangeURL is\t", configuration.Server.ExchangeURL)
+
+	//add "starting up" message while loading
+	myApp := app.NewWithID("EW Messenger")
+	w := myApp.NewWindow("EW Messenger Login")
+	username := widget.NewEntry()
+	password := widget.NewPasswordEntry()
+	w.SetContent(widget.NewButton("Login to the EW Circut", func() {
+		content := widget.NewForm(widget.NewFormItem("Username", username),
+			widget.NewFormItem("Password", password))
+
+		dialog.ShowCustomConfirm("Login...", "Log In", "Cancel", content, func(b bool) {
+			logger.Debug("Checking creds...")
+			//set values we just took in with login widget
+			configuration.Server.User = username.Text
+			configuration.Server.Passwd = password.Text
+
+			ok := checkCreds(configuration)
+
+			if !ok || !b {
+				return
+			}
+			logger.Debug("creds passed check!")
+
+			//run the next window
+			afterLogin(logger, configuration, myApp, w)
+			w.Close()
+		}, w)
+	}))
+	w.RequestFocus()
+	w.CenterOnScreen()
+	w.Resize(fyne.NewSize(400, 200))
+	w.Show()
+	myApp.Run()
 }
