@@ -13,6 +13,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/sirupsen/logrus"
 	"image/color"
+	"encoding/json"
 	"time"
 )
 
@@ -25,42 +26,60 @@ import (
 var users = []string{}
 var targetUser = ""
 
+//this thread should just read HELO and pass off to another thread
 func listen(logger *logrus.Logger, configuration Configurations) {
-	cm, err := exConnect(logger, configuration, "server")
+       localUser := fmt.Sprintf("%s_%s", configuration.User, "server")
+	cm, err := exConnect(logger, configuration, localUser)
 	if err != nil {
 		return
 	}
 	defer cm.Close()
+
+	//listen for incoming connections
 	for {
-		//here's our server function, but it needs to write to gui
-		handleConnection(cm, logger, configuration)
+		_, incoming, err := cm.Read()
+		if err != nil {
+			logger.Error("Error reading message:", err)
+			continue
+		}                                            
+		    
+		err = json.Unmarshal([]byte(incoming), &dat)
+		if err != nil {
+			logger.Error("Error unmarshalling json:", err)
+			continue
+		}   
+		    
+		//new connections should always ask
+		if dat["msg"] == "HELO" {
+			logger.Debug("Received HELO from ", dat["from"])
+		} else {
+			logger.Warn("New connection didn't HELO, bouncing")
+			continue
+		}   
+                //handle connection currently uses the HELO connection
+		//let's add exConnect to it for a fresh thread
+		go handleConnection(dat, logger, configuration)
 	}
 }
 
+//send needs to be a wrapper thread for go functions
 func send(logger *logrus.Logger, configuration Configurations, sendButton *widget.Button, progressBar *widget.ProgressBarInfinite) {
-	cm, err := exConnect(logger, configuration, "client")
-	if err != nil {
-		return
-	}
-	defer cm.Close()
-	for {
-		message := <-outgoingMsgChan
+    for {
+        message := <- outgoingMsgChan
+	//set container to sending progressbar widget
+	sendButton.Hide()
+	progressBar.Show()
+	//set container to sending progressbar widget
 
-		//set container to sending progressbar widget
-		sendButton.Hide()
-		progressBar.Show()
-		//set container to sending progressbar widget
+	//update user and send message to server root socket
+	ok := ew_client(logger, configuration, message)
+	//reset container to prior
+	sendButton.Show()
+	progressBar.Hide()
 
-		//update user and send message
-		targetUser := fmt.Sprintf("%s_%s", string(message.User), "server")
-		ok := ew_client(logger, configuration, cm, message.Msg, targetUser)
-		//reset container to prior
-		sendButton.Show()
-		progressBar.Hide()
-
-		//post our sent message
-		incomingMsgChan <- Post{Msg: message.Msg, User: configuration.User, ok: ok}
-	}
+	//post our sent message
+	incomingMsgChan <- Post{Msg: message.Msg, User: configuration.User, ok: ok}
+    }
 }
 
 func post(container *fyne.Container) {
@@ -163,8 +182,11 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 				return
 			}
 
-			//drop msg on correct channel
-			outgoingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
+			//create a goroutine here to send
+	                //OUR SENDIN THREAD SHOULD BE EVENT DRIVEN AND HAVE A UID
+			message := Post{Msg: message, User: targetUser, ok: true}
+			//drop the messsage on the outgoing channel
+			outgoingMsgChan <- message
 
 			// Clear the message entry field after sending
 			messageEntry.SetText("")

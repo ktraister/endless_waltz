@@ -61,9 +61,7 @@ func (cm *ConnectionManager) Close() {
 	}
 }
 
-func exConnect(logger *logrus.Logger, configuration Configurations, ctype string) (*ConnectionManager, error) {
-	user := configuration.User + "_" + ctype
-
+func exConnect(logger *logrus.Logger, configuration Configurations, user string) (*ConnectionManager, error) {
 	// Parse the WebSocket URL
 	u, err := url.Parse(configuration.ExchangeURL)
 	if err != nil {

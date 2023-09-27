@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"math/rand"
+	"time"
 
 	"github.com/sirupsen/logrus"
 )
@@ -14,30 +16,29 @@ type Client_Resp struct {
 }
 
 var incomingMsgChan = make(chan Post)
+var outgoingMsgChan = make(chan Post)
+
+func uid() string{
+    rand.Seed(time.Now().Unix())
+    length := 4
+
+    ran_str := make([]byte, length)
+
+    // Generating Random string
+    for i := 0; i < length; i++ {
+        ran_str[i] = ran_str[65 + rand.Intn(25)]
+    }
+
+    // Displaying the random string
+    str := string(ran_str)
+    return str
+}
 
 // Change handleConnection to act as the "server side" in this transaction
 // we'll pass around the websocket to accomplish this
-func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations) {
-	localUser := fmt.Sprintf("%s_%s", configuration.User, "server")
-	_, incoming, err := cm.Read()
-	if err != nil {
-		logger.Error("Error reading message:", err)
-		return
-	}
-
-	err = json.Unmarshal([]byte(incoming), &dat)
-	if err != nil {
-		logger.Error("Error unmarshalling json:", err)
-		return
-	}
-
-	//new connections should always ask
-	if dat["msg"] == "HELO" {
-		logger.Debug("Received HELO from ", dat["from"])
-	} else {
-		logger.Warn("New connection didn't HELO, bouncing")
-		return
-	}
+func handleConnection(dat map[string]interface{},  logger *logrus.Logger, configuration Configurations) {
+        localUser := fmt.Sprintf("%s_server-%s", configuration.User, uid())
+        cm, err := exConnect(logger, configuration, localUser)
 
 	//we need to respond with a HELO here
 	helo := &Message{Type: "helo",
@@ -108,7 +109,7 @@ func handleConnection(cm *ConnectionManager, logger *logrus.Logger, configuratio
 	logger.Debug("We've just sent off the UUID to client...")
 
 	//receive the encrypted text
-	_, incoming, err = cm.Read()
+	_, incoming, err := cm.Read()
 	if err != nil {
 		logger.Error("Error reading message:", err)
 		return

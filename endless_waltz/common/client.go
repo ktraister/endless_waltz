@@ -29,17 +29,23 @@ type Random_Req struct {
 	UUID string `json:"UUID"`
 }
 
-var outgoingMsgChan = make(chan Post)
 var dat map[string]interface{}
 
-func ew_client(logger *logrus.Logger, configuration Configurations, cm *ConnectionManager, message string, targetUser string) bool {
-	user := fmt.Sprintf("%s_%s", configuration.User, "client")
+func ew_client(logger *logrus.Logger, configuration Configurations, message Post) bool {
+        user := fmt.Sprintf("%s_client-%s", configuration.User, uid())
+        cm, err := exConnect(logger, configuration, user)
+        if err != nil { 
+                return false
+        }                  
+        defer cm.Close()  
 	passwd := configuration.Passwd
 	random := configuration.RandomURL
 
-	logger.Debug(fmt.Sprintf("Sending msg %s from user %s to user %s!!", message, user, targetUser))
+	targetUser := fmt.Sprintf("%s_%s", string(message.User), "server")
 
-	if len(message) > 4096 {
+	logger.Debug(fmt.Sprintf("Sending msg %s from user %s to user %s!!", message.Msg, user, targetUser))
+
+	if len(message.Msg) > 4096 {
 		logger.Fatal("We dont support this yet!")
 		return false
 	}
@@ -70,7 +76,6 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 	}
 	logger.Debug("Client:Sent init HELO")
 
-	heloFlag := 0
 	//HELO should be received within 5 seconds to proceed OR exit
 	cm.conn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	_, incoming, err := cm.Read()
@@ -92,16 +97,16 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 		return false
 	}
 
+	heloUser := strings.Split(dat["from"].(string), "-")[0]
 	if dat["msg"] == "HELO" &&
-		dat["from"] == targetUser {
-		logger.Debug("Client received HELO from ", dat["from"].(string))
-		heloFlag = 1
-	}
-
-	if heloFlag == 0 {
+		heloUser == targetUser {
+		logger.Debug("Client received HELO from ", heloUser)
+	} else {
 		logger.Error(fmt.Sprintf("Didn't receive HELO from %s in time, try again later", targetUser))
 		return false
 	}
+
+	targetUser = dat["from"].(string)
 
 	//reset conn read deadline
 	cm.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
@@ -154,7 +159,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 	json.NewDecoder(resp.Body).Decode(&dat)
 	logger.Debug("got response from RandomAPI: ", dat)
 	raw_pad := fmt.Sprintf("%v", dat["Pad"])
-	cipherText := pad_encrypt(message, raw_pad, private_key)
+	cipherText := pad_encrypt(message.Msg, raw_pad, private_key)
 	logger.Debug(fmt.Sprintf("Ciphertext: %v\n", cipherText))
 
 	//send the ciphertext to the other user throught the websocket
