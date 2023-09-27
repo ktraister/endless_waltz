@@ -62,17 +62,17 @@ func (cm *ConnectionManager) Close() {
 }
 
 func exConnect(logger *logrus.Logger, configuration Configurations, ctype string) (*ConnectionManager, error) {
-	user := configuration.Server.User + "_" + ctype
+	user := configuration.User + "_" + ctype
 
 	// Parse the WebSocket URL
-	u, err := url.Parse(configuration.Server.ExchangeURL)
+	u, err := url.Parse(configuration.ExchangeURL)
 	if err != nil {
 		logger.Fatal(err)
 		return &ConnectionManager{}, err
 	}
 
 	// Establish a WebSocket connection
-	conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Passwd": []string{configuration.Server.Passwd}, "User": []string{user}})
+	conn, _, err := websocket.DefaultDialer.Dial(u.String(), http.Header{"Passwd": []string{configuration.Passwd}, "User": []string{user}})
 	if err != nil {
 		logger.Fatal("Could not establish WebSocket connection with ", u.String())
 		return &ConnectionManager{}, err

@@ -5,10 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 	"net/http"
-	"os"
-	"os/user"
 	"strings"
 	"time"
 )
@@ -36,9 +33,9 @@ var outgoingMsgChan = make(chan Post)
 var dat map[string]interface{}
 
 func ew_client(logger *logrus.Logger, configuration Configurations, cm *ConnectionManager, message string, targetUser string) bool {
-	user := fmt.Sprintf("%s_%s", configuration.Server.User, "client")
-	passwd := configuration.Server.Passwd
-	random := configuration.Server.RandomURL
+	user := fmt.Sprintf("%s_%s", configuration.User, "client")
+	passwd := configuration.Passwd
+	random := configuration.RandomURL
 
 	logger.Debug(fmt.Sprintf("Sending msg %s from user %s to user %s!!", message, user, targetUser))
 
@@ -54,7 +51,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 
 	//send HELO to target user
 	helo := &Message{Type: "helo",
-		User: configuration.Server.User,
+		User: configuration.User,
 		From: user,
 		To:   targetUser,
 		Msg:  "HELO",
@@ -146,7 +143,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 		return false
 	}
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Set("User", configuration.Server.User)
+	req.Header.Set("User", configuration.User)
 	req.Header.Set("Passwd", passwd)
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -162,7 +159,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 
 	//send the ciphertext to the other user throught the websocket
 	outgoing := &Message{Type: "cipher",
-		User: configuration.Server.User,
+		User: configuration.User,
 		From: user,
 		To:   targetUser,
 		Msg:  cipherText,
@@ -177,83 +174,24 @@ func ew_client(logger *logrus.Logger, configuration Configurations, cm *Connecti
 	return true
 }
 
-func fetchConfig() (Configurations, error) {
-	var configuration Configurations
-	//contents of temp config file
-	contents := "server:\n  key: \"./certs/server.key\"\n  cert: \"./certs/server.crt\"\n  randomURL: \"http://localhost:8090/api/otp\"\n  exchangeURL: \"ws://localhost:8081/ws\"\n  logLevel: \"Debug\"\n  user: \"KayleighToo\"\n  Passwd: \"arandomnumber\""
-
-	currentUser, err := user.Current()
-	if err != nil {
-		fmt.Println("Unable to get current user: ", err)
-		return configuration, err
-	}
-
-	// Get the user's home directory
-	configDir := fmt.Sprintf("%s/.ew", currentUser.HomeDir)
-	configFile := fmt.Sprintf("%s/config.yml", configDir)
-
-	//check if directory exists and create if not
-	if _, err := os.Stat(configDir); os.IsNotExist(err) {
-		fmt.Println("no config dir found, creating...")
-		if err := os.Mkdir(configDir, os.ModePerm); err != nil {
-			fmt.Println("Unable to create config home dir: ", err)
-			return configuration, err
-		}
-	}
-
-	//check if actual config file exists, create if not
-	if _, err := os.Stat(configFile); os.IsNotExist(err) {
-		fmt.Println("no config file found, creating...")
-		file, err := os.Create(configFile)
-		if err != nil {
-			fmt.Println("Unable to create config file", err)
-			return configuration, err
-		}
-
-		// Write contents to the file
-		_, err = file.WriteString(contents)
-		if err != nil {
-			fmt.Println("Unable to write temp contents to config file", err)
-			return configuration, err
-		}
-		file.Close()
-	}
-
-	viper.SetConfigName("config")
-	viper.AddConfigPath("$HOME/.ew/")
-	viper.SetConfigType("yml")
-
-	if err := viper.ReadInConfig(); err != nil {
-		fmt.Println("Viper:Error reading config file: ", err)
-		return configuration, err
-	}
-	err = viper.Unmarshal(&configuration)
-	if err != nil {
-		fmt.Println("Viper:Unable to decode into struct: ", err)
-		return configuration, err
-	}
-
-	return configuration, nil
-}
-
 func checkCreds(configuration Configurations) bool {
 	//check and make sure inserted creds
 	//Random and Exchange will use same mongo, so the creds will be valid for both
 
-	health_url := fmt.Sprintf("%s%s", strings.Split(configuration.Server.RandomURL, "/otp")[0], "/healthcheck")
+	health_url := fmt.Sprintf("%s%s", strings.Split(configuration.RandomURL, "/otp")[0], "/healthcheck")
 	req, err := http.NewRequest("GET", health_url, nil)
 	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Set("User", configuration.Server.User)
-	req.Header.Set("Passwd", configuration.Server.Passwd)
+	req.Header.Set("User", configuration.User)
+	req.Header.Set("Passwd", configuration.Passwd)
 	client := http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("Could not connect to configured randomAPI ", configuration.Server.RandomURL)
+		fmt.Println("Could not connect to configured randomAPI ", configuration.RandomURL)
 		fmt.Println("Quietly exiting now. Please reconfigure.")
 		return false
 	}
 	if resp == nil {
-		fmt.Println("Could not connect to configured randomAPI ", configuration.Server.RandomURL)
+		fmt.Println("Could not connect to configured randomAPI ", configuration.RandomURL)
 		fmt.Println("Quietly exiting now. Please reconfigure.")
 		return false
 	}

@@ -72,11 +72,11 @@ func checkPrivKey(key string) bool {
 	return true
 }
 
-func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations, conn_type string, user string) (string, error) {
-	//prime := big.NewInt(1)
+func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations, conn_type string, targetUser string) (string, error) {
+        //setup required vars
+	localUser := fmt.Sprintf("%s_%s", configuration.User, conn_type)
 	prime := big.NewInt(424889)
 	tempkey := big.NewInt(1)
-
 	var generator int
 	var err error
 	var ok bool
@@ -90,9 +90,9 @@ func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Co
 		logger.Debug("Server DH Generator: ", generator)
 
 		outgoing := &Message{Type: "DH",
-			User: configuration.Server.User,
-			From: configuration.Server.User,
-			To:   user,
+			User: configuration.User,
+			From: localUser,
+			To:   targetUser,
 			Msg:  fmt.Sprintf("%d:%d", prime, generator),
 		}
 		b, err := json.Marshal(outgoing)
@@ -180,9 +180,9 @@ func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Co
 		//send the pubkey across the conn
 		logger.Debug("Sending pubkey TO client: ", tempkey)
 		outgoing := &Message{Type: "DH",
-			User: configuration.Server.User,
-			From: configuration.Server.User,
-			To:   user,
+			User: configuration.User,
+			From: localUser,
+			To:   targetUser,
 			Msg:  tempkey.String(),
 		}
 		b, err := json.Marshal(outgoing)
@@ -236,9 +236,9 @@ func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Co
 		//send the tempkey across the conn
 		logger.Debug("Sending pubkey TO server: ", tempkey.String())
 		outgoing := &Message{Type: "DH",
-			User: configuration.Server.User,
-			From: configuration.Server.User,
-			To:   user,
+			User: configuration.User,
+			From: localUser,
+			To:   targetUser,
 			Msg:  tempkey.String(),
 		}
 		b, err := json.Marshal(outgoing)
