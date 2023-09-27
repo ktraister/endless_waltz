@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #quick python program to convert ssh moduli files into useable generator/prime combos
 
 print("package main")
