@@ -29,4 +29,4 @@ To finish a new Reaper box or deploy new infra, follow the directions in
 
 # Architecture
 The POC Infra is currently active. It is true to this diagram:
-![alt text](./.png/EndlessWaltz.png)
+![alt text](./.png/EndlessWaltzPOC.png)

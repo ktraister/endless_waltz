@@ -28,26 +28,40 @@ This is the process for a new dev namespace with all the trimmings.
 Pick and choose what you need to deploy for each unieuq part
 
 #set up pull secret
+```
 kubectl create secret docker-registry ghcrcred \
   --docker-server=ghcr.io \
   --docker-username=ktraister \
   --docker-password= \
   --docker-email=kayleigh.traister@gmail.com
+```
 
 #deploy mongo
+```
 cd mongo && kubectl apply -f .
+```
 
 #deploy reaper
+```
 cd reaper && kubectl apply -f .
+```
 
 #deploy random
+```
 cd random && kubectl apply -f .
+```
 
 #deploy exchange
+```
 cd exchange && kubectl apply -f .
+```
 
 #expose random port
+```
 kubectl expose deployment ew-random --type=LoadBalancer --name=local-ew-random
+```
 
 #expose exchange port
+```
 kubectl expose deployment ew-exchange --type=LoadBalancer --name=local-ew-exchange
+```
