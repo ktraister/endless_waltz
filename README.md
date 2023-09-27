@@ -4,8 +4,7 @@
 This project is intended to serve as a POC of a One-Time Pad implementation using a Diffie-Hellman handshake to modify pads sent across the open internet. This monorepo contains all parts of the system except `ew-rtl-entropy`.
 
 ## Architecture
-**This is out of date and needs to be updated**
-
 ![alt text](./.png/EndlessWaltz.png)
 
-
+## Documentation
+Project docs can be found [here](./docs/README.md)
