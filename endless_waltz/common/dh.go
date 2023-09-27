@@ -90,8 +90,8 @@ func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Co
 		logger.Debug("Server DH Generator: ", generator)
 
 		outgoing := &Message{Type: "DH",
-			User: configuration.Server.User,
-			From: configuration.Server.User,
+			User: configuration.User,
+			From: configuration.User,
 			To:   user,
 			Msg:  fmt.Sprintf("%d:%d", prime, generator),
 		}
@@ -180,8 +180,8 @@ func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Co
 		//send the pubkey across the conn
 		logger.Debug("Sending pubkey TO client: ", tempkey)
 		outgoing := &Message{Type: "DH",
-			User: configuration.Server.User,
-			From: configuration.Server.User,
+			User: configuration.User,
+			From: configuration.User,
 			To:   user,
 			Msg:  tempkey.String(),
 		}
@@ -236,8 +236,8 @@ func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Co
 		//send the tempkey across the conn
 		logger.Debug("Sending pubkey TO server: ", tempkey.String())
 		outgoing := &Message{Type: "DH",
-			User: configuration.Server.User,
-			From: configuration.Server.User,
+			User: configuration.User,
+			From: configuration.User,
 			To:   user,
 			Msg:  tempkey.String(),
 		}

@@ -59,7 +59,7 @@ func send(logger *logrus.Logger, configuration Configurations, sendButton *widge
 		progressBar.Hide()
 
 		//post our sent message
-		incomingMsgChan <- Post{Msg: message.Msg, User: configuration.Server.User, ok: ok}
+		incomingMsgChan <- Post{Msg: message.Msg, User: configuration.User, ok: ok}
 	}
 }
 
@@ -158,7 +158,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 		message := messageEntry.Text
 		if message != "" {
 			//check, spelled like it sounds
-			if targetUser == configuration.Server.User {
+			if targetUser == configuration.User {
 				incomingMsgChan <- Post{Msg: "Sending messages to yourself is not allowed", User: "foo", ok: false}
 				return
 			}
@@ -189,7 +189,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	clearButton.Importance = widget.DangerImportance
 
 	//create the widget to display current user
-	myText := widget.NewLabelWithStyle("Logged in as: "+configuration.Server.User, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+	myText := widget.NewLabelWithStyle("Logged in as: "+configuration.User, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
 	myText.Importance = widget.WarningImportance
 
 	// Create a container for the message entry container, clear button widget and send button container
@@ -228,14 +228,12 @@ func main() {
 		return
 	}
 
-	logger := createLogger(configuration.Server.LogLevel, "normal")
+	logger := createLogger(configuration.LogLevel, "normal")
 
 	// Reading variables using the model
 	logger.Debug("Reading variables using the model..")
-	logger.Debug("keypath is\t\t", configuration.Server.Key)
-	logger.Debug("crtpath is\t\t", configuration.Server.Cert)
-	logger.Debug("randomURL is\t\t", configuration.Server.RandomURL)
-	logger.Debug("exchangeURL is\t", configuration.Server.ExchangeURL)
+	logger.Debug("randomURL is\t\t", configuration.RandomURL)
+	logger.Debug("exchangeURL is\t", configuration.ExchangeURL)
 
 	//add "starting up" message while loading
 	myApp := app.NewWithID("EW Messenger")
@@ -256,8 +254,8 @@ func main() {
 			hashString := hex.EncodeToString(hashSum)
 
 			//set values we just took in with login widget
-			configuration.Server.User = username.Text
-			configuration.Server.Passwd = hashString
+			configuration.User = username.Text
+			configuration.Passwd = hashString
 			logger.Debug(hashString)
 
 			//pass the hash lol
