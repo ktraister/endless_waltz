@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/rand"
+	"fmt"
 	"math/big"
 	"os"
 	"strings"
@@ -56,6 +57,7 @@ func checkUUIDUnique(logger *logrus.Logger, ctx context.Context, otp_db *mongo.C
 	}
 }
 
+//to optimize reaper, spin off a goroutine to keep a slice updated and pull from that when writing
 func createOTP() (string, error) {
 	temp := []string{}
 	maximum, _ := big.NewInt(0).SetString("1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000", 0)
@@ -68,23 +70,41 @@ func createOTP() (string, error) {
 	return strings.Join(temp[:], " "), nil
 }
 
-func insertItem(logger *logrus.Logger, ctx context.Context, otp_db *mongo.Collection) bool {
-	// create uuid inside function for ease of use
-	id := uuid.New().String()
-	ok := checkUUIDUnique(logger, ctx, otp_db, id)
-	if !ok {
-		logger.Debug("Non-unique UUID generated, passing for now...")
-		return false
+func insertItems(logger *logrus.Logger, ctx context.Context, count int64, otp_db *mongo.Collection) bool {
+	// Create an array of documents to insert
+	documents := []interface{}{}
+
+	if count > 100 {
+		count = 100
 	}
 
-	otp, err := createOTP()
-	if err != nil {
-		logger.Error(err)
-		return false
+	for i := 0; i < int(count); i++ {
+		// create uuid inside function for ease of use
+		id := uuid.New().String()
+		ok := checkUUIDUnique(logger, ctx, otp_db, id)
+		if !ok {
+			logger.Debug("Non-unique UUID generated, passing for now...")
+			continue
+		}
+
+		otp, err := createOTP()
+		if err != nil {
+			logger.Error(err)
+			return false
+		}
+
+		//add our new OTP document to our array
+		documents = append(documents, bson.D{{"UUID", id}, {"Pad", otp}})
+	}
+
+	// Create an array of insert models
+	var insertModels []mongo.WriteModel
+	for _, doc := range documents {
+		insertModels = append(insertModels, mongo.NewInsertOneModel().SetDocument(doc))
 	}
 
 	//Then we insert
-	_, err = otp_db.InsertOne(ctx, bson.D{{"UUID", id}, {"Pad", otp}})
+	result, err := otp_db.BulkWrite(ctx, insertModels)
 	if err != nil {
 		writeFailedCount++
 		if writeFailedCount <= 10 {
@@ -94,6 +114,7 @@ func insertItem(logger *logrus.Logger, ctx context.Context, otp_db *mongo.Collec
 		}
 		return false
 	}
+	logger.Info(fmt.Sprintf("Inserted %d documents\n", result.InsertedCount))
 	return true
 }
 
@@ -109,7 +130,7 @@ func main() {
 	logger.Info("Reaper finished starting up!")
 
 	for {
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 		defer cancel()
 		credential := options.Credential{
 			Username: MongoUser,
@@ -132,17 +153,14 @@ func main() {
 
 		//if count is less than threshold (this will need to go up for prod)
 		threshold := int64(1000)
-		if count < threshold {
-			logger.Info("Found count ", count, ", writing to db...")
-			for i := int64(0); i < threshold-count; i++ {
-				ok := insertItem(logger, ctx, otp_db)
-				if !ok {
-					break
-				} else {
-					logger.Debug("Wrote item ", i, " to DB!")
-				}
+		for count < threshold {
+			diff := threshold - count
+			logger.Info("Found count ", count, ", writing ", diff, " to db...")
+			ok := insertItems(logger, ctx, diff, otp_db)
+			if !ok {
+				break
 			}
-			logger.Info("Done writing to DB!")
+			count = count + 100
 		}
 
 		logger.Info("Count met threshold, sleeping...")
