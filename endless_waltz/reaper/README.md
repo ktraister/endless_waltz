@@ -26,5 +26,5 @@ before looping.
 ## Dockerfile
 The Dockerfile has a special command to make the container compatable with
 the `ew-rtl-entropy` container. On start, the command will remove 
-`/dev/urandom` and link /{tmp,dev}/urandom, and then run the reaper binary.
+`/dev/urandom` and link `/{tmp,dev}/urandom`, and then run the reaper binary.
 Note: /tmp is passed through a volume from `ew-rtl-entropy`
