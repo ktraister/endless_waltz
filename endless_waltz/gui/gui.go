@@ -119,6 +119,9 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	// Create an entry field for typing messages
 	messageEntry := widget.NewMultiLineEntry()
 	messageEntry.SetPlaceHolder("Type your message...")
+	//hiding the entry until a user is selected
+	//come up with something cute to go here
+	messageEntry.Hide()
 
 	// add lines to use with onlinePanel
 	text := widget.NewLabelWithStyle("    Online Users    ", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
@@ -156,6 +159,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 			text.SetText(users[id])
 		})
 	userList.OnSelected = func(id widget.ListItemID) {
+	        messageEntry.Show()
 		fmt.Println(users[id])
 		targetUser = users[id]
 		//clear the chat when switching users
