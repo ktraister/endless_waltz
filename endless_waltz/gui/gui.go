@@ -84,7 +84,10 @@ func send(logger *logrus.Logger, configuration Configurations, sendButton *widge
 func post(container *fyne.Container) {
 	for {
 		message := <-incomingMsgChan
-		if message.ok {
+		if message.User == "Sending messages to" {
+                       messageLabel := widget.NewLabelWithStyle("Sending messages to: "+message.Msg, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+                       container.Add(messageLabel)
+	        } else if message.ok {
 			messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", message.User, message.Msg))
 			container.Add(messageLabel)
 		} else {
@@ -112,13 +115,16 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	scrollContainer.Resize(fyne.NewSize(500, 0))
 
 	//set greeting warning lable
-	messageLabel := widget.NewLabel("Select user to start sending messages")
+	messageLabel := widget.NewLabelWithStyle("Select a user to send messages", fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
 	messageLabel.Importance = widget.MediumImportance
 	chatContainer.Add(messageLabel)
 
 	// Create an entry field for typing messages
 	messageEntry := widget.NewMultiLineEntry()
 	messageEntry.SetPlaceHolder("Type your message...")
+	//hiding the entry until a user is selected
+	//come up with something cute to go here
+	messageEntry.Hide()
 
 	// add lines to use with onlinePanel
 	text := widget.NewLabelWithStyle("    Online Users    ", fyne.TextAlignLeading, fyne.TextStyle{Bold: true})
@@ -156,10 +162,12 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 			text.SetText(users[id])
 		})
 	userList.OnSelected = func(id widget.ListItemID) {
+	        messageEntry.Show()
 		fmt.Println(users[id])
 		targetUser = users[id]
 		//clear the chat when switching users
 		chatContainer.Objects = chatContainer.Objects[:0]
+		messageLabel.Hide()
 		chatContainer.Refresh()
 		incomingMsgChan <- Post{Msg: users[id], User: "Sending messages to", ok: true}
 		messageEntry.SetText("")
@@ -183,7 +191,6 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 
 			//drop the messsage on the outgoing channel
 			outgoingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
-
 
 			// Clear the message entry field after sending
 			messageEntry.SetText("")
