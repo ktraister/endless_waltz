@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"math/rand"
+	"net/http"
 	"strings"
 	"time"
 
@@ -20,26 +20,27 @@ var incomingMsgChan = make(chan Post)
 var outgoingMsgChan = make(chan Post)
 
 const charset = "abcdefghijklmnopqrstuvwxyz"
-func uid() string{
-    rand.Seed(time.Now().UnixNano())
-    sb := strings.Builder{}
-    //hard-code uid of len 4 
-    length := 4
-    sb.Grow(length)
-    for i := 0; i < length; i++ {
-        sb.WriteByte(charset[rand.Intn(len(charset))])
-    }
-    return sb.String()
+
+func uid() string {
+	rand.Seed(time.Now().UnixNano())
+	sb := strings.Builder{}
+	//hard-code uid of len 4
+	length := 4
+	sb.Grow(length)
+	for i := 0; i < length; i++ {
+		sb.WriteByte(charset[rand.Intn(len(charset))])
+	}
+	return sb.String()
 }
 
 // Change handleConnection to act as the "server side" in this transaction
 // we'll pass around the websocket to accomplish this
-func handleConnection(dat map[string]interface{},  logger *logrus.Logger, configuration Configurations) {
-        localUser := fmt.Sprintf("%s_server-%s", configuration.User, uid())
+func handleConnection(dat map[string]interface{}, logger *logrus.Logger, configuration Configurations) {
+	localUser := fmt.Sprintf("%s_server-%s", configuration.User, uid())
 	targetUser := dat["from"].(string)
-        cm, err := exConnect(logger, configuration, localUser)
+	cm, err := exConnect(logger, configuration, localUser)
 	if err != nil {
-	logger.Error(err)
+		logger.Error(err)
 		return
 	}
 	logger.Debug("Connected to exchange with user ", localUser)
