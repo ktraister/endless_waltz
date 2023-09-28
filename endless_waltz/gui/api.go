@@ -4,9 +4,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
-	"sort"
 )
 
 func removeIndex(s []string, index int) []string {

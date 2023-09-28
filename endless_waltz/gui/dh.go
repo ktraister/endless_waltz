@@ -73,7 +73,7 @@ func checkPrivKey(key string) bool {
 }
 
 func dh_handshake(cm *ConnectionManager, logger *logrus.Logger, configuration Configurations, conn_type string, targetUser string) (string, error) {
-        //setup required vars
+	//setup required vars
 	localUser := fmt.Sprintf("%s_%s", configuration.User, conn_type)
 	prime := big.NewInt(424889)
 	tempkey := big.NewInt(1)

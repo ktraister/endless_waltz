@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha512"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -13,7 +14,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 	"github.com/sirupsen/logrus"
 	"image/color"
-	"encoding/json"
+	"net/http"
+	"strings"
 	"time"
 )
 
@@ -26,9 +28,43 @@ import (
 var users = []string{}
 var targetUser = ""
 
+func checkCreds(configuration Configurations) (bool, string) {
+	//check and make sure inserted creds
+	//Random and Exchange will use same mongo, so the creds will be valid for both
+
+	health_url := fmt.Sprintf("%s%s", strings.Split(configuration.RandomURL, "/otp")[0], "/healthcheck")
+	req, err := http.NewRequest("GET", health_url, nil)
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	req.Header.Set("User", configuration.User)
+	req.Header.Set("Passwd", configuration.Passwd)
+	client := http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	errorText := ""
+	if err != nil {
+		errorText = "Couldn't Connect to RandomAPI"
+		fmt.Println(errorText + " " + configuration.RandomURL)
+		fmt.Println("Quietly exiting now. Please reconfigure.")
+		return false, errorText
+	}
+	if resp == nil {
+		errorText = "No Response From RandomAPI"
+		fmt.Println(errorText + " " + configuration.RandomURL)
+		fmt.Println("Quietly exiting now. Please reconfigure.")
+		return false, errorText
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		errorText = "Invalid Username/Password Combination"
+		fmt.Println(errorText)
+		fmt.Printf("Request failed with status: %s\n", resp.Status)
+		return false, errorText
+	}
+	return true, ""
+}
+
 //this thread should just read HELO and pass off to another thread
 func listen(logger *logrus.Logger, configuration Configurations) {
-       localUser := fmt.Sprintf("%s_%s", configuration.User, "server")
+	localUser := fmt.Sprintf("%s_%s", configuration.User, "server")
 	cm, err := exConnect(logger, configuration, localUser)
 	if err != nil {
 		return
@@ -41,53 +77,53 @@ func listen(logger *logrus.Logger, configuration Configurations) {
 		if err != nil {
 			logger.Error("Error reading message:", err)
 			continue
-		}                                            
-		    
+		}
+
 		err = json.Unmarshal([]byte(incoming), &dat)
 		if err != nil {
 			logger.Error("Error unmarshalling json:", err)
 			continue
-		}   
-		    
+		}
+
 		//new connections should always ask
 		if dat["msg"] == "HELO" {
 			logger.Debug("Received HELO from ", dat["from"])
 		} else {
 			logger.Warn("New connection didn't HELO, bouncing")
 			continue
-		}   
-                //handle connection creates new socket inside goRoutine
+		}
+		//handle connection creates new socket inside goRoutine
 		go handleConnection(dat, logger, configuration)
 	}
 }
 
 //send needs to be a wrapper thread for go functions
 func send(logger *logrus.Logger, configuration Configurations, sendButton *widget.Button, progressBar *widget.ProgressBarInfinite) {
-    for {
-        message := <- outgoingMsgChan
-	//set container to sending progressbar widget
-	sendButton.Hide()
-	progressBar.Show()
-	//set container to sending progressbar widget
+	for {
+		message := <-outgoingMsgChan
+		//set container to sending progressbar widget
+		sendButton.Hide()
+		progressBar.Show()
+		//set container to sending progressbar widget
 
-	//update user and send message to server root socket
-	ok := ew_client(logger, configuration, message)
-	//reset container to prior
-	sendButton.Show()
-	progressBar.Hide()
+		//update user and send message to server root socket
+		ok := ew_client(logger, configuration, message)
+		//reset container to prior
+		sendButton.Show()
+		progressBar.Hide()
 
-	//post our sent message
-	incomingMsgChan <- Post{Msg: message.Msg, User: configuration.User, ok: ok}
-    }
+		//post our sent message
+		incomingMsgChan <- Post{Msg: message.Msg, User: configuration.User, ok: ok}
+	}
 }
 
 func post(container *fyne.Container) {
 	for {
 		message := <-incomingMsgChan
 		if message.User == "Sending messages to" {
-                       messageLabel := widget.NewLabelWithStyle("Sending messages to: "+message.Msg, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
-                       container.Add(messageLabel)
-	        } else if message.ok {
+			messageLabel := widget.NewLabelWithStyle("Sending messages to: "+message.Msg, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
+			container.Add(messageLabel)
+		} else if message.ok {
 			messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", message.User, message.Msg))
 			container.Add(messageLabel)
 		} else {
@@ -162,7 +198,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 			text.SetText(users[id])
 		})
 	userList.OnSelected = func(id widget.ListItemID) {
-	        messageEntry.Show()
+		messageEntry.Show()
 		fmt.Println(users[id])
 		targetUser = users[id]
 		//clear the chat when switching users
@@ -266,11 +302,10 @@ func main() {
 	w := myApp.NewWindow("EW Messenger Login")
 	username := widget.NewEntry()
 	password := widget.NewPasswordEntry()
-        w.SetContent(widget.NewButton("Login to the EW Circut", func() {
-		content := widget.NewForm(widget.NewFormItem("Username", username),
-			widget.NewFormItem("Password", password))
-
-		dialog.ShowCustomConfirm("Login...", "Log In", "Cancel", content, func(b bool) {
+	content := widget.NewForm(widget.NewFormItem("Username", username),
+		widget.NewFormItem("Password", password))
+	w.SetContent(widget.NewButton("Login to the EW Circut", func() {
+		dialog.ShowCustomConfirm("", "Log In", "Cancel", content, func(b bool) {
 			logger.Debug("Checking creds...")
 
 			//create our hasher to hash our pass
@@ -285,9 +320,15 @@ func main() {
 			logger.Debug(hashString)
 
 			//pass the hash lol
-			ok := checkCreds(configuration)
+			ok, err := checkCreds(configuration)
 
 			if !ok || !b {
+				//this is caused by an error in the checkCreds routine
+				errorWidget := widget.NewLabel(err)
+				errorWidget.Importance = widget.DangerImportance
+				content = widget.NewForm(widget.NewFormItem("Login Error", errorWidget),
+					widget.NewFormItem("Username", username),
+					widget.NewFormItem("Password", password))
 				return
 			}
 			logger.Debug("creds passed check!")
@@ -299,7 +340,7 @@ func main() {
 	}))
 	w.RequestFocus()
 	w.CenterOnScreen()
-	w.Resize(fyne.NewSize(400, 200))
+	w.Resize(fyne.NewSize(450, 300))
 	w.Show()
 	myApp.Run()
 }

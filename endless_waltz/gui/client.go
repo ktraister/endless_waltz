@@ -32,12 +32,12 @@ type Random_Req struct {
 var dat map[string]interface{}
 
 func ew_client(logger *logrus.Logger, configuration Configurations, message Post) bool {
-        user := fmt.Sprintf("%s_client-%s", configuration.User, uid())
-        cm, err := exConnect(logger, configuration, user)
-        if err != nil { 
-                return false
-        }                  
-        defer cm.Close()  
+	user := fmt.Sprintf("%s_client-%s", configuration.User, uid())
+	cm, err := exConnect(logger, configuration, user)
+	if err != nil {
+		return false
+	}
+	defer cm.Close()
 	passwd := configuration.Passwd
 	random := configuration.RandomURL
 
@@ -177,35 +177,5 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message Post
 	}
 
 	err = cm.Send(b)
-	return true
-}
-
-func checkCreds(configuration Configurations) bool {
-	//check and make sure inserted creds
-	//Random and Exchange will use same mongo, so the creds will be valid for both
-
-	health_url := fmt.Sprintf("%s%s", strings.Split(configuration.RandomURL, "/otp")[0], "/healthcheck")
-	req, err := http.NewRequest("GET", health_url, nil)
-	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	req.Header.Set("User", configuration.User)
-	req.Header.Set("Passwd", configuration.Passwd)
-	client := http.Client{Timeout: 3 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Println("Could not connect to configured randomAPI ", configuration.RandomURL)
-		fmt.Println("Quietly exiting now. Please reconfigure.")
-		return false
-	}
-	if resp == nil {
-		fmt.Println("Could not connect to configured randomAPI ", configuration.RandomURL)
-		fmt.Println("Quietly exiting now. Please reconfigure.")
-		return false
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		fmt.Println("creds entered are invalid for randomAPI")
-		fmt.Printf("Request failed with status: %s\n", resp.Status)
-		return false
-	}
 	return true
 }
