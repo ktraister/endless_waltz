@@ -266,7 +266,7 @@ func main() {
 	w := myApp.NewWindow("EW Messenger Login")
 	username := widget.NewEntry()
 	password := widget.NewPasswordEntry()
-	w.SetContent(widget.NewButton("Login to the EW Circut", func() {
+        w.SetContent(widget.NewButton("Login to the EW Circut", func() {
 		content := widget.NewForm(widget.NewFormItem("Username", username),
 			widget.NewFormItem("Password", password))
 

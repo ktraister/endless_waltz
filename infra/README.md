@@ -1,4 +1,4 @@
-# Infrastructure
+### Infrastructure
 This directory contains all of the scripts and manifests to build the physical
 hosts and cloud hosts required for the EW infrastructure. At the time of 
 writing, the POC infrastructure is active, and no Terraform yet exists. 
@@ -27,6 +27,13 @@ These files will be applied on new reaper hosts, and also cloud infra!
 To finish a new Reaper box or deploy new infra, follow the directions in 
 [the K8s Infra README.md](./k8s/README.md)
 
-# Architecture
+## Architecture
+### Current (POC)
 The POC Infra is currently active. It is true to this diagram:
-![alt text](./.png/EndlessWaltzPOC.png)
+![alt text](../.png/EndlessWaltzPOC.png)
+
+### Future (Production)
+The PROD Infra is not yet active. It will be more expensive, but truly HA. 
+This is the current idea of what it will look like:
+![alt text](../.png/EndlessWaltzPOC.png)
+
