@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -18,33 +19,36 @@ type Client_Resp struct {
 var incomingMsgChan = make(chan Post)
 var outgoingMsgChan = make(chan Post)
 
+const charset = "abcdefghijklmnopqrstuvwxyz"
 func uid() string{
-    rand.Seed(time.Now().Unix())
+    rand.Seed(time.Now().UnixNano())
+    sb := strings.Builder{}
+    //hard-code uid of len 4 
     length := 4
-
-    ran_str := make([]byte, length)
-
-    // Generating Random string
+    sb.Grow(length)
     for i := 0; i < length; i++ {
-        ran_str[i] = ran_str[65 + rand.Intn(25)]
+        sb.WriteByte(charset[rand.Intn(len(charset))])
     }
-
-    // Displaying the random string
-    str := string(ran_str)
-    return str
+    return sb.String()
 }
 
 // Change handleConnection to act as the "server side" in this transaction
 // we'll pass around the websocket to accomplish this
 func handleConnection(dat map[string]interface{},  logger *logrus.Logger, configuration Configurations) {
         localUser := fmt.Sprintf("%s_server-%s", configuration.User, uid())
+	targetUser := dat["from"].(string)
         cm, err := exConnect(logger, configuration, localUser)
+	if err != nil {
+	logger.Error(err)
+		return
+	}
+	logger.Debug("Connected to exchange with user ", localUser)
 
 	//we need to respond with a HELO here
 	helo := &Message{Type: "helo",
 		User: configuration.User,
 		From: localUser,
-		To:   dat["from"].(string),
+		To:   targetUser,
 		Msg:  "HELO",
 	}
 	b, err := json.Marshal(helo)
@@ -58,10 +62,9 @@ func handleConnection(dat map[string]interface{},  logger *logrus.Logger, config
 		logger.Error("Server:Unable to write message to websocket: ", err)
 		return
 	}
-	logger.Debug("Responded with HELO")
+	logger.Debug("Responded with HELO to ", targetUser)
 
-	user := dat["from"].(string)
-	private_key, err := dh_handshake(cm, logger, configuration, "server", user)
+	private_key, err := dh_handshake(cm, logger, configuration, "server", targetUser)
 	if err != nil {
 		logger.Error("Private Key Error!")
 		return
@@ -91,7 +94,7 @@ func handleConnection(dat map[string]interface{},  logger *logrus.Logger, config
 	outgoing := &Message{Type: "UUID",
 		User: configuration.User,
 		From: configuration.User,
-		To:   user,
+		To:   targetUser,
 		Msg:  res["UUID"].(string),
 	}
 	b, err = json.Marshal(outgoing)

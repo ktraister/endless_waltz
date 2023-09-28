@@ -106,6 +106,7 @@ func ew_client(logger *logrus.Logger, configuration Configurations, message Post
 		return false
 	}
 
+	logger.Debug(fmt.Sprintf("Upgrading remote conn user from %s to %s", targetUser, dat["from"].(string)))
 	targetUser = dat["from"].(string)
 
 	//reset conn read deadline
