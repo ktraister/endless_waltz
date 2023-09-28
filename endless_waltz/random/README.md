@@ -11,6 +11,10 @@ is created, and the routes listed below are configured with desired methods.
 The HTTP server is then started on port 8090 with the router mutex. 
 
 ### Routes
+Both routes require credentials to be set using the correct headers.
+Headers "User" and "Passwd" should be set with credentials that are 
+configured in the db "auth" collection. 
+
 #### /api/healthcheck (GET)
 The purpose of this route is to provide the client with an easy way to test 
 it's credentials for authentication & authorization. Hitting this route also
@@ -19,11 +23,12 @@ proves to the client that the RandomAPI is prepared to handle traffic.
 #### /api/otp (POST)
 This route provides clients with raw one-time pads. The JSON body of the
 request should contain the "host" identifier, set either to "client or 
-"server", denoting the requester's position in the EW Connection. 
+"server", denoting the requester's position in the EW Connection. All 
+records accessed in this path are stored in the "otp_db" collection.
 
 If "server" is set, the db is queried for an item that is unlocked 
-({"LOCK": false}). a UUID and raw pad will be returned to the requestor, 
-and the item in the db will be locked by setting {"LOCK": true}.
+({"LOCK": nil}). a UUID and raw pad will be returned to the requestor, and 
+the item in the db will be locked by setting {"LOCK": true}.
 
 If "client" is set, the db is queried for an item that has the UUID matching
 the UUID in the JSON body. The raw pad in the record is then returned to the 
