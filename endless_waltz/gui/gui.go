@@ -56,8 +56,7 @@ func listen(logger *logrus.Logger, configuration Configurations) {
 			logger.Warn("New connection didn't HELO, bouncing")
 			continue
 		}   
-                //handle connection currently uses the HELO connection
-		//let's add exConnect to it for a fresh thread
+                //handle connection creates new socket inside goRoutine
 		go handleConnection(dat, logger, configuration)
 	}
 }
@@ -182,11 +181,9 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 				return
 			}
 
-			//create a goroutine here to send
-	                //OUR SENDIN THREAD SHOULD BE EVENT DRIVEN AND HAVE A UID
-			message := Post{Msg: message, User: targetUser, ok: true}
 			//drop the messsage on the outgoing channel
-			outgoingMsgChan <- message
+			outgoingMsgChan <- Post{Msg: message, User: targetUser, ok: true}
+
 
 			// Clear the message entry field after sending
 			messageEntry.SetText("")
