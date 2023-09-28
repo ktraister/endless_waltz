@@ -154,12 +154,9 @@ func post(configuration Configurations, container *fyne.Container) {
 			container.Add(messageLabel)
 			//we're not focused on the user the message is from
 		} else if targetUser != message.User && configuration.User != message.User {
+	                //we're not focused on the user the message is from
 			//stash the message for now
 			stashedMessages = append(stashedMessages, message)
-
-			//we'll also need to update the user name in onlineUsers
-
-			//and then we skip the rest of the executions
 		} else if message.ok {
 			messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", message.User, message.Msg))
 			container.Add(messageLabel)
@@ -234,11 +231,12 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 			text := obj.(*fyne.Container).Objects[0].(*widget.Label)
 			text.SetText(users[id])
 			if messageStashed(users[id]) {
+		                //turn the user blue if we have messages from them
 				text.Importance = widget.HighImportance
 			} else {
+			        //reset user text
 				text.Importance = widget.MediumImportance
 			}
-			//turn the user blue if we have messages from them
 		})
 	userList.OnSelected = func(id widget.ListItemID) {
 		messageEntry.Show()
