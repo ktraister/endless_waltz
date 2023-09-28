@@ -27,6 +27,7 @@ import (
 
 var users = []string{}
 var targetUser = ""
+var stashedMessages = []Post{}
 
 func checkCreds(configuration Configurations) (bool, string) {
 	//check and make sure inserted creds
@@ -60,6 +61,30 @@ func checkCreds(configuration Configurations) (bool, string) {
 		return false, errorText
 	}
 	return true, ""
+}
+
+func postStashedMessages() {
+	for index, message := range stashedMessages {
+		if message.User == targetUser {
+			incomingMsgChan <- message
+			plusOne := index + 1
+			//index error here b/c of slice length
+			if len(stashedMessages) >= 2 {
+				stashedMessages = append(stashedMessages[:index], stashedMessages[plusOne:]...)
+			} else {
+				stashedMessages = []Post{}
+			}
+		}
+	}
+}
+
+func messageStashed(user string) bool {
+	for _, message := range stashedMessages {
+		if message.User == user {
+			return true
+		}
+	}
+	return false
 }
 
 //this thread should just read HELO and pass off to another thread
@@ -98,11 +123,12 @@ func listen(logger *logrus.Logger, configuration Configurations) {
 }
 
 //send needs to be a wrapper thread for go functions
-func send(logger *logrus.Logger, configuration Configurations, sendButton *widget.Button, progressBar *widget.ProgressBarInfinite) {
+func send(logger *logrus.Logger, configuration Configurations, sendButton *widget.Button, progressBar *widget.ProgressBarInfinite, textBox *widget.Entry) {
 	for {
 		message := <-outgoingMsgChan
 		//set container to sending progressbar widget
 		sendButton.Hide()
+		textBox.Hide()
 		progressBar.Show()
 		//set container to sending progressbar widget
 
@@ -110,6 +136,7 @@ func send(logger *logrus.Logger, configuration Configurations, sendButton *widge
 		ok := ew_client(logger, configuration, message)
 		//reset container to prior
 		sendButton.Show()
+		textBox.Show()
 		progressBar.Hide()
 
 		//post our sent message
@@ -117,12 +144,19 @@ func send(logger *logrus.Logger, configuration Configurations, sendButton *widge
 	}
 }
 
-func post(container *fyne.Container) {
+func post(configuration Configurations, container *fyne.Container) {
 	for {
 		message := <-incomingMsgChan
+		//this approach works
+		//fmt.Println("Current user is ", targetUser)
 		if message.User == "Sending messages to" {
 			messageLabel := widget.NewLabelWithStyle("Sending messages to: "+message.Msg, fyne.TextAlignCenter, fyne.TextStyle{Bold: true})
 			container.Add(messageLabel)
+			//we're not focused on the user the message is from
+		} else if targetUser != message.User && configuration.User != message.User {
+	                //we're not focused on the user the message is from
+			//stash the message for now
+			stashedMessages = append(stashedMessages, message)
 		} else if message.ok {
 			messageLabel := widget.NewLabel(fmt.Sprintf("%s: %s", message.User, message.Msg))
 			container.Add(messageLabel)
@@ -196,6 +230,13 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 		func(id widget.ListItemID, obj fyne.CanvasObject) {
 			text := obj.(*fyne.Container).Objects[0].(*widget.Label)
 			text.SetText(users[id])
+			if messageStashed(users[id]) {
+		                //turn the user blue if we have messages from them
+				text.Importance = widget.HighImportance
+			} else {
+			        //reset user text
+				text.Importance = widget.MediumImportance
+			}
 		})
 	userList.OnSelected = func(id widget.ListItemID) {
 		messageEntry.Show()
@@ -206,6 +247,7 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 		messageLabel.Hide()
 		chatContainer.Refresh()
 		incomingMsgChan <- Post{Msg: users[id], User: "Sending messages to", ok: true}
+		postStashedMessages()
 		messageEntry.SetText("")
 	}
 
@@ -268,8 +310,8 @@ func configureGUI(myWindow fyne.Window, logger *logrus.Logger, configuration Con
 	//https://developer.fyne.io/widget/progressbar
 	//listen for incoming messages here
 	go listen(logger, configuration)
-	go send(logger, configuration, sendButton, infinite)
-	go post(chatContainer)
+	go send(logger, configuration, sendButton, infinite, messageEntry)
+	go post(configuration, chatContainer)
 
 	myWindow.SetContent(finalContainer)
 	myWindow.Resize(fyne.NewSize(600, 800))
