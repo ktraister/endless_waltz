@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"sort"
 )
 
 func removeIndex(s []string, index int) []string {
@@ -39,6 +40,9 @@ func getExUsers(logger *logrus.Logger, configuration Configurations) ([]string, 
 			final = append(final, user)
 		}
 	}
+
+	//sort the list in alphabetical order
+	sort.Strings(final)
 
 	return final, nil
 }
