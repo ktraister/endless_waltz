@@ -6,7 +6,7 @@ on:
       - "140_messenger_build"
 
 jobs:
-  build_nix:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -16,44 +16,24 @@ jobs:
 
       - name: Go Build
         run: | 
-          cd ./endless_waltz/gui    
+          #install fyne-cross
+          git clone https://github.com/fyne-io/fyne-cross.git
+          cd fyne-cross
+          go build .
+          mv fyne-cross /tmp
+
+          cd ../endless_waltz/gui    
           echo "Fixing symlinks..."
           for i in `find . -maxdepth 1 -type l -ls | tr -s ' ' | cut -d ' ' -f 12 | cut -d '/' -f 2`; do cp --remove-destination ../common/$i .; done
-          echo "Building dockerfile"
-          docker build . --tag=nix --build-arg BUILD=true --build-arg GOOS=linux --build-arg GOARCH=amd64 --build-arg CGO_ENABLED=0
-          docker cp docker.io/library/nix:/src/gui linux_gui
 
-  build_mac:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
+          #fyne commands
+          go mod init
+          go get
 
-      - uses: actions/setup-go@v3
+          #windows/linux/darwin
+          /tmp/fyne-cross windows -app-id EW.Messenger
+          /tmp/fyne-cross linux -app-id EW.Messenger
 
-      - name: Go Build
-        run: | 
-          cd ./endless_waltz/gui    
-          echo "Fixing symlinks..."
-          for i in `find . -maxdepth 1 -type l -ls | tr -s ' ' | cut -d ' ' -f 12 | cut -d '/' -f 2`; do cp --remove-destination ../common/$i .; done
-          echo "Building dockerfile"
-          docker build . --tag=darwin --build-arg BUILD=true --build-arg GOOS=darwin --build-arg GOARCH=amd64 --build-arg CGO_ENABLED=1 --build-arg CC=o32-clang
-          docker cp docker.io/library/darwin:/src/gui darwin_gui
-
-  build_windows:
-    runs-on: ubuntu-latest
-    steps:
-      - name: checkout
-        uses: actions/checkout@v3
-
-      - uses: actions/setup-go@v3
-
-      - name: Go Build
-        run: | 
-          cd ./endless_waltz/gui    
-          echo "Fixing symlinks..."
-          for i in `find . -maxdepth 1 -type l -ls | tr -s ' ' | cut -d ' ' -f 12 | cut -d '/' -f 2`; do cp --remove-destination ../common/$i .; done
-          echo "Building dockerfile"
-          docker build . --tag=windows --build-arg BUILD=true --build-arg GOOS=windows --build-arg GOARCH=amd64 --build-arg CGO_ENABLED=1 --build-arg CC=x86_64-w64-mingw64-gcc
-          docker cp docker.io/library/windows:/src/gui windows_gui
-
+          #ugh why is mac such a pain in the ass!!
+          #fyne-cross darwin-sdk-extract --xcode-path /path/to/Command_Line_Tools_for_Xcode_12.5.dmg
+          #fyne-cross darwin -app-id EW.Messenger --macosx-sdk-path /full/path/to/SDKs/MacOSX12.5.sdk
