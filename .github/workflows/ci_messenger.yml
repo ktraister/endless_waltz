@@ -21,7 +21,7 @@ jobs:
           for i in `find . -maxdepth 1 -type l -ls | tr -s ' ' | cut -d ' ' -f 12 | cut -d '/' -f 2`; do cp --remove-destination ../common/$i .; done
           echo "Building dockerfile"
           docker build . --tag=nix --build-arg BUILD=true --build-arg GOOS=linux --build-arg GOARCH=amd64
-          docker cp nix:/src/gui linux_gui
+          docker cp docker.io/library/nix:/src/gui linux_gui
 
   build_mac:
     runs-on: ubuntu-latest
@@ -38,7 +38,7 @@ jobs:
           for i in `find . -maxdepth 1 -type l -ls | tr -s ' ' | cut -d ' ' -f 12 | cut -d '/' -f 2`; do cp --remove-destination ../common/$i .; done
           echo "Building dockerfile"
           docker build . --tag=darwin --build-arg BUILD=true --build-arg GOOS=darwin --build-arg GOARCH=amd64
-          docker cp darwin:/src/gui darwin_gui
+          docker cp docker.io/library/darwin:/src/gui darwin_gui
 
   build_windows:
     runs-on: ubuntu-latest
@@ -55,5 +55,5 @@ jobs:
           for i in `find . -maxdepth 1 -type l -ls | tr -s ' ' | cut -d ' ' -f 12 | cut -d '/' -f 2`; do cp --remove-destination ../common/$i .; done
           echo "Building dockerfile"
           docker build . --tag=windows --build-arg BUILD=true --build-arg GOOS=windows --build-arg GOARCH=amd64
-          docker cp windows:/src/gui windows_gui
+          docker cp docker.io/library/windows:/src/gui windows_gui
 
