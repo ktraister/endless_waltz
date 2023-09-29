@@ -16,7 +16,7 @@ As of 26 September 2023, the EW Messenger has five discreet applications:
   - [Reaper](../endless_waltz/reaper/README.md)
   - [RandomAPI](../endless_waltz/random/README.md)
   - [Exchange](../endless_waltz/exchange/README.md)
-  - [Messenger](../endless_waltz/gui/README.md)
+  - [Messenger](https://github.com/ktraister/ew_messenger)
 
 Everything except RTL-Entropy lives in this repository and is written in GoLang.
 RTL-Entropy lives in ktraister/ew-rtl-entropy, and is written in C.
