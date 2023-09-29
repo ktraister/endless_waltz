@@ -25,7 +25,7 @@ jobs:
           cd ../endless_waltz/gui    
 
           #fyne commands
-          go mod init
+          go mod init github.com/ktraister/ew_messenger
           go get
 
           #windows/linux/darwin
