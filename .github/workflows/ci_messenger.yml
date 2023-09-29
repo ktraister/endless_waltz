@@ -35,3 +35,4 @@ jobs:
           #ugh why is mac such a pain in the ass!!
           #fyne-cross darwin-sdk-extract --xcode-path /path/to/Command_Line_Tools_for_Xcode_12.5.dmg
           #fyne-cross darwin -app-id EW.Messenger --macosx-sdk-path /full/path/to/SDKs/MacOSX12.5.sdk
+          #
