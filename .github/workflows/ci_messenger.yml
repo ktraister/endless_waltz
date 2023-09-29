@@ -23,8 +23,6 @@ jobs:
           mv fyne-cross /tmp
 
           cd ../endless_waltz/gui    
-          echo "Fixing symlinks..."
-          for i in `find . -maxdepth 1 -type l -ls | tr -s ' ' | cut -d ' ' -f 12 | cut -d '/' -f 2`; do cp --remove-destination ../common/$i .; done
 
           #fyne commands
           go mod init
