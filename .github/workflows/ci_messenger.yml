@@ -20,7 +20,7 @@ jobs:
           echo "Fixing symlinks..."
           for i in `find . -maxdepth 1 -type l -ls | tr -s ' ' | cut -d ' ' -f 12 | cut -d '/' -f 2`; do cp --remove-destination ../common/$i .; done
           echo "Building dockerfile"
-          docker build . --tag=nix --build-arg BUILD=true --build-arg GOOS=linux --build-arg GOARCH=amd64
+          docker build . --tag=nix --build-arg BUILD=true --build-arg GOOS=linux --build-arg GOARCH=amd64 --build-arg CGO_ENABLED=0
           docker cp docker.io/library/nix:/src/gui linux_gui
 
   build_mac:
@@ -37,7 +37,7 @@ jobs:
           echo "Fixing symlinks..."
           for i in `find . -maxdepth 1 -type l -ls | tr -s ' ' | cut -d ' ' -f 12 | cut -d '/' -f 2`; do cp --remove-destination ../common/$i .; done
           echo "Building dockerfile"
-          docker build . --tag=darwin --build-arg BUILD=true --build-arg GOOS=darwin --build-arg GOARCH=amd64
+          docker build . --tag=darwin --build-arg BUILD=true --build-arg GOOS=darwin --build-arg GOARCH=amd64 --build-arg CGO_ENABLED=1
           docker cp docker.io/library/darwin:/src/gui darwin_gui
 
   build_windows:
@@ -54,6 +54,6 @@ jobs:
           echo "Fixing symlinks..."
           for i in `find . -maxdepth 1 -type l -ls | tr -s ' ' | cut -d ' ' -f 12 | cut -d '/' -f 2`; do cp --remove-destination ../common/$i .; done
           echo "Building dockerfile"
-          docker build . --tag=windows --build-arg BUILD=true --build-arg GOOS=windows --build-arg GOARCH=amd64
+          docker build . --tag=windows --build-arg BUILD=true --build-arg GOOS=windows --build-arg GOARCH=amd64 --build-arg CGO_ENABLED=1
           docker cp docker.io/library/windows:/src/gui windows_gui
 
