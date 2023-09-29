@@ -35,5 +35,5 @@ The POC Infra is currently active. It is true to this diagram:
 ### Future (Production)
 The PROD Infra is not yet active. It will be more expensive, but truly HA. 
 This is the current idea of what it will look like:
-![alt text](../.png/EndlessWaltzPOC.png)
+![alt text](../.png/EndlessWaltzProd.png)
 

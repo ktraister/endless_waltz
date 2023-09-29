@@ -2,6 +2,12 @@
 MongoDB is a NoSQL database known for high speed and flexibility. It serves as 
 the persistent data store for one-time pads and user authentication data. 
 
+## Application
+The application uses two distinct database collections within Mongo:
+`auth` and `otp`. `auth` is used for storing user credentials, whose records
+include notes and will eventually other information. `otp` is used to store 
+records with UUIDs and one-time pads, written by the reaper service.
+
 ## Infrastructure
 Currently, Mongo is served within K8s using a persistent volume claim to 
 persist data. The service files used can be found in `../../infra/k8s/mongodb/`
