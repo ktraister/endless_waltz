@@ -29,6 +29,7 @@ func signUpPageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func signUpHandler(w http.ResponseWriter, req *http.Request) {
+    /*
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -53,6 +54,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	password := hex.EncodeToString(hashSum)
 
 	//redirect to main page here pending email confirmation
+	*/
 }
 
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
