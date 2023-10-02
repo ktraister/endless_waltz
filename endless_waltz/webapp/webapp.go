@@ -15,25 +15,17 @@ var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
 
 func homePageHandler(w http.ResponseWriter, r *http.Request) {
 	// Implement your custom page logic here
-	fmt.Fprintln(w, "Welcome to MyWebApp!")
+	home, err := os.ReadFile("pages/home.html")
+	if err != nil { return }
+	fmt.Fprintln(w, string(home))
 }
 
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
-	// Serve your login page (e.g., an HTML form)
-	// You can use HTML templates or generate the form directly here
-	// Example HTML form:
-	loginForm := `
-    <html>
-    <body>
-        <form method="POST" action="/login">
-            <input type="text" name="username" placeholder="Username"><br>
-            <input type="password" name="password" placeholder="Password"><br>
-            <input type="submit" value="Login">
-        </form>
-    </body>
-    </html>
-    `
-	fmt.Fprintln(w, loginForm)
+	loginForm, err := os.ReadFile("pages/login.html")
+	if err != nil { return }
+
+	fmt.Fprintln(w, string(loginForm))
+
 }
 
 func loginHandler(w http.ResponseWriter, req *http.Request) {
