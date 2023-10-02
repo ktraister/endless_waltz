@@ -55,6 +55,8 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 
 	//redirect to main page here pending email confirmation
 	*/
+	http.Redirect(w, req, "/signUpSuccess", http.StatusSeeOther)
+
 }
 
 func loginPageHandler(w http.ResponseWriter, r *http.Request) {
