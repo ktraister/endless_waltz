@@ -13,6 +13,13 @@ import (
 
 var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
 
+func imgHandler(w http.ResponseWriter, req *http.Request) {
+	img, err := os.ReadFile(fmt.Sprintf("pages%s", req.URL.Path))
+	if err != nil { return }
+	w.Header().Set("Content-Type", "image/png")
+	w.Write(img)
+}
+
 func homePageHandler(w http.ResponseWriter, r *http.Request) {
 	// Implement your custom page logic here
 	home, err := os.ReadFile("pages/home.html")
@@ -27,6 +34,15 @@ func signUpPageHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, string(signUpForm))
 
 }
+
+func loginPageHandler(w http.ResponseWriter, r *http.Request) {
+	loginForm, err := os.ReadFile("pages/login.html")
+	if err != nil { return }
+
+	fmt.Fprintln(w, string(loginForm))
+
+}
+
 
 func signUpHandler(w http.ResponseWriter, req *http.Request) {
     /*
@@ -56,14 +72,6 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	//redirect to main page here pending email confirmation
 	*/
 	http.Redirect(w, req, "/signUpSuccess", http.StatusSeeOther)
-
-}
-
-func loginPageHandler(w http.ResponseWriter, r *http.Request) {
-	loginForm, err := os.ReadFile("pages/login.html")
-	if err != nil { return }
-
-	fmt.Fprintln(w, string(loginForm))
 
 }
 
@@ -147,6 +155,7 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
 	router.HandleFunc("/", homePageHandler).Methods("GET")
+	router.HandleFunc("/img/{id}", imgHandler).Methods("GET")
 	router.HandleFunc("/login", loginPageHandler).Methods("GET")
 	router.HandleFunc("/login", loginHandler).Methods("POST")
 	router.HandleFunc("/signUp", signUpPageHandler).Methods("GET")
