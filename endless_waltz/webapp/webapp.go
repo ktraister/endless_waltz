@@ -264,5 +264,7 @@ func main() {
 	router.HandleFunc("/signUp", signUpHandler).Methods("POST")
 	router.HandleFunc("/signUpSuccess", staticHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedPageHandler).Methods("GET")
+	router.HandleFunc("/downloads", staticHandler).Methods("GET")
+	router.HandleFunc("/how_it_works", staticHandler).Methods("GET")
 	http.ListenAndServe(":8080", router)
 }

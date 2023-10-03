@@ -156,7 +156,6 @@
 <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
   <header class="mb-auto">
     <div>
-	<!-- <h3 class="float-md-start mb-0">Cover</h3> -->
       <nav class="nav nav-masthead justify-content-center float-md-end">
         <a class="nav-link fw-bold py-1 px-0" href="/login">Sign In</a>
 	&nbsp; &nbsp; &nbsp;
@@ -168,11 +167,14 @@
   <main class="px-3">
     <img class="mb-4" src="/img/ew.png" alt="" width="500" height="300">  
       <br>
-      <p class="lead">The three beats of encryption, attack, and decryption will continue eternally.</p>
-    <p class="lead">To keep your communications safe now ang into the future:</p>
-    <p class="lead"> There's Endless Waltz.</p>
+    <p class="lead" style="font-size:300%">Downloads</p>
+    <br>
     <p class="lead">
-      <a href="/how_it_works" class="btn btn-lg btn-light fw-bold border-white bg-white">Learn more</a>
+      <a href="https://endless-waltz-xyz-downloads.s3.us-east-2.amazonaws.com/win_ew_messenger.tar.xz" class="btn btn-lg btn-light fw-bold border-white bg-white">For Windows</a>
+    </p>
+    <br>
+    <p class="lead">
+      <a href="https://endless-waltz-xyz-downloads.s3.us-east-2.amazonaws.com/nix_ew_messenger.tar.xz" class="btn btn-lg btn-light fw-bold border-white bg-white">For Linux</a>
     </p>
   </main>
 
