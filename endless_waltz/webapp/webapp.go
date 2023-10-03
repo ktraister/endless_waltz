@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"html/template"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -30,11 +31,11 @@ func imgHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func staticHandler(w http.ResponseWriter, req *http.Request) {
-	img, err := os.ReadFile(fmt.Sprintf("pages%s", req.URL.Path))
+	file, err := os.ReadFile(fmt.Sprintf("pages%s", req.URL.Path))
 	if err != nil {
 		return
 	}
-	w.Write(img)
+	w.Write(file)
 }
 
 
@@ -170,6 +171,7 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		// Create a session for the user
 		session, _ := store.Get(req, "session-name")
 		session.Values["authenticated"] = true
+		session.Values["username"] = username
 		session.Save(req, w)
 
 		// Redirect to a protected page or display a success message
@@ -204,7 +206,41 @@ func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Display your protected page content here
-	fmt.Fprintln(w, "Welcome to the Protected Page!")
+	//fmt.Fprintln(w, fmt.Sprintf("Welcome to the Protected Page, %s!", session.Values["username"]))
+
+	//read in the template
+	tmpl, err := os.ReadFile("pages/manageUser.tmpl")
+	if err != nil {
+	    logger.Error("Failed to read template")
+		return
+	}
+
+	// Parse the template
+	t, err := template.New("index").Parse(string(tmpl))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Error("failed to parse template")
+		return
+	}
+
+	// Define a data struct for the template
+	data := struct {
+		IsAuthenticated bool
+		Username        string
+	}{
+		IsAuthenticated: true,
+		Username:        session.Values["username"].(string),
+	}
+
+	// Execute the template with the data and write it to the response
+	err = t.Execute(w, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Error("Failed to execute template")
+		logger.Error(err)
+		return
+	}
+	fmt.Println("Got to the end")
 }
 
 func main() {
