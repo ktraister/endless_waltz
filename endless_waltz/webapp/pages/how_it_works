@@ -168,10 +168,9 @@
   <main class="px-3">
     <img class="mb-4" src="/img/ew.png" alt="" width="500" height="300">  
       <br>
-      <p class="lead">The three beats of encryption, attack, and decryption will continue eternally.</p>
-    <p class="lead">
-      <a href="/how_it_works" class="btn btn-lg btn-light fw-bold border-white bg-white">Learn more</a>
-    </p>
+      <h1>What is Endless Waltz?<h1>
+      <p class="lead">Endless Waltz is a messenger application that implements a proprietary one-time pad cipher to encrypt each message uniquely.</p>
+      <p class="lead">Due to the nature of the cipher, messages sent by users cannot be intercepted and decrypted.</p>
   </main>
 
   <footer class="mt-auto text-white-50">
