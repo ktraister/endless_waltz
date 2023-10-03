@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ew-webapp
+  labels:
+    name: ew-webapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: ew-webapp
+  template:
+    metadata:
+      labels:
+        name: ew-webapp
+    spec:
+      imagePullSecrets:
+        - name: ghcrcred
+      serviceAccountName: ew-webapp
+      containers:
+        - name: ew-webapp
+          securityContext:
+            privileged: true
+          image: "ghcr.io/ktraister/ew_webapp:5866f78189f6cad6f88eab18651176d117cef6f2"
+          imagePullPolicy: Always
+          env:
+            - name: "MongoURI"
+              valueFrom:
+                secretKeyRef:
+                  key:  mongouri
+                  name: ew-reaper
+            - name: "MongoUser"
+              valueFrom:
+                secretKeyRef:
+                  key:  mongouser
+                  name: ew-reaper
+            - name: "MongoPass"
+              valueFrom:
+                secretKeyRef:
+                  key:  mongopass
+                  name: ew-reaper
+          ports:
+            - containerPort: 8080

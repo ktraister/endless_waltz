@@ -266,7 +266,21 @@ func protectedHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//delete the user per their request
+	ok = deleteUser(logger, session.Values["username"].(string))
+	if !ok {
+            logger.Error("Unable to delete user")
+	    http.Redirect(w, req, "/error", http.StatusSeeOther)
+        }
 
+	//end their session
+	session.Options.MaxAge = -1
+	err = session.Save(req, w)
+	if err != nil {
+	    logger.Error("Unable to delete session")
+	    http.Redirect(w, req, "/error", http.StatusSeeOther)
+	}
+
+        http.Redirect(w, req, "/deleteSuccess", http.StatusSeeOther)
 }
 
 
@@ -290,6 +304,7 @@ func main() {
 	router.HandleFunc("/signUp", staticHandler).Methods("GET")
 	router.HandleFunc("/signUp", signUpHandler).Methods("POST")
 	router.HandleFunc("/signUpSuccess", staticHandler).Methods("GET")
+        router.HandleFunc("/deleteSuccess", staticHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedPageHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedHandler).Methods("POST")
 	router.HandleFunc("/downloads", staticHandler).Methods("GET")

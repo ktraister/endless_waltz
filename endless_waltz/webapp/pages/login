@@ -161,7 +161,6 @@
       <input type="text" name="username" class="form-control" id="floatingInput" placeholder="Username">
       <label for="floatingInput">Username</label>
     </div>
-    &nbsp;
     <div class="form-floating">
       <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password">
       <label for="floatingPassword">Password</label>

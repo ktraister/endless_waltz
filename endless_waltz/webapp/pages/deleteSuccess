@@ -166,17 +166,11 @@
   </header>
 
   <main class="px-3">
-    <img class="mb-4" src="/img/ew.png" alt="" width="500" height="300">  
-      <br>
-    <h1>User Information</h1>
-    <p>Authenticated: {{.IsAuthenticated}}</p>
-    <p>Username: {{.Username}}</p>
+<img class="mb-4" src="/img/ew.png" alt="" width="500" height="300">  
     <br>
-    <p class="lead">
-      <form action="/protected" method="POST" class="btn btn-primary py-2">
-	<button name="delete">Delete My User</button>
-      </form>
-    </p>
+    <h2 class="lead">Successfully deleted user for the EW Circut!.</h2>
+    <h3 class="lead">Redirecting to home page...</h3>
+    <meta http-equiv="refresh" content="5; url='/'" />
   </main>
 
   <footer class="mt-auto text-white-50">

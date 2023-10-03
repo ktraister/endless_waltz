@@ -3,20 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
-
-var MongoURI string
-var MongoUser string
-var MongoPass string
 
 func deleteUser(logger *logrus.Logger, user string) bool {
 	//creating context to connect to mongo
@@ -38,11 +32,8 @@ func deleteUser(logger *logrus.Logger, user string) bool {
 	// Check if the item exists in the collection
 	logger.Debug(fmt.Sprintf("deleting user '%s'", user))
 	filter := bson.M{"User": user}
-	var result bson.M
-	//delete one
-	err = auth_db.FinOne(context.TODO(), filter).Decode(&result)
+	_, err = auth_db.DeleteOne(context.TODO(), filter)
 	if err == nil {
-		logger.Info("Found creds in db, authorized")
 		return true
 	} else if err == mongo.ErrNoDocuments {
 		logger.Warn("No creds found, unauthorized")
