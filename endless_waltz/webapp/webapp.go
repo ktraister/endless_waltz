@@ -128,7 +128,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 
 	//set our signUpTime to the unix time.now()
 	now := time.Now()
-        signUpTime := string(now.Unix())
+        signUpTime := fmt.Sprint(now.Unix())
 
 	//Write to database with information
 	_, err = auth_db.InsertOne(ctx, bson.M{"User":req.FormValue("username"),"Passwd":password,"SignupTime":signUpTime,"Active":true})
