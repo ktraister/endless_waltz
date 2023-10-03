@@ -240,8 +240,35 @@ func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
 		logger.Error(err)
 		return
 	}
-	fmt.Println("Got to the end")
 }
+
+func protectedHandler(w http.ResponseWriter, req *http.Request) {
+    
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	session, err := store.Get(req, "session-name")
+	if err != nil {
+		logger.Error("sessionNotFound")
+		http.Error(w, "Session not found", http.StatusUnauthorized)
+		return
+	}
+
+	// Check if the user is authenticated
+	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+		logger.Error("Client unauthorized")
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	//delete the user per their request
+
+}
+
 
 func main() {
 	MongoURI = os.Getenv("MongoURI")
@@ -264,6 +291,7 @@ func main() {
 	router.HandleFunc("/signUp", signUpHandler).Methods("POST")
 	router.HandleFunc("/signUpSuccess", staticHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedPageHandler).Methods("GET")
+	router.HandleFunc("/protected", protectedHandler).Methods("POST")
 	router.HandleFunc("/downloads", staticHandler).Methods("GET")
 	router.HandleFunc("/how_it_works", staticHandler).Methods("GET")
 	http.ListenAndServe(":8080", router)
