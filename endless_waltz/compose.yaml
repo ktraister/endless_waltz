@@ -22,6 +22,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      SessionKey: efnic74mh5Ki1EWHoZFNgEnZJ3IZKsLu
       MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser
       MongoPass: password123

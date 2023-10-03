@@ -19,7 +19,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var store = sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+var store = sessions.NewCookieStore([]byte(os.Getenv("SessionKey")))
 
 func imgHandler(w http.ResponseWriter, req *http.Request) {
 	img, err := os.ReadFile(fmt.Sprintf("pages%s", req.URL.Path))
