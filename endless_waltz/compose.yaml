@@ -12,6 +12,21 @@ services:
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
+
+  webapp:
+    depends_on:
+      mongo:
+        condition: service_started
+    build:
+      context: webapp
+    ports:
+      - "8080:8080"
+    environment:
+      SessionKey: efnic74mh5Ki1EWHoZFNgEnZJ3IZKsLu
+      MongoURI: mongodb://mongo:27017/
+      MongoUser: adminuser
+      MongoPass: password123
+      LogLevel: Debug
         
   exchange:
     depends_on:
@@ -45,7 +60,6 @@ services:
     ports:
       - "27017:27017"
     environment:
-        # provide your credentials here
         - MONGO_INITDB_ROOT_USERNAME=adminuser
         - MONGO_INITDB_ROOT_PASSWORD=password123
 

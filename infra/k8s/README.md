@@ -25,7 +25,7 @@ https://github.com/k3s-io/k3s/releases/tag/v1.26.0+k3s1
 SVC SETUP:
 --------------------------
 This is the process for a new dev namespace with all the trimmings.
-Pick and choose what you need to deploy for each unieuq part
+Pick and choose what you need to deploy for each unique part
 
 #set up pull secret
 ```
@@ -51,6 +51,11 @@ cd reaper && kubectl apply -f .
 cd random && kubectl apply -f .
 ```
 
+#deploy webapp
+```
+cd webapp && kubectl apply -f .
+```
+
 #deploy exchange
 ```
 cd exchange && kubectl apply -f .
@@ -64,4 +69,9 @@ kubectl expose deployment ew-random --type=LoadBalancer --name=local-ew-random
 #expose exchange port
 ```
 kubectl expose deployment ew-exchange --type=LoadBalancer --name=local-ew-exchange
+```
+
+#expose webapp port
+```
+kubectl expose deployment ew-webapp --type=LoadBalancer --name=local-ew-webapp
 ```
