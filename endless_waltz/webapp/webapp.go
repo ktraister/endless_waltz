@@ -103,10 +103,9 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	auth_db := client.Database("auth").Collection("keys")
 
-	//check database to ensure username/email ! already exists
-	filters := []primitive.M{bson.M{"User": req.FormValue("username")},
-		bson.M{"Email": req.FormValue("email")},
-	}
+	//extensible for other db checks into the future
+	//check database to ensure username ! already exists
+	filters := []primitive.M{bson.M{"User": req.FormValue("username")}}
 
 	for _,filter := range filters {
 	        var result bson.M
@@ -114,7 +113,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		err := auth_db.FindOne(ctx, filter).Decode(&result)
 		if err != mongo.ErrNoDocuments {
 			//be more specific in future
-			http.Error(w, "Username or Email collision", http.StatusBadRequest)
+			http.Error(w, "Username collision", http.StatusBadRequest)
 			logger.Error(err)
 			return
 		}
@@ -126,13 +125,17 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	hashSum := hash.Sum(nil)
 	password := hex.EncodeToString(hashSum)
 
+	//set our signUpTime to the unix time.now()
+	now := time.Now()
+        signUpTime := string(now.Unix())
+
 	//Write to database with information
-	_, err = auth_db.InsertOne(ctx, bson.M{"User":req.FormValue("username"),"Passwd":password,"Email":req.FormValue("email"),"Active":true})
+	_, err = auth_db.InsertOne(ctx, bson.M{"User":req.FormValue("username"),"Passwd":password,"SignupTime":signUpTime,"Active":true})
 	if err != nil {
 		return
 	}
 
-	//redirect to main page here pending email confirmation
+	//redirect to main page 5 seconds later using html
 	http.Redirect(w, req, "/signUpSuccess", http.StatusSeeOther)
 
 }

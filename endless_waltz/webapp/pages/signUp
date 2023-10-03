@@ -156,11 +156,6 @@
   <form method="POST" action="/signUp">
     <img class="mb-4" src="/img/Icon.png" alt="" width="72" height="57">
     <h1 class="h3 mb-3 fw-normal">Create an account</h1>
-
-    <div class="form-floating">
-      <input type="email" name="email" class="form-control" id="floatingInput" placeholder="email">
-      <label for="floatingInput">Email address</label>
-    </div>
     <div class="form-floating">
       <input type="text" name="username" class="form-control" id="floatingInput" placeholder="Username">
       <label for="floatingInput">Username</label>

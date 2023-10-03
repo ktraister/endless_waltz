@@ -159,7 +159,7 @@
 
     <div class="form-floating">
       <input type="text" name="username" class="form-control" id="floatingInput" placeholder="Username">
-      <label for="floatingInput">Email address</label>
+      <label for="floatingInput">Username</label>
     </div>
     &nbsp;
     <div class="form-floating">
