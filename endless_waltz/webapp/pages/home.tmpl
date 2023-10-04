@@ -18,6 +18,10 @@
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
+      .push {
+	margin-left: auto;
+      }
+
       .bd-placeholder-img {
         font-size: 1.125rem;
         text-anchor: middle;
@@ -156,11 +160,22 @@
 <div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
   <header class="mb-auto">
     <div>
-	<!-- <h3 class="float-md-start mb-0">Cover</h3> -->
-      <nav class="nav nav-masthead justify-content-center float-md-end">
-        <a class="nav-link fw-bold py-1 px-0" href="/login">Sign In</a>
+      <nav class="nav nav-masthead">
+        <a class="nav-link fw-bold py-1 px-0" href="/downloads">Downloads</a>
+	&nbsp; &nbsp; &nbsp;
+        <a class="nav-link fw-bold py-1 px-0" href="/how_it_works">How It Works</a>
+	&nbsp; &nbsp; &nbsp;
+        <a class="nav-link fw-bold py-1 px-0" href="/privacy">Privacy</a>
+	&nbsp; &nbsp; &nbsp;
+	{{if .IsAuthenticated }}
+	<a class="push nav-link fw-bold py-1 px-0" href="/protected">{{.Username}}</a>
+	&nbsp; &nbsp; &nbsp;
+        <a class="nav-link fw-bold py-1 px-0" href="/logout">Log Out</a>
+	{{ else }}
+	<a class="push nav-link fw-bold py-1 px-0" href="/login">Sign In</a>
 	&nbsp; &nbsp; &nbsp;
         <a class="nav-link fw-bold py-1 px-0" href="/signUp">Sign Up</a>
+	{{ end }}
       </nav>
     </div>
   </header>
