@@ -35,15 +35,7 @@ func imgHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write(img)
 }
 
-func staticHandler(w http.ResponseWriter, req *http.Request) {
-	file, err := os.ReadFile(fmt.Sprintf("pages%s", req.URL.Path))
-	if err != nil {
-		return
-	}
-	w.Write(file)
-}
-
-func homePageHandler(w http.ResponseWriter, req *http.Request) {
+func staticTemplateHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -53,14 +45,17 @@ func homePageHandler(w http.ResponseWriter, req *http.Request) {
 
 	session, err := store.Get(req, "session-name")
 
-	tmpl, err := os.ReadFile("pages/home.tmpl")
-	if err != nil {
-		logger.Error("Failed to read template")
-		return
-	}
+	path := ""
+	if req.URL.Path == "/" { 
+	    path = "home"
+	} else {
+	    path = req.URL.Path
+        }
+
+	filename := fmt.Sprintf("pages/%s.tmpl", path)
 
 	// Parse the template
-	t, err := template.New("index").Parse(string(tmpl))
+	t, err := template.New("").ParseFiles("pages/base.tmpl", filename)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logger.Error("failed to parse template")
@@ -82,13 +77,14 @@ func homePageHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Execute the template with the data and write it to the response
-	err = t.Execute(w, data)
+	err = t.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logger.Error("Failed to execute template")
 		logger.Error(err)
 		return
 	}
+
 }
 
 func signUpPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -365,20 +361,20 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
-	router.HandleFunc("/", homePageHandler).Methods("GET")
-	router.HandleFunc("/error", staticHandler).Methods("GET")
+	router.HandleFunc("/", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/error", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/img/{id}", imgHandler).Methods("GET")
-	router.HandleFunc("/login", staticHandler).Methods("GET")
+	router.HandleFunc("/login", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/login", loginHandler).Methods("POST")
-	router.HandleFunc("/signUp", staticHandler).Methods("GET")
+	router.HandleFunc("/signUp", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/signUp", signUpHandler).Methods("POST")
-	router.HandleFunc("/signUpSuccess", staticHandler).Methods("GET")
-	router.HandleFunc("/deleteSuccess", staticHandler).Methods("GET")
+	router.HandleFunc("/signUpSuccess", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/deleteSuccess", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedPageHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedHandler).Methods("POST")
-	router.HandleFunc("/downloads", staticHandler).Methods("GET")
-	router.HandleFunc("/how_it_works", staticHandler).Methods("GET")
-	router.HandleFunc("/privacy", staticHandler).Methods("GET")
+	router.HandleFunc("/downloads", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/how_it_works", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/privacy", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/logout", logoutPageHandler).Methods("GET")
 	http.ListenAndServe(":8080", router)
 }
