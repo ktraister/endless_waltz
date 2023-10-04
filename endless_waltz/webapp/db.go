@@ -43,4 +43,3 @@ func deleteUser(logger *logrus.Logger, user string) bool {
 		return false
 	}
 }
-

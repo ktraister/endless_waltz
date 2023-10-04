@@ -8,10 +8,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
+	"html/template"
 	"net/http"
 	"os"
 	"time"
-	"html/template"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -20,6 +20,11 @@ import (
 )
 
 var store = sessions.NewCookieStore([]byte(os.Getenv("SessionKey")))
+
+type sessionData struct {
+	IsAuthenticated bool
+	Username        string
+}
 
 func imgHandler(w http.ResponseWriter, req *http.Request) {
 	img, err := os.ReadFile(fmt.Sprintf("pages%s", req.URL.Path))
@@ -38,14 +43,52 @@ func staticHandler(w http.ResponseWriter, req *http.Request) {
 	w.Write(file)
 }
 
-
-func homePageHandler(w http.ResponseWriter, r *http.Request) {
-	// Implement your custom page logic here
-	home, err := os.ReadFile("pages/home")
-	if err != nil {
+func homePageHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
 		return
 	}
-	fmt.Fprintln(w, string(home))
+
+	session, err := store.Get(req, "session-name")
+
+	tmpl, err := os.ReadFile("pages/home.tmpl")
+	if err != nil {
+		logger.Error("Failed to read template")
+		return
+	}
+
+	// Parse the template
+	t, err := template.New("index").Parse(string(tmpl))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Error("failed to parse template")
+		return
+	}
+
+	var data sessionData
+	// Define a data struct for the template
+	if session.Values["username"] != nil {
+		data = sessionData{
+			IsAuthenticated: true,
+			Username:        session.Values["username"].(string),
+		}
+	} else {
+		data = sessionData{
+			IsAuthenticated: false,
+			Username:        "none",
+		}
+	}
+
+	// Execute the template with the data and write it to the response
+	err = t.Execute(w, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Error("Failed to execute template")
+		logger.Error(err)
+		return
+	}
 }
 
 func signUpPageHandler(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +108,33 @@ func loginPageHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintln(w, string(loginForm))
+
+}
+
+func logoutPageHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	session, err := store.Get(req, "session-name")
+
+	//end their session
+	session.Options.MaxAge = -1
+	err = session.Save(req, w)
+	if err != nil {
+		logger.Error("Unable to delete session")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+	}
+
+	logoutForm, err := os.ReadFile("pages/logOutSuccess")
+	if err != nil {
+		return
+	}
+
+	fmt.Fprintln(w, string(logoutForm))
 
 }
 
@@ -108,8 +178,8 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	//check database to ensure username ! already exists
 	filters := []primitive.M{bson.M{"User": req.FormValue("username")}}
 
-	for _,filter := range filters {
-	        var result bson.M
+	for _, filter := range filters {
+		var result bson.M
 		fmt.Println(filter)
 		err := auth_db.FindOne(ctx, filter).Decode(&result)
 		if err != mongo.ErrNoDocuments {
@@ -128,10 +198,10 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 
 	//set our signUpTime to the unix time.now()
 	now := time.Now()
-        signUpTime := fmt.Sprint(now.Unix())
+	signUpTime := fmt.Sprint(now.Unix())
 
 	//Write to database with information
-	_, err = auth_db.InsertOne(ctx, bson.M{"User":req.FormValue("username"),"Passwd":password,"SignupTime":signUpTime,"Active":true})
+	_, err = auth_db.InsertOne(ctx, bson.M{"User": req.FormValue("username"), "Passwd": password, "SignupTime": signUpTime, "Active": true})
 	if err != nil {
 		return
 	}
@@ -211,7 +281,7 @@ func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
 	//read in the template
 	tmpl, err := os.ReadFile("pages/manageUser.tmpl")
 	if err != nil {
-	    logger.Error("Failed to read template")
+		logger.Error("Failed to read template")
 		return
 	}
 
@@ -243,7 +313,7 @@ func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func protectedHandler(w http.ResponseWriter, req *http.Request) {
-    
+
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -268,21 +338,20 @@ func protectedHandler(w http.ResponseWriter, req *http.Request) {
 	//delete the user per their request
 	ok = deleteUser(logger, session.Values["username"].(string))
 	if !ok {
-            logger.Error("Unable to delete user")
-	    http.Redirect(w, req, "/error", http.StatusSeeOther)
-        }
+		logger.Error("Unable to delete user")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+	}
 
 	//end their session
 	session.Options.MaxAge = -1
 	err = session.Save(req, w)
 	if err != nil {
-	    logger.Error("Unable to delete session")
-	    http.Redirect(w, req, "/error", http.StatusSeeOther)
+		logger.Error("Unable to delete session")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 	}
 
-        http.Redirect(w, req, "/deleteSuccess", http.StatusSeeOther)
+	http.Redirect(w, req, "/deleteSuccess", http.StatusSeeOther)
 }
-
 
 func main() {
 	MongoURI = os.Getenv("MongoURI")
@@ -304,10 +373,12 @@ func main() {
 	router.HandleFunc("/signUp", staticHandler).Methods("GET")
 	router.HandleFunc("/signUp", signUpHandler).Methods("POST")
 	router.HandleFunc("/signUpSuccess", staticHandler).Methods("GET")
-        router.HandleFunc("/deleteSuccess", staticHandler).Methods("GET")
+	router.HandleFunc("/deleteSuccess", staticHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedPageHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedHandler).Methods("POST")
 	router.HandleFunc("/downloads", staticHandler).Methods("GET")
 	router.HandleFunc("/how_it_works", staticHandler).Methods("GET")
+	router.HandleFunc("/privacy", staticHandler).Methods("GET")
+	router.HandleFunc("/logout", logoutPageHandler).Methods("GET")
 	http.ListenAndServe(":8080", router)
 }
