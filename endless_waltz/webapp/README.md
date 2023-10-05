@@ -8,6 +8,15 @@ the end user is not required to enter an email address or phone number. This
 may change in the future.
 
 ## Operation
+
+### Env Variables
+This application requires the following env variables to be set:
+  - MongoURI: String value for mongo protocol/hostname/port
+  - MongoUser: Login user for mongo
+  - MongoPass: Login password for Mongo
+  - SessionKey: Unique key to be used for session store in containers
+  - CaptchaKey: Key provided by google to check if captcha responses are valid
+
 ### On Start
 On startup, the webapp binary reads in configuration variables from the 
 environment. These variables deal with Mongo and Logging. A new router mutex 
