@@ -24,10 +24,11 @@ var store = sessions.NewCookieStore([]byte(os.Getenv("SessionKey")))
 type sessionData struct {
 	IsAuthenticated bool
 	Username        string
+	Captcha         bool
 }
 
 func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, session *sessions.Session, file string) {
-	filename := fmt.Sprintf("pages/%s.tmpl", file)
+	filename := fmt.Sprintf("pages%s.tmpl", file)
 
 	// Parse the template
 	t, err := template.New("").ParseFiles("pages/base.tmpl", filename)
@@ -43,12 +44,19 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, session *sessio
 		data = sessionData{
 			IsAuthenticated: true,
 			Username:        session.Values["username"].(string),
+			Captcha:         false,
 		}
 	} else {
 		data = sessionData{
 			IsAuthenticated: false,
 			Username:        "none",
+			Captcha:         false,
 		}
+	}
+
+	//add recaptcha JS to pageif needed
+	if file == "/signUp" {
+		data.Captcha = true
 	}
 
 	// Execute the template with the data and write it to the response
@@ -87,11 +95,11 @@ func staticTemplateHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	path := ""
-	if req.URL.Path == "/" { 
-	    path = "home"
+	if req.URL.Path == "/" {
+		path = "home"
 	} else {
-	    path = req.URL.Path
-        }
+		path = req.URL.Path
+	}
 
 	parseTemplate(logger, w, session, path)
 }
@@ -137,6 +145,18 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	//check recaptcha post here
+	logger.Debug(req.FormValue("g-recaptcha-response"))
+	ok, err = checkCaptcha(logger, req.FormValue("g-recaptcha-response"))
+	if err != nil {
+		http.Error(w, "Error performing Recaptcha Check", http.StatusBadRequest)
+		return
+	}
+	if !ok {
+		http.Error(w, "Recaptcha Check failed", http.StatusBadRequest)
+		return
+	}
+
 	//setup database access
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
@@ -159,7 +179,6 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 
 	for _, filter := range filters {
 		var result bson.M
-		fmt.Println(filter)
 		err := auth_db.FindOne(ctx, filter).Decode(&result)
 		if err != mongo.ErrNoDocuments {
 			//be more specific in future
