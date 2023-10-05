@@ -112,6 +112,10 @@
       }
     </style>
 
+    <!-- add script for recaptcha -->
+    {{ if .Captcha }}
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    {{ end }}
     
     <!-- Custom styles for this template -->
     <link href="cover.css" rel="stylesheet">
