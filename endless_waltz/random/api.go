@@ -117,7 +117,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 				update := bson.D{{"$set", bson.D{{"LOCK", "true"}}}}
 				_, err := otp_db.UpdateOne(ctx, filter, update)
 				if err != nil {
-					logger.Error(err)
+					logger.Error("Error locking pad in db: ", err)
 					return
 				}
 			}

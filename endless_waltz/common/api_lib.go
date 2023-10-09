@@ -37,7 +37,7 @@ func checkAuth(user string, passwd string, logger *logrus.Logger) bool {
 
 	// Check if the item exists in the collection
 	logger.Debug(fmt.Sprintf("checking user '%s' with pass '%s'", user, passwd))
-	filter := bson.M{"Passwd": passwd, "User": user}
+	filter := bson.M{"Passwd": passwd, "User": user, "Active": true}
 	var result bson.M
 	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
 	if err == nil {

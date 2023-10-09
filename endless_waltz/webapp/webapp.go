@@ -28,7 +28,7 @@ type sessionData struct {
 }
 
 func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, session *sessions.Session, file string) {
-	filename := fmt.Sprintf("pages%s.tmpl", file)
+	filename := fmt.Sprintf("pages/%s.tmpl", file)
 
 	// Parse the template
 	t, err := template.New("").ParseFiles("pages/base.tmpl", filename)
@@ -63,8 +63,7 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, session *sessio
 	err = t.ExecuteTemplate(w, "base", data)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logger.Error("Failed to execute template")
-		logger.Error(err)
+		logger.Error("Failed to execute template: ", err)
 		return
 	}
 
@@ -166,7 +165,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 	if err != nil {
-		logger.Fatal(err)
+		logger.Error("generic mongo signup error: ", err)
 		return
 	} else {
 		logger.Info("Database connection succesful!")
@@ -179,16 +178,18 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		bson.M{"Email": req.FormValue("email")},
 	}
 
-	for _, filter := range filters {
-		var result bson.M
-		err := auth_db.FindOne(ctx, filter).Decode(&result)
-		if err != mongo.ErrNoDocuments {
-			//be more specific in future
-			http.Error(w, "Collision", http.StatusBadRequest)
-			logger.Error(err)
-			return
-		}
-	}
+	if os.Getenv("ENV") != "local" {
+	    for _, filter := range filters {
+		    var result bson.M
+		    err := auth_db.FindOne(ctx, filter).Decode(&result)
+		    if err != mongo.ErrNoDocuments {
+			    //be more specific in future
+			    http.Error(w, "Collision", http.StatusBadRequest)
+			    logger.Error("Collision of user/email while checking signup: ", err)
+			    return
+		    }
+	    }
+        }
 
 	//create our hasher to hash our pass
 	hash := sha512.New()
@@ -204,23 +205,23 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	emailVerifyToken := generateToken()
 
 	//send the email before writing to db
-	err = sendVerifyEmail(logger, req.FormValue("email"), emailVerifyToken)
+	err = sendVerifyEmail(logger, req.FormValue("username"), req.FormValue("email"), emailVerifyToken)
         if err != nil {
 		http.Error(w, "Email Verify Fail", http.StatusBadRequest)
-		logger.Error(err)
+		logger.Error("Email verify incoming fail: ", err)
 		return
 	}
 
 	//Write to database with information
 	_, err = auth_db.InsertOne(ctx, bson.M{"User": req.FormValue("username"), "Passwd": password, "SignupTime": signUpTime, "Active": false, "Email": req.FormValue("email"), "EmailVerifyToken": emailVerifyToken})
 	if err != nil {
-		http.Error(w, "Collision", http.StatusBadRequest)
-		logger.Error(err)
+		http.Error(w, "Error", http.StatusBadRequest)
+		logger.Error("Generic mongo error on user signup write: ", err)
 		return
 	}
 
 	//redirect to main page 5 seconds later using html
-	http.Redirect(w, req, "/signUpSuccess", http.StatusSeeOther)
+	http.Redirect(w, req, "/signUpSuccess", 200)
 
 }
 
@@ -283,10 +284,11 @@ func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if verifyUserSignup(logger, req.FormValue("User"), req.FormValue("Token")) {
+	if verifyUserSignup(logger, req.FormValue("email"), req.FormValue("user"), req.FormValue("token")) {
 	    //show the page for user verification success
+ 	    http.Redirect(w, req, "/verifySuccess", 200)
 	} else {
-            // form fucked up
+ 	    http.Redirect(w, req, "/error", http.StatusSeeOther)
         }
 }
 
@@ -376,7 +378,8 @@ func main() {
 	router.HandleFunc("/login", loginHandler).Methods("POST")
 	router.HandleFunc("/signUp", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/signUp", signUpHandler).Methods("POST")
-	router.HandleFunc("/verifyEmail", emailVerifyHandler
+	router.HandleFunc("/verifyEmail", emailVerifyHandler).Methods("POST")
+	router.HandleFunc("/verifySuccess", staticTemplateHandler).Methods("POST")
 	router.HandleFunc("/signUpSuccess", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/deleteSuccess", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedPageHandler).Methods("GET")

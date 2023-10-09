@@ -6,3 +6,4 @@ endless_waltz/exchange/exchange
 endless_waltz/cli/cli
 endless_waltz/gui/gui
 endless_waltz/webapp/webapp
+endless_waltz/.env

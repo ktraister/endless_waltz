@@ -41,7 +41,7 @@ func checkCaptcha(logger *logrus.Logger, input string) (bool, error) {
 	}
 
 	if responseBody.Success == false {
-		logger.Warn("User failed captcha on signup")
+	    logger.Warn("User failed captcha on signup: ", responseBody.EC)
 		return false, nil
 	} else {
 		return true, nil

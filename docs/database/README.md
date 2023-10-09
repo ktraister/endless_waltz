@@ -28,4 +28,5 @@ commands can be used to switch to the `auth` database and add a user:
 ```
 use auth
 db.keys.insertOne({"Passwd":"f57ae22905021c0bcc0e9fad532af2787256bdbdc20f57cb4c63303e2bbd4c562a2c9ca6d79da6c02602b2b2faea41cbda8953020d0b92e0b1cecd3bd75029bb","User":"Kayleigh","Comments":"Init"})
+db.keys.find({})
 ```
