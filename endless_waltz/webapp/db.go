@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
 	"strconv"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -24,7 +24,7 @@ func deleteUser(logger *logrus.Logger, user string) bool {
 	//actually connect to mongo
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 	if err != nil {
-	    logger.Error("Could not connect to mongo:", err)
+		logger.Error("Could not connect to mongo:", err)
 		return false
 	}
 
@@ -78,7 +78,7 @@ func verifyUserSignup(logger *logrus.Logger, email string, user string, token st
 	logger.Error(result)
 
 	regTime, err := strconv.Atoi(result["SignupTime"].(string))
-        if err != nil {
+	if err != nil {
 		logger.Error("strconv error: ", err)
 		return false
 	}
@@ -87,17 +87,17 @@ func verifyUserSignup(logger *logrus.Logger, email string, user string, token st
 
 	//check the result for appropriate values
 	if int(time.Now().Unix()) > threshold {
-	        logger.Warn(fmt.Sprintf("User '%s' exceeded email verify threshold", user))
+		logger.Warn(fmt.Sprintf("User '%s' exceeded email verify threshold", user))
 		return false
 	}
 
 	//update the item to set the user to active
-	update := bson.D{{"$set", bson.D{{"Active", "true"}}}}
+	update := bson.D{{"$set", bson.D{{"Active", true}}}}
 	_, err = auth_db.UpdateOne(context.TODO(), filter, update)
-	if err != nil {   
+	if err != nil {
 		logger.Error("Error setting user to active: ", err)
 		return false
-	}   
+	}
 
 	return true
 }

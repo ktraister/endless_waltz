@@ -22,7 +22,8 @@
 
 <a href="some_page">This is a regular link</a>
 
-<form method="post" action="http://localhost:8080/verifyEmail" class="inline">
+<!-- I can do something here to format it differently for local testing -->
+<form method="post" action="%s/verifyEmail" class="inline">
   <input type="hidden" name="user" value="%s">
   <input type="hidden" name="email" value="%s">
   <input type="hidden" name="token" value="%s">

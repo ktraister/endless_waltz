@@ -179,17 +179,17 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if os.Getenv("ENV") != "local" {
-	    for _, filter := range filters {
-		    var result bson.M
-		    err := auth_db.FindOne(ctx, filter).Decode(&result)
-		    if err != mongo.ErrNoDocuments {
-			    //be more specific in future
-			    http.Error(w, "Collision", http.StatusBadRequest)
-			    logger.Error("Collision of user/email while checking signup: ", err)
-			    return
-		    }
-	    }
-        }
+		for _, filter := range filters {
+			var result bson.M
+			err := auth_db.FindOne(ctx, filter).Decode(&result)
+			if err != mongo.ErrNoDocuments {
+				//be more specific in future
+				http.Error(w, "Collision", http.StatusBadRequest)
+				logger.Error("Collision of user/email while checking signup: ", err)
+				return
+			}
+		}
+	}
 
 	//create our hasher to hash our pass
 	hash := sha512.New()
@@ -206,7 +206,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 
 	//send the email before writing to db
 	err = sendVerifyEmail(logger, req.FormValue("username"), req.FormValue("email"), emailVerifyToken)
-        if err != nil {
+	if err != nil {
 		http.Error(w, "Email Verify Fail", http.StatusBadRequest)
 		logger.Error("Email verify incoming fail: ", err)
 		return
@@ -221,7 +221,8 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//redirect to main page 5 seconds later using html
-	http.Redirect(w, req, "/signUpSuccess", 200)
+	logger.Warn("Alls well that ends well, redirecting")
+	http.Redirect(w, req, "/signUpSuccess", http.StatusSeeOther)
 
 }
 
@@ -285,11 +286,11 @@ func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if verifyUserSignup(logger, req.FormValue("email"), req.FormValue("user"), req.FormValue("token")) {
-	    //show the page for user verification success
- 	    http.Redirect(w, req, "/verifySuccess", 200)
+		//show the page for user verification success
+		http.Redirect(w, req, "/verifySuccess", http.StatusSeeOther)
 	} else {
- 	    http.Redirect(w, req, "/error", http.StatusSeeOther)
-        }
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+	}
 }
 
 func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
@@ -379,7 +380,7 @@ func main() {
 	router.HandleFunc("/signUp", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/signUp", signUpHandler).Methods("POST")
 	router.HandleFunc("/verifyEmail", emailVerifyHandler).Methods("POST")
-	router.HandleFunc("/verifySuccess", staticTemplateHandler).Methods("POST")
+	router.HandleFunc("/verifySuccess", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/signUpSuccess", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/deleteSuccess", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedPageHandler).Methods("GET")
