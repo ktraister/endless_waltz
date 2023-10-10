@@ -1,7 +1,7 @@
 {{ define "content" }}
 <!-- I can do something here to format it differently for local testing -->
 <h1>Endless Waltz Password Reset</h1>
-<h1>IF YOU DID NOT REQUEST THIS, PLEASE DISREGARD</a>
+<h1>IF YOU DID NOT REQUEST THIS, PLEASE DISREGARD</h1>
 <h2>Please use the button below to verify your email</h2>
 <form method="post" action="{{.FormHost}}/resetPassword" class="inline">
   <input type="hidden" name="user" value="{{.Username}}">

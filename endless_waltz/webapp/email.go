@@ -106,7 +106,7 @@ func sendResetEmail(logger *logrus.Logger, username string, token string) error 
 	    Token: token,
         }
 
-        emailContent, err := templateEmail(logger, "verifyTemplate", emailData)
+        emailContent, err := templateEmail(logger, "resetTemplate", emailData)
 	if err != nil {
 		logger.Error("Unable to template email")
 		return err
