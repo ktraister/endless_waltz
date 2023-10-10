@@ -22,11 +22,15 @@ services:
     ports:
       - "8080:8080"
     environment:
+      ENV: local
       SessionKey: efnic74mh5Ki1EWHoZFNgEnZJ3IZKsLu
+      CaptchaKey: ${CaptchaKey}
       MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
+      EmailUser: ${EmailUser}
+      EmailPass: ${EmailPass}
         
   exchange:
     depends_on:
