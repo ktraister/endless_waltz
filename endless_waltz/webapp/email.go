@@ -3,11 +3,38 @@ package main
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
-	"log"
+	"bytes"
 	"net/smtp"
 	"os"
+	"html/template"
 )
+
+type emailData struct {
+    FormHost string
+    Username string
+    TargetUser string
+    Token string
+}
+
+func templateEmail(logger *logrus.Logger, path string, data emailData) (string, error) {
+        filename := fmt.Sprintf("pages/email/%s.tmpl", path)
+	logger.Info("templating ", filename)
+        // Parse the template
+        t, err := template.New("").ParseFiles("pages/email/base.tmpl", filename)
+        if err != nil {
+                logger.Error("failed to parse email template")
+                return "", err
+        }      
+
+	var rendered bytes.Buffer
+	err = t.ExecuteTemplate(&rendered, "base", data)
+	if err != nil {
+		logger.Error("Error rendering template:", err)
+		return "", err
+	}
+
+	return rendered.String(), nil
+}
 
 func sendVerifyEmail(logger *logrus.Logger, username string, targetUser string, token string) error {
 	emailUser := os.Getenv("EmailUser")
@@ -16,17 +43,23 @@ func sendVerifyEmail(logger *logrus.Logger, username string, targetUser string, 
 	//connect to our server, set up a message and send it
 	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
 
-	//grab our template
-	fileContent, err := ioutil.ReadFile("./pages/email/verifyTemplate")
-	if err != nil {
-		log.Fatal("Unable to read email template")
-		return err
-	}
-
 	formHost := "https://endlesswaltz.xyz"
 	if os.Getenv("ENV") == "local" {
 		formHost = "http://localhost:8080"
 	}
+
+	emailData := emailData {
+	    FormHost: formHost,
+	    Username: username,
+	    TargetUser: targetUser,
+	    Token: token,
+        }
+
+        emailContent, err := templateEmail(logger, "verifyTemplate", emailData)
+	if err != nil {
+		logger.Error("Unable to template email")
+		return err
+        }
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	from := emailUser
@@ -34,12 +67,12 @@ func sendVerifyEmail(logger *logrus.Logger, username string, targetUser string, 
 	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
 		"Subject: Welcome to Endless Waltz\r\n" +
 		mime +
-		fmt.Sprintf(string(fileContent), formHost, username, targetUser, token))
+		emailContent)
 
 	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
 
 	if err != nil {
-		log.Fatal("unable to send email to gmail server")
+		logger.Error("unable to send email to gmail server")
 		return err
 	}
 
@@ -61,17 +94,23 @@ func sendResetEmail(logger *logrus.Logger, username string, token string) error 
 	//connect to our server
 	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
 
-	//grab our template
-	fileContent, err := ioutil.ReadFile("./pages/email/resetTemplate")
-	if err != nil {
-		log.Fatal("Unable to read email template")
-		return err
-	}
-
 	formHost := "https://endlesswaltz.xyz"
 	if os.Getenv("ENV") == "local" {
 		formHost = "http://localhost:8080"
 	}
+
+	emailData := emailData {
+	    FormHost: formHost,
+	    Username: username,
+	    TargetUser: targetUser,
+	    Token: token,
+        }
+
+        emailContent, err := templateEmail(logger, "resetTemplate", emailData)
+	if err != nil {
+		logger.Error("Unable to template email")
+		return err
+        }
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	from := emailUser
@@ -79,12 +118,12 @@ func sendResetEmail(logger *logrus.Logger, username string, token string) error 
 	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
 		"Subject: Welcome to Endless Waltz\r\n" +
 		mime +
-		fmt.Sprintf(string(fileContent), formHost, username, targetUser, token))
+		emailContent)
 
 	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
 
 	if err != nil {
-		log.Fatal("unable to send email to gmail server")
+		logger.Error("unable to send email to gmail server")
 		return err
 	}
 
