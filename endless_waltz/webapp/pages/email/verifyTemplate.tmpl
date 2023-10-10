@@ -1,0 +1,10 @@
+{{ define "content" }}
+<form method="post" action="{{.FormHost}}/verifyEmail" class="inline">
+  <input type="hidden" name="user" value="{{.Username}}">
+  <input type="hidden" name="email" value="{{.TargetUser}}">
+  <input type="hidden" name="token" value="{{.Token}}">
+  <button type="submit" name="submit_param" value="submit_value" class="link-button">
+    This is a link that sends a POST request
+  </button>
+</form>
+{{end}}

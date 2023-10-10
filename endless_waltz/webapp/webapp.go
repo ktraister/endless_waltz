@@ -229,7 +229,6 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//redirect to main page 5 seconds later using html
-	logger.Warn("Alls well that ends well, redirecting")
 	http.Redirect(w, req, "/signUpSuccess", http.StatusSeeOther)
 
 }
