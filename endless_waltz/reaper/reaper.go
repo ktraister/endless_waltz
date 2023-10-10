@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"math/big"
 	"os"
+	"strconv"
 	"strings"
 	"time"
-	"strconv"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -75,10 +75,6 @@ func insertItems(logger *logrus.Logger, ctx context.Context, count int64, otp_db
 	// Create an array of documents to insert
 	documents := []interface{}{}
 
-	if count > 100 {
-		count = 100
-	}
-
 	for i := 0; i < int(count); i++ {
 		// create uuid inside function for ease of use
 		id := uuid.New().String()
@@ -115,7 +111,7 @@ func insertItems(logger *logrus.Logger, ctx context.Context, count int64, otp_db
 		}
 		return false
 	}
-	logger.Info(fmt.Sprintf("Inserted %d documents, result.InsertedCount))
+	logger.Info(fmt.Sprintf("Inserted %d documents", result.InsertedCount))
 	return true
 }
 
@@ -155,11 +151,14 @@ func main() {
 
 		threshold, err := strconv.ParseInt(WriteThreshold, 10, 64)
 		if err != nil {
-		    threshold = 0
-                }
-		//if count is less than threshold 
+			threshold = 0
+		}
+		//if count is less than threshold
 		for count < threshold {
 			diff := threshold - count
+			if diff > 100 {
+				diff = 100
+			}
 			logger.Info("Found count ", count, ", writing ", diff, " to db...")
 			ok := insertItems(logger, ctx, diff, otp_db)
 			if !ok {
