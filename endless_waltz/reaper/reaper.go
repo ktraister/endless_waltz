@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"time"
+	"strconv"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -114,7 +115,7 @@ func insertItems(logger *logrus.Logger, ctx context.Context, count int64, otp_db
 		}
 		return false
 	}
-	logger.Info(fmt.Sprintf("Inserted %d documents\n", result.InsertedCount))
+	logger.Info(fmt.Sprintf("Inserted %d documents, result.InsertedCount))
 	return true
 }
 
@@ -125,6 +126,7 @@ func main() {
 	MongoPass := os.Getenv("MongoPass")
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
+	WriteThreshold := os.Getenv("WriteThreshold")
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Reaper finished starting up!")
@@ -151,8 +153,11 @@ func main() {
 			continue
 		}
 
-		//if count is less than threshold (this will need to go up for prod)
-		threshold := int64(1000)
+		threshold, err := strconv.ParseInt(WriteThreshold, 10, 64)
+		if err != nil {
+		    threshold = 0
+                }
+		//if count is less than threshold 
 		for count < threshold {
 			diff := threshold - count
 			logger.Info("Found count ", count, ", writing ", diff, " to db...")
@@ -160,7 +165,7 @@ func main() {
 			if !ok {
 				break
 			}
-			count = count + 100
+			count = count + diff
 		}
 
 		logger.Info("Count met threshold, sleeping...")

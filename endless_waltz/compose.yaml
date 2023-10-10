@@ -46,17 +46,18 @@ services:
       MongoPass: password123
       LogLevel: Debug
 
-#  reaper:
-#    depends_on:
-#      mongo:
-#        condition: service_started
-#    build:
-#      context: reaper
-#    environment:
-#      MongoURI: mongodb://mongo:27017/
-#      MongoUser: adminuser
-#      MongoPass: password123
-#      LogLevel: Debug
+  reaper:
+    depends_on:
+      mongo:
+        condition: service_started
+    build:
+      context: reaper
+    environment:
+      MongoURI: mongodb://mongo:27017/
+      MongoUser: adminuser
+      MongoPass: password123
+      WriteThreshold: 10
+      LogLevel: Debug
 
   mongo:
     image: mongo

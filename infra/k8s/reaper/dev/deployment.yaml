@@ -39,6 +39,8 @@ spec:
                 secretKeyRef:
                   key:  mongopass
                   name: ew-reaper
+            - name: "WriteThreshold"
+              value: 100
         - name: ew-entropy
           securityContext:
             privileged: true

@@ -5,13 +5,15 @@ MongoDB instance where they will be served by the RandomAPI service.
 ## Operation
 ### On Start
 On startup, the Reaper binary reads in configuration variables from the 
-environment. These variables deal with Mongo and Logging. The application
-then enters an indefinite loop. 
+environment. These variables deal with Mongo and Logging. The variable
+`WriteThreshold` deserves special attention: it sets the number of pads
+reaper will maintain in the OTP database.The application then enters an 
+indefinite loop.
 
 ### Main
 In each loop, it connects to Mongo and reads how many items are in the "otp" 
-collection. If the count is under a hard-coded limit, the diff is calculated 
-and passed to the insertItems func.
+collection. If the count is under the threshold set in the environment, the 
+diff is calculated and passed to the insertItems func.
 
 In the insertItems func, the diff is limited to 100 to use network bandwidth 
 effeciently. New UUIDs are generated and checked for uniqueness against the 
