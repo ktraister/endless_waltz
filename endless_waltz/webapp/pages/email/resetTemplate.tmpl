@@ -1,12 +1,14 @@
 {{ define "content" }}
 <!-- I can do something here to format it differently for local testing -->
-  <a>IF YOU DID NOT REQUEST THIS, PLEASE DISREGARD</a>
-<form method="post" action="%s/resetPassword" class="inline">
-  <input type="hidden" name="user" value="%s">
-  <input type="hidden" name="email" value="%s">
-  <input type="hidden" name="token" value="%s">
-  <button type="submit" name="submit_param" value="submit_value" class="link-button">
-    This is a link that sends a POST request
+<h1>Endless Waltz Password Reset</h1>
+<h1>IF YOU DID NOT REQUEST THIS, PLEASE DISREGARD</a>
+<h2>Please use the button below to verify your email</h2>
+<form method="post" action="{{.FormHost}}/resetPassword" class="inline">
+  <input type="hidden" name="user" value="{{.Username}}">
+  <input type="hidden" name="email" value="{{.TargetUser}}">
+  <input type="hidden" name="token" value="{{.Token}}">
+  <button type="submit" class="btn btn-primary w-50 py-2">
+  Reset Password
   </button>
 </form>
 {{end}}
