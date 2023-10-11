@@ -1,18 +1,20 @@
 # Documentation
-This directory contains all of the documentation for the Endless Waltz messenger. 
-Individual services are split out into seperate directories, while common things
-are given their own directories. 
+This directory contains all of the documentation for the Endless Waltz 
+messenger. Individual services are split out into seperate directories, while 
+common things are given their own directories. 
+
+LAST UPDATED: 11 October 23
 
 ## Naming Conventions
 The project gets its name from the movie Gundam Wing: Endless Waltz, and hosts
-are named to reflect this. As of 26 September 2023, the environment contains:
+are named to reflect this. The environment contains:
   - Zero: Physical development machine, hosting dev and prod infra
   - Shenlong: GCP Cloud server hosting k3s for dev infra work
   - HeavyArms: AWS Cloud server hosting k3s for dev infra work
   - DeathScythe: My laptop :) 
 
 ## Applications
-As of 26 September 2023, the EW Messenger has five discreet applications:
+The EW Messenger has six discreet applications:
   - [RTL-Entropy](https://github.com/ktraister/ew-rtl-entropy) 
   - [Reaper](../endless_waltz/reaper/README.md)
   - [RandomAPI](../endless_waltz/random/README.md)
@@ -20,7 +22,9 @@ As of 26 September 2023, the EW Messenger has five discreet applications:
   - [WebApp](../endless_waltz/webapp/README.md)
   - [Messenger](https://github.com/ktraister/ew_messenger)
 
-Everything except RTL-Entropy lives in this repository and is written in GoLang.
+Everything except RTL-Entropy and Messenger live in this repository and is 
+written in GoLang.
+EW_Messenger lives in ktraister/ew_messenger, and is written in GoLang.
 RTL-Entropy lives in ktraister/ew-rtl-entropy, and is written in C.
 
 For more information, read the individual READMEs for the appropriate service.
@@ -46,9 +50,9 @@ For more information, read the [database README](./database/README.md).
 ## Supporting Docs
 This is a collection of documents and scripts of various languages used to 
 support development of the applications.
-  - [random_numbers](./random_numbers/README.md): used to generate new prime numbers for rn.go in the 
-    messenger application. 
+  - [random_numbers](./random_numbers/README.md): used to generate new prime numbers for rn.go in the messenger application. 
   - [passwd](./passwd/README.md): used to generate password hashes for user that match go output
+  - [database](./database/README.md): docs for the Endless Waltz database setup
 
 ### Context
 Context is important to be able to understand what you read. Therefor, I plan
