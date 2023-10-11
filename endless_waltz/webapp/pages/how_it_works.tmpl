@@ -1,9 +1,38 @@
 {{ define "content" }}
   <main class="px-3">
     <img class="mb-4" src="/img/ew.png" alt="" width="500" height="300">  
-      <br>
-      <h1>What is Endless Waltz?<h1>
-      <p class="lead">Endless Waltz is a messenger application that implements a proprietary one-time pad cipher to encrypt each message uniquely.</p>
-      <p class="lead">Due to the nature of the cipher, messages sent by users cannot be intercepted and decrypted.</p>
+    <br>
+    <br>
+    <h1>What is Endless Waltz?<h1>
+    <p class="lead">Endless Waltz is a messenger application that implements a proprietary one-time pad cipher to encrypt each message uniquely.</p>
+    <p class="lead">Due to the nature of the cipher, messages sent by users cannot be intercepted and decrypted.</p>
+    <p class="lead">Even with quantum computing. </p>
+    <br>
+    <br>
+    <h1>What is a One Time Pad?<h1>
+    <p class="lead">One Time Pads are encryption keys harvested from atmospheric randomness. Endless Waltz uses a private encryption source to garuntee uniqueness in each key.</p>
+    <a class="lead" href="https://en.wikipedia.org/wiki/One-time_pad">Read more about One Time Pads at Wikipedia</a>
+    <br>
+    <br>
+    <br>
+    <h1>How is the One Time Pad kept secure?<h1>
+    <p class="lead">Once the key is delivered to a client, it is modified by using a Diffie-Hellman handshake in cooperation with the target client. No component of the Endless Waltz circut or an external listener has knowledge of the final Pad (key) used for encryption.</p>
+    <a class="lead" href="https://en.wikipedia.org/wiki/Diffie–Hellman_key_exchange">Read more about the Diffie-Hellman handshake at Wikipedia</a>
+    <br>
+    <br>
+    <br>
+    <h1>How are the final messages kept secure?<h1>
+    <p class="lead" style="color:red">Obviously, the final messages are plaintext, and only as secure as the endpoints the messenger application is run on.</p>
+    <p class="lead">The Endless Waltz messenger does not save anything, nor do the intermediary servers. And they never will.</p>
+    <p class="lead">In order to garuntee that an adversary cannot plant malware on your endpoint, we reccomend using the live media provided as a download on this site.</p>
+    <a class="lead" href="/downloads">Download the Live ISO</a>
+    <br>
+    <br>
+    <br>
+    <h1>Does Endless Waltz store anything?<h1>
+    <p class="lead">All that is stored is what is required for operation: this includes user account data (email, username, password, signup time, and date). Pads are removed immediately after use and regenerated. The exchange servers only maintain a current list of active users.</p>
+    <a class="lead" href="/privacy">Read more about Endless Waltz's privacy posture</a>
+    <br>
+    <br>
   </main>
 {{ end }}
