@@ -7,7 +7,8 @@ are given their own directories.
 The project gets its name from the movie Gundam Wing: Endless Waltz, and hosts
 are named to reflect this. As of 26 September 2023, the environment contains:
   - Zero: Physical development machine, hosting dev and prod infra
-  - HeavyArms: Cloud server hosting k3s for dev infra work
+  - Shenlong: GCP Cloud server hosting k3s for dev infra work
+  - HeavyArms: AWS Cloud server hosting k3s for dev infra work
   - DeathScythe: My laptop :) 
 
 ## Applications

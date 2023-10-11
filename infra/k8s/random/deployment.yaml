@@ -27,17 +27,17 @@ spec:
             - name: "MongoURI"
               valueFrom:
                 secretKeyRef:
-                  key:  mongouri
-                  name: ew-reaper
+                  key:  MongoURI
+                  name: ew-config
             - name: "MongoUser"
               valueFrom:
                 secretKeyRef:
-                  key:  mongouser
-                  name: ew-reaper
+                  key:  username
+                  name: mongo-creds
             - name: "MongoPass"
               valueFrom:
                 secretKeyRef:
-                  key:  mongopass
-                  name: ew-reaper
+                  key:  password
+                  name: mongo-creds
           ports:
             - containerPort: 8090
