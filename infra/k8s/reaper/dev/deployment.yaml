@@ -27,17 +27,17 @@ spec:
             - name: "MongoURI"
               valueFrom:
                 secretKeyRef:
-                  key:  mongouri
+                  key:  MongoURI
                   name: ew-reaper
             - name: "MongoUser"
               valueFrom:
                 secretKeyRef:
-                  key:  mongouser
+                  key:  MongoUser
                   name: ew-reaper
             - name: "MongoPass"
               valueFrom:
                 secretKeyRef:
-                  key:  mongopass
+                  key:  MongoPass
                   name: ew-reaper
             - name: "WriteThreshold"
               value: 100

@@ -36,6 +36,11 @@ kubectl create secret docker-registry ghcrcred \
   --docker-email=kayleigh.traister@gmail.com
 ```
 
+#setup common config secret
+```
+cd config && echo "edit" && kubectl apply -f .
+```
+
 #deploy mongo
 ```
 cd mongo && kubectl apply -f .

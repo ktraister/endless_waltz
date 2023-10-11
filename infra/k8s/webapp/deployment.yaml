@@ -21,23 +21,43 @@ spec:
         - name: ew-webapp
           securityContext:
             privileged: true
-          image: "ghcr.io/ktraister/ew_webapp:5866f78189f6cad6f88eab18651176d117cef6f2"
+          image: "ghcr.io/ktraister/ew_webapp:70bb01c9648453a62c9e8f39eebb246665a75342"
           imagePullPolicy: Always
           env:
+            - name: "SessionKey"
+              valueFrom:
+                secretKeyRef:
+                  key: SessionKey
+                  name: ew-config
+            - name: "CaptchaKey"
+              valueFrom:
+                secretKeyRef:
+                  key: CaptchaKey
+                  name: ew-config
+            - name: "EmailUser"
+              valueFrom:
+                secretKeyRef:
+                  key: EmailUser
+                  name: ew-config
+            - name: "EmailPass"
+              valueFrom:
+                secretKeyRef:
+                  key: EmailPass
+                  name: ew-config
             - name: "MongoURI"
               valueFrom:
                 secretKeyRef:
-                  key:  mongouri
-                  name: ew-reaper
+                  key:  MongoURI
+                  name: ew-config
             - name: "MongoUser"
               valueFrom:
                 secretKeyRef:
-                  key:  mongouser
-                  name: ew-reaper
+                  key:  username
+                  name: mongo-creds
             - name: "MongoPass"
               valueFrom:
                 secretKeyRef:
-                  key:  mongopass
-                  name: ew-reaper
+                  key:  password
+                  name: mongo-creds
           ports:
             - containerPort: 8080

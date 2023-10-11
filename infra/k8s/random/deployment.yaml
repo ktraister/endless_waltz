@@ -21,23 +21,23 @@ spec:
         - name: ew-random
           securityContext:
             privileged: true
-          image: "ghcr.io/ktraister/ew_random:5866f78189f6cad6f88eab18651176d117cef6f2"
+          image: "ghcr.io/ktraister/ew_random:992936876bb869516c9f6c03de24d122bf484335"
           imagePullPolicy: Always
           env:
             - name: "MongoURI"
               valueFrom:
                 secretKeyRef:
-                  key:  mongouri
-                  name: ew-reaper
+                  key:  MongoURI
+                  name: ew-config
             - name: "MongoUser"
               valueFrom:
                 secretKeyRef:
-                  key:  mongouser
-                  name: ew-reaper
+                  key:  username
+                  name: mongo-creds
             - name: "MongoPass"
               valueFrom:
                 secretKeyRef:
-                  key:  mongopass
-                  name: ew-reaper
+                  key:  password
+                  name: mongo-creds
           ports:
             - containerPort: 8090
