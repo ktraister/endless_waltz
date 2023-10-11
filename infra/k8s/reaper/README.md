@@ -6,3 +6,5 @@ ordered another and will hook up/configure when it gets here
 
 When pointing Reaper to Mongo on another cluster over VPN:
 Point reaper to the svc IP -- the VPN lets you reach into the docker network :)
+
+apply the config secret before reaper, w/e env

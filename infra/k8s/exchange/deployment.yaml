@@ -24,5 +24,20 @@ spec:
           image: "ghcr.io/ktraister/ew_exchange:foo"
           imagePullPolicy: Always
           env:
+            - name: "MongoURI"
+              valueFrom:
+                secretKeyRef:
+                  key:  MongoURI
+                  name: ew-config
+            - name: "MongoUser"
+              valueFrom:
+                secretKeyRef:
+                  key:  username
+                  name: mongo-creds
+            - name: "MongoPass"
+              valueFrom:
+                secretKeyRef:
+                  key:  password
+                  name: mongo-creds
           ports:
             - containerPort: 8081
