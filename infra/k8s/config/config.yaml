@@ -1,10 +1,10 @@
 apiVersion: v1
 data:
   MongoURI: bW9uZ29kYjovL21vbmdvOjI3MDE3Lw==
-  CaptchaKey:
-  SessionKey:
-  EmailUser:
-  EmailPass:
+  CaptchaKey: 
+  SessionKey: 
+  EmailUser: 
+  EmailPass: 
 kind: Secret
 metadata:
   name: ew-config
