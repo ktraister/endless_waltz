@@ -47,6 +47,9 @@ as well as one-time pads to be used in messaging.
 
 For more information, read the [database README](./database/README.md).
 
+## Security
+Read the [security README](./security.README.md).
+
 ## Supporting Docs
 This is a collection of documents and scripts of various languages used to 
 support development of the applications.

@@ -147,8 +147,23 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	//confirm passwords match
 	if req.FormValue("password") != req.FormValue("confirm_password") {
 		http.Error(w, "Password did not match confirmation", http.StatusBadRequest)
+		return
+	}
+
+	//check for special characters in username
+        ok = checkUserInput(req.FormValue("username"))
+	if !ok {
+		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		return
+	}
+
+	//check email is valid
+        ok = isEmailValid(req.FormValue("email"))
+	if !ok {
+		http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
 		return
 	}
 
@@ -248,6 +263,13 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+        //check for special characters in username
+        ok = checkUserInput(req.FormValue("username"))
+        if !ok {
+                http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+                return
+        }
+
 	// Get username and password from the form
 	username := req.FormValue("username")
 
@@ -290,6 +312,14 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+        //check for special characters in username
+        ok = checkUserInput(req.FormValue("username"))
+        if !ok {
+                http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+                return
+        }
+
+
 	//check recaptcha post here
 	logger.Debug(req.FormValue("g-recaptcha-response"))
 	ok, err = checkCaptcha(logger, req.FormValue("g-recaptcha-response"))
@@ -329,13 +359,26 @@ func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//we should get form data from our email template... maybe.
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
 		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
 		return
 	}
+
+        //check for special characters in username
+        ok = checkUserInput(req.FormValue("user"))
+        if !ok {
+                http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+                return
+        }
+
+        //check email is valid
+        ok = isEmailValid(req.FormValue("email"))
+        if !ok {
+                http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
+                return
+        }
 
 	if verifyUserSignup(logger, req.FormValue("email"), req.FormValue("user"), req.FormValue("token")) {
 		//show the page for user verification success
@@ -354,13 +397,26 @@ func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//we should get form data from our email template... maybe.
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
 		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
 		return
 	}
+
+        //check for special characters in username
+        ok = checkUserInput(req.FormValue("user"))
+        if !ok {
+                http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+                return
+        }
+
+        //check email is valid
+        ok = isEmailValid(req.FormValue("email"))
+        if !ok {
+                http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
+                return
+        }
 
 	if verifyPasswordReset(logger, req.FormValue("email"), req.FormValue("user"), req.FormValue("token")) {
 		// Parse the template
@@ -407,6 +463,20 @@ func resetPasswordSubmitHandler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
 		return
 	}
+
+        //check for special characters in username
+        ok = checkUserInput(req.FormValue("user"))
+        if !ok {
+                http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+                return
+        }
+
+        //check email is valid
+        ok = isEmailValid(req.FormValue("email"))
+        if !ok {
+                http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
+                return
+        }
 
 	//create our hasher to hash our pass
 	hash := sha512.New()
