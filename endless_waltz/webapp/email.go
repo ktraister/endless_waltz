@@ -1,30 +1,30 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"bytes"
+	"html/template"
 	"net/smtp"
 	"os"
-	"html/template"
 )
 
 type emailData struct {
-    FormHost string
-    Username string
-    TargetUser string
-    Token string
+	FormHost   string
+	Username   string
+	TargetUser string
+	Token      string
 }
 
 func templateEmail(logger *logrus.Logger, path string, data emailData) (string, error) {
-        filename := fmt.Sprintf("pages/email/%s.tmpl", path)
+	filename := fmt.Sprintf("pages/email/%s.tmpl", path)
 	logger.Info("templating ", filename)
-        // Parse the template
-        t, err := template.New("").ParseFiles("pages/email/base.tmpl", filename)
-        if err != nil {
-                logger.Error("failed to parse email template")
-                return "", err
-        }      
+	// Parse the template
+	t, err := template.New("").ParseFiles("pages/email/base.tmpl", filename)
+	if err != nil {
+		logger.Error("failed to parse email template")
+		return "", err
+	}
 
 	var rendered bytes.Buffer
 	err = t.ExecuteTemplate(&rendered, "base", data)
@@ -48,18 +48,18 @@ func sendVerifyEmail(logger *logrus.Logger, username string, targetUser string, 
 		formHost = "http://localhost:8080"
 	}
 
-	emailData := emailData {
-	    FormHost: formHost,
-	    Username: username,
-	    TargetUser: targetUser,
-	    Token: token,
-        }
+	emailData := emailData{
+		FormHost:   formHost,
+		Username:   username,
+		TargetUser: targetUser,
+		Token:      token,
+	}
 
-        emailContent, err := templateEmail(logger, "verifyTemplate", emailData)
+	emailContent, err := templateEmail(logger, "verifyTemplate", emailData)
 	if err != nil {
 		logger.Error("Unable to template email")
 		return err
-        }
+	}
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	from := emailUser
@@ -99,18 +99,18 @@ func sendResetEmail(logger *logrus.Logger, username string, token string) error 
 		formHost = "http://localhost:8080"
 	}
 
-	emailData := emailData {
-	    FormHost: formHost,
-	    Username: username,
-	    TargetUser: targetUser,
-	    Token: token,
-        }
+	emailData := emailData{
+		FormHost:   formHost,
+		Username:   username,
+		TargetUser: targetUser,
+		Token:      token,
+	}
 
-        emailContent, err := templateEmail(logger, "resetTemplate", emailData)
+	emailContent, err := templateEmail(logger, "resetTemplate", emailData)
 	if err != nil {
 		logger.Error("Unable to template email")
 		return err
-        }
+	}
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	from := emailUser
