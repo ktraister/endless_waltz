@@ -153,6 +153,11 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if !isPasswordValid(req.FormValue("password")){
+        	http.Error(w, "Password is not valid", http.StatusBadRequest)
+		return
+	}
+
 	//check for special characters in username
         ok = checkUserInput(req.FormValue("username"))
 	if !ok {
@@ -477,6 +482,11 @@ func resetPasswordSubmitHandler(w http.ResponseWriter, req *http.Request) {
                 http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
                 return
         }
+
+	if !isPasswordValid(req.FormValue("password")){
+        	http.Error(w, "Password is not valid", http.StatusBadRequest)
+		return
+	}
 
 	//create our hasher to hash our pass
 	hash := sha512.New()

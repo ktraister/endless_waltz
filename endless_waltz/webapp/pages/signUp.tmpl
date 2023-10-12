@@ -5,22 +5,23 @@
 	<img class="mb-4" src="/img/Icon.png" alt="" width="72" height="57">
 	<h1 class="h3 mb-3 fw-normal">Create an account</h1>
 	<div class="form-floating">
-	  <input type="text" name="email" class="form-control" id="floatingInput" placeholder="Email" required>
-	  <label for="floatingInput">Email</label>
+	  <input type="text" name="email" class="form-control" id="floatingEmail" placeholder="Email" required>
+	  <label for="floatingEmail">Email</label>
 	</div>
 	<div class="form-floating">
-	  <input type="text" name="username" class="form-control" id="floatingInput" placeholder="Username" required>
-	  <label for="floatingInput">Username</label>
+	  <input type="text" name="username" class="form-control" id="floatingUser" placeholder="Username" required>
+	  <label for="floatingUser">Username</label>
+    	  <span id="usernameError" style="color: red;"></span>
 	</div>
 	<div class="form-floating">
-	<span id="passwordError" style="color: red;"></span>
-	  <input type="password" name="password" class="form-control" id="password" placeholder="Password" required>
+	  <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password" required>
 	  <label for="floatingPassword">Password</label>
+	  <span id="passwordError" style="color: red;"></span>
 	</div>
 	<div class="form-floating">
-	  <span id="passwordConfirmError" style="color: red;"></span>
-	  <input type="password" name="confirm_password" class="form-control" id="confirm_password" placeholder="Confirm Password" required>
-	  <label for="floatingPassword">Confirm Password</label>
+	  <input type="password" name="confirm_password" class="form-control" id="floatingConfirm" placeholder="Confirm Password" required>
+	  <label for="floatingConfirm">Confirm Password</label>
+          <span id="passwordConfirmError" style="color: red;"></span>
 	</div>
 	<br>
 	<div class="g-recaptcha" data-sitekey="6LcQtnsoAAAAAB2DskA6q-uUKpzbyEFvAQ0Kjzcm"></div>
@@ -30,17 +31,36 @@
     </div>
     <script>
     document.querySelector('form').addEventListener('submit', function(event) {
-        const password = document.querySelector('#password').value;
-        const Cpassword = document.querySelector('#confirm_password').value;
+        const username = document.querySelector('#floatingUser').value;
+        const password = document.querySelector('#floatingPassword').value;
+        const Cpassword = document.querySelector('#floatingConfirm').value;
+        const usernameError = document.querySelector('#usernameError');
         const passwordError = document.querySelector('#passwordError');
         const CpasswordError = document.querySelector('#passwordConfirmError');
 
-        //pass length check
-        if (password.length < 8) {
-            passwordError.textContent = 'Password must be at least 8 characters long';
+	//username special char check
+        var format = /[ `!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
+        if (format.test(username)) {
+            usernameError.textContent = 'Username must not contain special characters';
             event.preventDefault(); // Prevent form submission
 	    return
-        } else {
+
+	} else {
+            usernameError.textContent = ''; // Clear any previous error message
+        }
+
+
+       format = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/;
+        if (! format.test(password)) {
+            passwordError.textContent = 'Password Requirements:\n' +
+	                                'At least 8 characters long\n' +
+	                                'At least 1 Special Character !@#$%^&*\n' +
+					'At least 1 Upper Case Character\n' +
+					'At least 1 lower case character\n';
+            event.preventDefault(); // Prevent form submission
+	    return
+
+	}  else {
             passwordError.textContent = ''; // Clear any previous error message
         }
 
