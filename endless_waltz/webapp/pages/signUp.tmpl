@@ -1,7 +1,7 @@
 {{ define "content" }}    
   <main class="form-signin w-50 m-auto align-items-center">
     <div align=center>
-      <form method="POST" action="/signUp" id="form">
+      <form method="POST" action="/signUp">
 	<img class="mb-4" src="/img/Icon.png" alt="" width="72" height="57">
 	<h1 class="h3 mb-3 fw-normal">Create an account</h1>
 	<div class="form-floating">
@@ -30,8 +30,7 @@
       </form>
     </div>
     <script>
-	document.querySelector('form').addEventListener('submit', function(event) {
-	document = document.getElementById("form")
+    document.querySelector('form').addEventListener('submit', function(event) {
         const password = document.querySelector('#password').value;
         const Cpassword = document.querySelector('#confirm_password').value;
         const passwordError = document.querySelector('#passwordError');
