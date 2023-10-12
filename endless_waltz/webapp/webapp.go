@@ -153,20 +153,20 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if !isPasswordValid(req.FormValue("password")){
-        	http.Error(w, "Password is not valid", http.StatusBadRequest)
+	if !isPasswordValid(req.FormValue("password")) {
+		http.Error(w, "Password is not valid", http.StatusBadRequest)
 		return
 	}
 
 	//check for special characters in username
-        ok = checkUserInput(req.FormValue("username"))
+	ok = checkUserInput(req.FormValue("username"))
 	if !ok {
 		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
 		return
 	}
 
 	//check email is valid
-        ok = isEmailValid(req.FormValue("email"))
+	ok = isEmailValid(req.FormValue("email"))
 	if !ok {
 		http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
 		return
@@ -268,12 +268,12 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-        //check for special characters in username
-        ok = checkUserInput(req.FormValue("username"))
-        if !ok {
-                http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
-                return
-        }
+	//check for special characters in username
+	ok = checkUserInput(req.FormValue("username"))
+	if !ok {
+		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		return
+	}
 
 	// Get username and password from the form
 	username := req.FormValue("username")
@@ -317,13 +317,12 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-        //check for special characters in username
-        ok = checkUserInput(req.FormValue("username"))
-        if !ok {
-                http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
-                return
-        }
-
+	//check for special characters in username
+	ok = checkUserInput(req.FormValue("username"))
+	if !ok {
+		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		return
+	}
 
 	//check recaptcha post here
 	logger.Debug(req.FormValue("g-recaptcha-response"))
@@ -371,19 +370,19 @@ func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-        //check for special characters in username
-        ok = checkUserInput(req.FormValue("user"))
-        if !ok {
-                http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
-                return
-        }
+	//check for special characters in username
+	ok = checkUserInput(req.FormValue("user"))
+	if !ok {
+		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		return
+	}
 
-        //check email is valid
-        ok = isEmailValid(req.FormValue("email"))
-        if !ok {
-                http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
-                return
-        }
+	//check email is valid
+	ok = isEmailValid(req.FormValue("email"))
+	if !ok {
+		http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
+		return
+	}
 
 	if verifyUserSignup(logger, req.FormValue("email"), req.FormValue("user"), req.FormValue("token")) {
 		//show the page for user verification success
@@ -409,19 +408,19 @@ func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-        //check for special characters in username
-        ok = checkUserInput(req.FormValue("user"))
-        if !ok {
-                http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
-                return
-        }
+	//check for special characters in username
+	ok = checkUserInput(req.FormValue("user"))
+	if !ok {
+		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		return
+	}
 
-        //check email is valid
-        ok = isEmailValid(req.FormValue("email"))
-        if !ok {
-                http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
-                return
-        }
+	//check email is valid
+	ok = isEmailValid(req.FormValue("email"))
+	if !ok {
+		http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
+		return
+	}
 
 	if verifyPasswordReset(logger, req.FormValue("email"), req.FormValue("user"), req.FormValue("token")) {
 		// Parse the template
@@ -469,22 +468,22 @@ func resetPasswordSubmitHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-        //check for special characters in username
-        ok = checkUserInput(req.FormValue("user"))
-        if !ok {
-                http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
-                return
-        }
+	//check for special characters in username
+	ok = checkUserInput(req.FormValue("user"))
+	if !ok {
+		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		return
+	}
 
-        //check email is valid
-        ok = isEmailValid(req.FormValue("email"))
-        if !ok {
-                http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
-                return
-        }
+	//check email is valid
+	ok = isEmailValid(req.FormValue("email"))
+	if !ok {
+		http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
+		return
+	}
 
-	if !isPasswordValid(req.FormValue("password")){
-        	http.Error(w, "Password is not valid", http.StatusBadRequest)
+	if !isPasswordValid(req.FormValue("password")) {
+		http.Error(w, "Password is not valid", http.StatusBadRequest)
 		return
 	}
 
