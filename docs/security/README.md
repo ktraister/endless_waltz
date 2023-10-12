@@ -3,5 +3,13 @@ This page is intended to inform the reader of security actions undertaken on
 the EW Circut and messenger.
 
 ## WebApp
-To prevent DB injection attacks, we're going to disallow any entries of curly
-braces. In fact, we're going to disallow the username from containing any special characters at all. It'd just be a huge mess.
+### Injection attacks
+To prevent DB injection attacks, we check user input for the `Email` and 
+`username` fields. The password field is hashed, so no risk of an injection 
+attack there. Checks exist for email, username, and password correctness 
+both on the server side(Go) and client side(JS). Checks are also performed
+on password resets (all inputs, all forms).
+
+### User Security
+To ensure a certain level of security, password complexity requirements are
+enforced on Server/Client side by Go/JS. This is enforced on reset as well.
