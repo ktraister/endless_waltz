@@ -50,6 +50,7 @@ For more information, read the [database README](./database/README.md).
 ## Supporting Docs
 This is a collection of documents and scripts of various languages used to 
 support development of the applications.
+  - [LiveISO](./LiveISO/README.md): docs for the Endless Waltz LiveISO setup
   - [random_numbers](./random_numbers/README.md): used to generate new prime numbers for rn.go in the messenger application. 
   - [passwd](./passwd/README.md): used to generate password hashes for user that match go output
   - [database](./database/README.md): docs for the Endless Waltz database setup
