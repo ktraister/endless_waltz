@@ -9,7 +9,6 @@
 	  <label for="floatingInput">Email</label>
 	</div>
 	<div class="form-floating">
-	<span id="usernameError" style="color: red;"></span>
 	  <input type="text" name="username" class="form-control" id="floatingInput" placeholder="Username" required>
 	  <label for="floatingInput">Username</label>
 	</div>
@@ -36,15 +35,6 @@
         const passwordError = document.querySelector('#passwordError');
         const CpasswordError = document.querySelector('#passwordConfirmError');
 
-        //pass match check
-        if (password != Cpassword) {
-            passwordConfirmError.textContent = 'Password does not match confirmation';
-            event.preventDefault(); // Prevent form submission
-	    return
-        }  else {
-            passwordConfirmError.textContent = ''; // Clear any previous error message
-        }
-
         //pass length check
         if (password.length < 8) {
             passwordError.textContent = 'Password must be at least 8 characters long';
@@ -63,18 +53,6 @@
         }  else {
             passwordConfirmError.textContent = ''; // Clear any previous error message
         }
-
-        //pass security check
-            passwordError.textContent = 'Password does not meet complexity requirements: 
-	    1. Uppercase Letter
-	    2. Lowercase Letter
-	    3. Number
-	    4. Special Character';
-            event.preventDefault(); // Prevent form submission
-	    return
-        //}  else {
-        //    passwordError.textContent = ''; // Clear any previous error message
-        //}
  
     });
     </script>
