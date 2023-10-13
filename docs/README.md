@@ -12,6 +12,14 @@ are named to reflect this. The environment contains:
   - Shenlong: GCP Cloud server hosting k3s for dev infra work
   - HeavyArms: AWS Cloud server hosting k3s for dev infra work
   - DeathScythe: My laptop :) 
+  - *Sandrock: Available*
+  - *Wing: Available*
+  - *Epion: Available*
+  - *Altron: Available*
+  - *Sandrock: Available*
+  - *Talgeese: Available*
+  - *Mercurius: Available*
+  - *Vayeate: Available*
 
 ## Applications
 The EW Messenger has six discreet applications:
