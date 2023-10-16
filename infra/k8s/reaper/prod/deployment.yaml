@@ -21,7 +21,7 @@ spec:
         - name: ew-reaper
           securityContext:
             privileged: true
-          image: "ghcr.io/ktraister/ew_reaper:5866f78189f6cad6f88eab18651176d117cef6f2"
+          image: "ghcr.io/ktraister/ew_reaper:1444ca8b070c38f7a77c9f3ae7d950f3a71502a7"
           imagePullPolicy: Always
           env:
             - name: "MongoURI"
@@ -40,7 +40,7 @@ spec:
                   key:  MongoPass
                   name: ew-reaper
             - name: "WriteThreshold"
-              value: 1000
+              value: "1000"
         - name: ew-entropy
           securityContext:
             privileged: true
