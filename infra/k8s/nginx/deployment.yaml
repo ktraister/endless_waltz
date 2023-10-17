@@ -26,21 +26,9 @@ spec:
             - containerPort: 443
           volumeMounts:
           - name: config 
-            mountPath: "/etc/nginx/nginx.conf"
-            readOnly: true
-          - name: cert 
-            mountPath: "/etc/nginx/tls.crt"
-            readOnly: true
-          - name: key
-            mountPath: "/etc/nginx/tls.key"
+            mountPath: "/etc/nginx"
             readOnly: true
       volumes:
       - name: config
-        configMap:
-          name: nginxConfig
-      - name: cert
         secret:
-          secretName: tlsCert
-      - name: key
-        secret:
-          secretName: tlsKey
+          secretName: nginx-config

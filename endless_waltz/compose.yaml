@@ -16,7 +16,7 @@ services:
       - "80:80"
       - "443:443"
 
-  random:
+  ew-random:
     depends_on:
       mongo:
         condition: service_started
@@ -28,7 +28,7 @@ services:
       MongoPass: password123
       LogLevel: Debug
 
-  webapp:
+  ew-webapp:
     depends_on:
       mongo:
         condition: service_started
@@ -45,7 +45,7 @@ services:
       EmailUser: ${EmailUser}
       EmailPass: ${EmailPass}
         
-  exchange:
+  ew-exchange:
     depends_on:
       mongo:
         condition: service_started
@@ -57,7 +57,7 @@ services:
       MongoPass: password123
       LogLevel: Debug
 
-  reaper:
+  ew-reaper:
     depends_on:
       mongo:
         condition: service_started
