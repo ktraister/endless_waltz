@@ -27,6 +27,13 @@ The Mongo shell is built on top of a JavaScript interface. The following
 commands can be used to switch to the `auth` database and add a user:
 ```
 use auth
-db.keys.insertOne({"Passwd":"f57ae22905021c0bcc0e9fad532af2787256bdbdc20f57cb4c63303e2bbd4c562a2c9ca6d79da6c02602b2b2faea41cbda8953020d0b92e0b1cecd3bd75029bb","User":"Kayleigh","Comments":"Init"})
+db.keys.insertOne({
+    SignupTime: '1697504433',
+    Active: true,
+    Email: 'Kayleigh.traister@gmail.com',
+    EmailVerifyToken: 'N5ZJgRAWO0keQI81YGawv9xNxMc0EKjFgFAvzVwxPm9srDn7WzDS8M66AdAPpSiIWN3V4cF7BjD8VoLemsDa9P1bCeGGGnHHClDefAaIDcaZ6qFhQuCsqWSAOAUqJQPu',
+    User: 'Kayleigh',
+    Passwd: ''
+})
 db.keys.find({})
 ```

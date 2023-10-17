@@ -12,6 +12,12 @@ get your new cluster set up:
 ./k3setup.sh
 ```
 
+If the cluster is to host the web stack, you'll need to disable traefik on k3s:
+```
+vim /etc/systemd/system/k3s.service
+#append --disable=traefik to the systemd run cmd
+```
+
 ## VPN Server
 setup openVPN server on remote host IF REQUIRED:
 ```

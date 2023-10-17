@@ -203,7 +203,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
-	router.HandleFunc("/listUsers", listUsers).Methods("GET") 
+	router.HandleFunc("/ws/listUsers", listUsers).Methods("GET") 
 	router.HandleFunc("/ws", serveWs)
 	http.ListenAndServe(":8081", router)
 }

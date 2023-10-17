@@ -66,17 +66,7 @@ cd webapp && kubectl apply -f .
 cd exchange && kubectl apply -f .
 ```
 
-#expose random port
+#expose load balancer ports
 ```
-kubectl expose deployment ew-random --type=LoadBalancer --name=local-ew-random
-```
-
-#expose exchange port
-```
-kubectl expose deployment ew-exchange --type=LoadBalancer --name=local-ew-exchange
-```
-
-#expose webapp port
-```
-kubectl expose deployment ew-webapp --type=LoadBalancer --name=local-ew-webapp
+kubectl expose deployment nginx --type=LoadBalancer --name=nginx-lb
 ```

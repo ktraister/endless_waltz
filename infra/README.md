@@ -3,7 +3,13 @@ This directory contains all of the scripts and manifests to build the physical
 hosts and cloud hosts required for the EW infrastructure. At the time of 
 writing, the POC infrastructure is active, and no Terraform yet exists. 
 
-This directory is split out into two discreet sections: bare_metal and k8s. 
+This directory is split out into three discreet sections: nginx, bare_metal,
+and k8s. 
+
+## NGINX
+This directory contains configuration files used for the NGINX service. For 
+more information, consult [the NGINX README.md](./nginx/README.md)
+
 
 ## Bare Metal
 This section outlines how to set up new reaper physical hosts. 
