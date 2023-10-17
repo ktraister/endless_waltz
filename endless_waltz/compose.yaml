@@ -1,11 +1,11 @@
 services:
   nginx:
     depends_on:
-      webapp:
+      ew-webapp:
         condition: service_started
-      exchange:
+      ew-exchange:
         condition: service_started
-      random:
+      ew-random:
         condition: service_started
     image: nginx:1.16.0-alpine
     volumes:
