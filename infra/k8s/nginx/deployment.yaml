@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  labels:
+    name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: nginx
+  template:
+    metadata:
+      labels:
+        name: nginx
+    spec:
+      serviceAccountName: nginx
+      containers:
+        - name: nginx
+          securityContext:
+            privileged: true
+          image: "nginx:1.16.0-alpine"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+            - containerPort: 443
+          volumeMounts:
+          - name: config 
+            mountPath: "/etc/nginx/nginx.conf"
+            readOnly: true
+          - name: cert 
+            mountPath: "/etc/nginx/tls.crt"
+            readOnly: true
+          - name: key
+            mountPath: "/etc/nginx/tls.key"
+            readOnly: true
+      volumes:
+      - name: config
+        configMap:
+          name: nginxConfig
+      - name: cert
+        secret:
+          secretName: tlsCert
+      - name: key
+        secret:
+          secretName: tlsKey

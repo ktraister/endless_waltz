@@ -9,9 +9,9 @@ services:
         condition: service_started
     image: nginx:1.16.0-alpine
     volumes:
-      - ../infra/nginx/localhost/nginx.conf:/etc/nginx/nginx.conf
-      - ../infra/nginx/localhost/localhost.crt:/etc/nginx/localhost.crt
-      - ../infra/nginx/localhost/localhost.key:/etc/nginx/localhost.key
+      - ../infra/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ../infra/nginx/localhost/localhost.crt:/etc/nginx/tls.crt
+      - ../infra/nginx/localhost/localhost.key:/etc/nginx/tls.key
     ports:
       - "80:80"
       - "443:443"
