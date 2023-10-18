@@ -61,6 +61,7 @@ Read the [security README](./security.README.md).
 ## Supporting Docs
 This is a collection of documents and scripts of various languages used to 
 support development of the applications.
+  - [CertBot](./CertBot/README.md): docs for TLS Certs using CertBot
   - [LiveISO](./LiveISO/README.md): docs for the Endless Waltz LiveISO setup
   - [random_numbers](./random_numbers/README.md): used to generate new prime numbers for rn.go in the messenger application. 
   - [passwd](./passwd/README.md): used to generate password hashes for user that match go output
