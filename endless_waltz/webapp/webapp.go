@@ -142,7 +142,7 @@ func logoutPageHandler(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 	}
 
-	session.Values["IsAuthenticated"] = false
+	session.Values["authenticated"] = false
 
 	parseTemplate(logger, w, req, session, "logOutSuccess")
 }
