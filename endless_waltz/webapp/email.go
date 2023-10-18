@@ -45,7 +45,7 @@ func sendVerifyEmail(logger *logrus.Logger, username string, targetUser string, 
 
 	formHost := "https://endlesswaltz.xyz"
 	if os.Getenv("ENV") == "local" {
-		formHost = "http://localhost:8080"
+		formHost = "https://localhost"
 	}
 
 	emailData := emailData{
@@ -96,7 +96,7 @@ func sendResetEmail(logger *logrus.Logger, username string, token string) error 
 
 	formHost := "https://endlesswaltz.xyz"
 	if os.Getenv("ENV") == "local" {
-		formHost = "http://localhost:8080"
+		formHost = "https://localhost"
 	}
 
 	emailData := emailData{

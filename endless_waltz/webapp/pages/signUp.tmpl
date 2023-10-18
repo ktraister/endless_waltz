@@ -13,6 +13,9 @@
 	  <input type="text" name="username" class="form-control" id="floatingUser" placeholder="Username" required>
 	  <label for="floatingUser">Username</label>
     	  <span id="usernameError" style="color: red;"></span>
+	  {{ if ne .Username "" }}
+    	  <span id="userSubmitError" style="color: red;">Username '{{.Username}}' is already in use.</span>
+	  {{ end }}
 	</div>
 	<div class="form-floating">
 	  <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password" required>
