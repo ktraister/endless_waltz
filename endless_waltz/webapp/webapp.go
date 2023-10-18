@@ -35,14 +35,14 @@ type sessionData struct {
 	Captcha         bool
 }
 
-func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, session *sessions.Session, file string) {
+func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Request, session *sessions.Session, file string) {
 	filename := fmt.Sprintf("pages/%s.tmpl", file)
 
 	// Parse the template
 	t, err := template.New("").ParseFiles("pages/base.tmpl", filename)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logger.Error("failed to parse template")
+		logger.Error("failed to parse template: ", err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
@@ -57,7 +57,7 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, session *sessio
 	} else {
 		data = sessionData{
 			IsAuthenticated: false,
-			Username:        "none",
+			Username:        "",
 			Captcha:         false,
 		}
 	}
@@ -70,16 +70,24 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, session *sessio
 	// Execute the template with the data and write it to the response
 	err = t.ExecuteTemplate(w, "base", data)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		logger.Error("Failed to execute template: ", err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 }
 
 func imgHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		logger.Error("Could not configure logger in staticTemplateHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
 	img, err := os.ReadFile(fmt.Sprintf("pages%s", req.URL.Path))
 	if err != nil {
+		logger.Error("Failed to serve Img: ", err)
 		return
 	}
 	w.Header().Set("Content-Type", "image/png")
@@ -89,15 +97,15 @@ func imgHandler(w http.ResponseWriter, req *http.Request) {
 func staticTemplateHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not configure logger!")
+		logger.Error("Could not configure logger in staticTemplateHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	session, err := store.Get(req, "session-name")
 	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not get session!")
+		logger.Error("Could not get session in staticTemplateHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
@@ -108,18 +116,23 @@ func staticTemplateHandler(w http.ResponseWriter, req *http.Request) {
 		path = req.URL.Path
 	}
 
-	parseTemplate(logger, w, session, path)
+	parseTemplate(logger, w, req, session, path)
 }
 
 func logoutPageHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not configure logger!")
+		logger.Error("Could not configure logger in logoutPageHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	session, err := store.Get(req, "session-name")
+	if err != nil {
+		logger.Error("Could not get session in logoutPageHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
 
 	//end their session
 	session.Options.MaxAge = -1
@@ -129,46 +142,49 @@ func logoutPageHandler(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 	}
 
-	parseTemplate(logger, w, session, "logOutSuccess")
+	session.Values["authenticated"] = false
+
+	parseTemplate(logger, w, req, session, "logOutSuccess")
 }
 
 func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not configure logger!")
+		logger.Error("Could not configure logger in signUpHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		logger.Error("Failed to parse form data in signUpHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	//confirm passwords match
 	if req.FormValue("password") != req.FormValue("confirm_password") {
-		http.Error(w, "Password did not match confirmation", http.StatusBadRequest)
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
 	}
 
 	if !isPasswordValid(req.FormValue("password")) {
-		http.Error(w, "Password is not valid", http.StatusBadRequest)
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
 	}
 
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("username"))
 	if !ok {
-		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
 	}
 
 	//check email is valid
 	ok = isEmailValid(req.FormValue("email"))
 	if !ok {
-		http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
 	}
 
@@ -176,11 +192,13 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	logger.Debug(req.FormValue("g-recaptcha-response"))
 	ok, err = checkCaptcha(logger, req.FormValue("g-recaptcha-response"))
 	if err != nil {
-		http.Error(w, "Error performing Recaptcha Check", http.StatusBadRequest)
+		logger.Error("Error while checking captcha response: ", err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 	if !ok {
-		http.Error(w, "Recaptcha Check failed", http.StatusBadRequest)
+		logger.Warn("Captcha check invalid for: ", req.FormValue("username"))
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
@@ -194,6 +212,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 	if err != nil {
 		logger.Error("generic mongo signup error: ", err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	} else {
 		logger.Info("Database connection succesful!")
@@ -202,20 +221,42 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 
 	//extensible for other db checks into the future
 	//check database to ensure username/email ! already exists
-	filters := []primitive.M{bson.M{"User": req.FormValue("username")},
-		bson.M{"Email": req.FormValue("email")},
-	}
+	//removed email check for now. Have as many accts as you want
+	filters := []primitive.M{bson.M{"User": req.FormValue("username")}}//bson.M{"Email": req.FormValue("email")},
 
-	if os.Getenv("ENV") != "local" {
-		for _, filter := range filters {
-			var result bson.M
-			err := auth_db.FindOne(ctx, filter).Decode(&result)
-			if err != mongo.ErrNoDocuments {
-				//be more specific in future
-				http.Error(w, "Collision", http.StatusBadRequest)
-				logger.Error("Collision of user/email while checking signup: ", err)
+	//run our extensible DB checks
+	for i, filter := range filters {
+		var result bson.M
+		err := auth_db.FindOne(ctx, filter).Decode(&result)
+		if err != mongo.ErrNoDocuments {
+			data := sessionData{
+				Username: "",
+				Captcha:  true,
+			}
+			switch i {
+			case 0:
+				data.Username = req.FormValue("username")
+				//removed email check for now
+				//case 1:
+				//    data.Email = req.FormValue("email")
+			}
+			//template out the page here
+			t, err := template.New("").ParseFiles("pages/base.tmpl", "pages/signUp.tmpl")
+			if err != nil {
+				logger.Error("failed to parse template")
+				http.Redirect(w, req, "/error", http.StatusSeeOther)
 				return
 			}
+
+			// Execute the template with the data and write it to the response
+			err = t.ExecuteTemplate(w, "base", data)
+			if err != nil {
+				logger.Error("Failed to execute template: ", err)
+				http.Redirect(w, req, "/error", http.StatusSeeOther)
+				return
+			}
+
+			return
 		}
 	}
 
@@ -226,8 +267,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	password := hex.EncodeToString(hashSum)
 
 	//set our signUpTime to the unix time.now()
-	now := time.Now()
-	signUpTime := fmt.Sprint(now.Unix())
+	signUpTime := fmt.Sprint(time.Now().Unix())
 
 	//create a unique token for the user to verify email
 	emailVerifyToken := generateToken()
@@ -235,15 +275,15 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	//send the email before writing to db
 	err = sendVerifyEmail(logger, req.FormValue("username"), req.FormValue("email"), emailVerifyToken)
 	if err != nil {
-		http.Error(w, "Email Verify Fail", http.StatusBadRequest)
-		logger.Error("Email verify incoming fail: ", err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		logger.Error("Email verify outgoing fail: ", err)
 		return
 	}
 
 	//Write to database with information
 	_, err = auth_db.InsertOne(ctx, bson.M{"User": req.FormValue("username"), "Passwd": password, "SignupTime": signUpTime, "Active": false, "Email": req.FormValue("email"), "EmailVerifyToken": emailVerifyToken})
 	if err != nil {
-		http.Error(w, "Error", http.StatusBadRequest)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		logger.Error("Generic mongo error on user signup write: ", err)
 		return
 	}
@@ -256,22 +296,23 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 func loginHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not configure logger!")
+		logger.Error("Could not configure logger in loginHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		logger.Error("Failed to parse form data in loginHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("username"))
 	if !ok {
-		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		http.Redirect(w, req, "/login", http.StatusSeeOther)
 		return
 	}
 
@@ -284,20 +325,18 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 	hashSum := hash.Sum(nil)
 	password := hex.EncodeToString(hashSum)
 
-	// Authenticate user (you'll need to implement this function)
+	//api_lib checkAuth function
 	if checkAuth(username, password, logger) {
-		// Successful login
-		// Create a session for the user
+		//create a session for the user
 		session, _ := store.Get(req, "session-name")
 		session.Values["authenticated"] = true
 		session.Values["username"] = username
 		session.Save(req, w)
 
-		// Redirect to a protected page or display a success message
+		//redirect to protected page
 		http.Redirect(w, req, "/protected", http.StatusSeeOther)
 	} else {
-		// Failed login
-		// Display an error message or redirect to the login page
+		//redirect to the login page
 		http.Redirect(w, req, "/login", http.StatusSeeOther)
 	}
 }
@@ -305,22 +344,23 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not configure logger!")
+		logger.Error("Could not configure logger in loginHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		logger.Error("Failed to parse form data in loginHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("username"))
 	if !ok {
-		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		http.Redirect(w, req, "/forgotPassword", http.StatusSeeOther)
 		return
 	}
 
@@ -328,11 +368,13 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	logger.Debug(req.FormValue("g-recaptcha-response"))
 	ok, err = checkCaptcha(logger, req.FormValue("g-recaptcha-response"))
 	if err != nil {
-		http.Error(w, "Error performing Recaptcha Check", http.StatusBadRequest)
+		logger.Error("Error while checking captcha response: ", err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 	if !ok {
-		http.Error(w, "Recaptcha Check failed", http.StatusBadRequest)
+		logger.Warn("Recaptcha Check failed for user: ", req.FormValue("username"))
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
@@ -342,10 +384,13 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	//send the email before writing to db
 	err = sendResetEmail(logger, req.FormValue("username"), emailVerifyToken)
 	if err == mongo.ErrNoDocuments {
+		//if no documents returned, a reset has been requested for
+		//non-existent user. Return the same link as normal.
 		http.Redirect(w, req, "/forgotPasswordSent", http.StatusSeeOther)
+		return
 	} else if err != nil {
-		http.Error(w, "Email Reset Fail", http.StatusBadRequest)
-		logger.Error("Email verify incoming fail: ", err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		logger.Error("forgotPasswordHandler fail: ", err)
 		return
 	}
 
@@ -358,29 +403,32 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not configure logger!")
+		logger.Error("Could not configure logger in loginHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
+
+	logger.Info("EmailVerifyHandler!")
 
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		logger.Error("Failed to parse form data in emailVerifyHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("user"))
 	if !ok {
-		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	//check email is valid
 	ok = isEmailValid(req.FormValue("email"))
 	if !ok {
-		http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
@@ -396,29 +444,30 @@ func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not configure logger!")
+		logger.Error("Could not configure logger in loginHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		logger.Error("Failed to parse form data in resetPasswordHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("user"))
 	if !ok {
-		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		http.Redirect(w, req, "/resetPassword", http.StatusSeeOther)
 		return
 	}
 
 	//check email is valid
 	ok = isEmailValid(req.FormValue("email"))
 	if !ok {
-		http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
+		http.Redirect(w, req, "/resetPassword", http.StatusSeeOther)
 		return
 	}
 
@@ -426,8 +475,8 @@ func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 		// Parse the template
 		t, err := template.New("").ParseFiles("pages/base.tmpl", "pages/resetPassword.tmpl")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			logger.Error("failed to parse template")
+			logger.Error("failed to parse template in passwordResetHandler")
+			http.Redirect(w, req, "/error", http.StatusSeeOther)
 			return
 		}
 
@@ -443,8 +492,8 @@ func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 		// Execute the template with the data and write it to the response
 		err = t.ExecuteTemplate(w, "base", data)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 			logger.Error("Failed to execute template: ", err)
+			http.Redirect(w, req, "/error", http.StatusSeeOther)
 			return
 		}
 
@@ -456,34 +505,35 @@ func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 func resetPasswordSubmitHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not configure logger!")
+		logger.Error("Could not configure logger in loginHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		http.Error(w, "Failed to parse form data", http.StatusBadRequest)
+		logger.Error("Failed to parse form data in resetPasswordHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("user"))
 	if !ok {
-		http.Error(w, "Username input did not pass checks", http.StatusBadRequest)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	//check email is valid
 	ok = isEmailValid(req.FormValue("email"))
 	if !ok {
-		http.Error(w, "Email input did not pass checks", http.StatusBadRequest)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	if !isPasswordValid(req.FormValue("password")) {
-		http.Error(w, "Password is not valid", http.StatusBadRequest)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
@@ -503,49 +553,63 @@ func resetPasswordSubmitHandler(w http.ResponseWriter, req *http.Request) {
 func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not configure logger!")
+		logger.Error("Could not configure logger in loginHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	// Parse form data
+	err := req.ParseForm()
+	if err != nil {
+		logger.Error("Failed to parse form data in resetPasswordHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	session, err := store.Get(req, "session-name")
 	if err != nil {
-		logger.Error("sessionNotFound")
-		http.Error(w, "Session not found", http.StatusUnauthorized)
+		logger.Error("Could not get session in protectedPageHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	// Check if the user is authenticated
 	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
 		logger.Error("Client unauthorized")
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		http.Redirect(w, req, "/unauthorized", http.StatusSeeOther)
 		return
 	}
 
-	parseTemplate(logger, w, session, "manageUser")
+	parseTemplate(logger, w, req, session, "manageUser")
 
 }
 
 func protectedHandler(w http.ResponseWriter, req *http.Request) {
-
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		logger.Error("Could not configure logger!")
+		logger.Error("Could not configure logger in loginHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	// Parse form data
+	err := req.ParseForm()
+	if err != nil {
+		logger.Error("Failed to parse form data in resetPasswordHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	session, err := store.Get(req, "session-name")
 	if err != nil {
-		logger.Error("sessionNotFound")
-		http.Error(w, "Session not found", http.StatusUnauthorized)
+		logger.Error("Could not get session in protectedHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	// Check if the user is authenticated
 	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
-		logger.Error("Client unauthorized")
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		http.Redirect(w, req, "/unauthorized", http.StatusSeeOther)
 		return
 	}
 
@@ -567,6 +631,12 @@ func protectedHandler(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/deleteSuccess", http.StatusSeeOther)
 }
 
+func notFoundHandler(w http.ResponseWriter, req *http.Request) {
+	logger, _ := req.Context().Value("logger").(*logrus.Logger)
+	session, _ := store.Get(req, "session-name")
+	parseTemplate(logger, w, req, session, "not_found")
+}
+
 func main() {
 	MongoURI = os.Getenv("MongoURI")
 	MongoUser = os.Getenv("MongoUser")
@@ -579,6 +649,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
+	router.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 	router.HandleFunc("/", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/error", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/img/{id}", imgHandler).Methods("GET")
@@ -593,6 +664,7 @@ func main() {
 	router.HandleFunc("/protected", protectedPageHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedHandler).Methods("POST")
 	router.HandleFunc("/downloads", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/unauthorized", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/how_it_works", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/privacy", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/logout", logoutPageHandler).Methods("GET")

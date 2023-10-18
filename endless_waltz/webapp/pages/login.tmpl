@@ -6,12 +6,14 @@
     <h1 class="h3 mb-3 fw-normal">Sign in, please</h1>
 
     <div class="form-floating">
-      <input type="text" name="username" class="form-control" id="floatingInput" placeholder="Username">
+      <input type="text" name="username" class="form-control" id="floatingUser" placeholder="Username">
       <label for="floatingInput">Username</label>
+      <span id="usernameError" style="color: red;"></span>
     </div>
     <div class="form-floating">
       <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password">
       <label for="floatingPassword">Password</label>
+      <span id="passwordError" style="color: red;"></span>
       <br>
     </div>
     <button class="btn btn-primary w-50 py-2" type="submit" value="Login">Sign in</button>
@@ -23,5 +25,38 @@
     <br>
     <a class="h6 mb-3 fw-normal" href="/forgotPassword">Forgot your password?</a>
     </div>
+    <script>
+    document.querySelector('form').addEventListener('submit', function(event) {
+        const username = document.querySelector('#floatingUser').value;
+        const password = document.querySelector('#floatingPassword').value;
+        const usernameError = document.querySelector('#usernameError');
+        const passwordError = document.querySelector('#passwordError');
+
+	//username special char check
+        var format = /[ `!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
+        if (format.test(username)) {
+            usernameError.textContent = 'Username must not contain special characters';
+            event.preventDefault(); // Prevent form submission
+	    return
+
+	} else {
+            usernameError.textContent = ''; // Clear any previous error message
+        }
+
+	let passText = 'Password is invalid!'
+
+        //password length and complexity check 
+        format = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/;
+        if (! format.test(password)) {
+            passwordError.textContent = passText;
+            event.preventDefault(); // Prevent form submission
+	    return
+
+	}  else {
+            passwordError.textContent = ''; // Clear any previous error message
+        }
+
+    });
+    </script>
 </main>
 {{ end }}
