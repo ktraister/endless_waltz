@@ -460,14 +460,14 @@ func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("user"))
 	if !ok {
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		http.Redirect(w, req, "/resetPassword", http.StatusSeeOther)
 		return
 	}
 
 	//check email is valid
 	ok = isEmailValid(req.FormValue("email"))
 	if !ok {
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		http.Redirect(w, req, "/resetPassword", http.StatusSeeOther)
 		return
 	}
 
@@ -579,9 +579,6 @@ func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/unauthorized", http.StatusSeeOther)
 		return
 	}
-
-	//debugging session values
-	fmt.Println(session.Values)
 
 	parseTemplate(logger, w, req, session, "manageUser")
 
