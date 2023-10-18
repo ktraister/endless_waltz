@@ -165,26 +165,26 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 
 	//confirm passwords match
 	if req.FormValue("password") != req.FormValue("confirm_password") {
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
 	}
 
 	if !isPasswordValid(req.FormValue("password")) {
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
 	}
 
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("username"))
 	if !ok {
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
 	}
 
 	//check email is valid
 	ok = isEmailValid(req.FormValue("email"))
 	if !ok {
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
 	}
 
@@ -276,7 +276,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	err = sendVerifyEmail(logger, req.FormValue("username"), req.FormValue("email"), emailVerifyToken)
 	if err != nil {
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
-		logger.Error("Email verify incoming fail: ", err)
+		logger.Error("Email verify outgoing fail: ", err)
 		return
 	}
 
