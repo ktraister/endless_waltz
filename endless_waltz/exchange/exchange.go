@@ -122,6 +122,10 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 		// messageType: 1-> Text Message, 2 -> Binary Message
 		_, p, err := client.Conn.ReadMessage()
 		if err != nil {
+		       	if websocket.IsUnexpectedCloseError(err) {
+			     client.Conn.Close()
+			     break
+			}
 			logger.Error(err)
 			continue
 		}
