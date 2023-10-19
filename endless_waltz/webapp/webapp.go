@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
+	"errors"
 	"os"
 	"time"
 
@@ -85,11 +86,18 @@ func imgHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	img, err := os.ReadFile(fmt.Sprintf("pages%s", req.URL.Path))
+	path := fmt.Sprintf("pages%s", req.URL.Path)
+
+	_, err := os.Stat(path)
+	//return !os.IsNotExist(err)
+	if errors.Is(err, os.ErrNotExist) { return }
+
+	img, err := os.ReadFile(path)
 	if err != nil {
 		logger.Error("Failed to serve Img: ", err)
 		return
 	}
+
 	w.Header().Set("Content-Type", "image/png")
 	w.Write(img)
 }
