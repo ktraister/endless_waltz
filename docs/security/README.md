@@ -2,6 +2,11 @@
 This page is intended to inform the reader of security actions undertaken on 
 the EW Circut and messenger.
 
+## Scanning 
+A great source of info on website and infra vulns and issues has been 
+my personal account at `hostedscan.com`. This could be extended and leveraged
+in the future. NMap is also helpful, and Nessus has been helpful in the past.
+
 ## WebApp
 ### Injection attacks
 To prevent DB injection attacks, we check user input for the `Email` and 
