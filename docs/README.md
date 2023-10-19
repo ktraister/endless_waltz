@@ -9,7 +9,7 @@ LAST UPDATED: 11 October 23
 The project gets its name from the movie Gundam Wing: Endless Waltz, and hosts
 are named to reflect this. The environment contains:
   - Zero: Physical development machine, hosting dev and prod infra
-  - Shenlong: GCP Cloud server hosting k3s for dev infra work
+  - Shenlong: PROD GCP Cloud server hosting k3s 
   - HeavyArms: AWS Cloud server hosting k3s for dev infra work
   - DeathScythe: My laptop :) 
   - *Sandrock: Available*
