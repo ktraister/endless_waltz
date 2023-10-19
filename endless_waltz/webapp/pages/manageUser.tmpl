@@ -1,15 +1,18 @@
 {{ define "content" }}
   <main class="px-3">
+    <div align=center>
     <img class="mb-4" src="/img/ew.png" alt="" width="500" height="300">  
       <br>
     <h1>User Information</h1>
-    <p>Authenticated: {{.IsAuthenticated}}</p>
     <p>Username: {{.Username}}</p>
     <br>
+    <h2 style="color:red;">Destructive Actions</h2>
+    <hr style="width:50%">
     <p class="lead">
-      <form action="/protected" method="POST" class="btn btn-primary py-2">
-	<button name="delete">Delete My User</button>
-      </form>
+    <form action="/protected" method="POST">
+      <button style="color:red;" class="btn btn-primary w-25 py-2" name="delete">Delete My Account</button>
+    </form>
     </p>
+    </div>
   </main>
 {{ end }}
