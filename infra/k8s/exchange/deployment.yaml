@@ -21,7 +21,7 @@ spec:
         - name: ew-exchange
           securityContext:
             privileged: true
-          image: "ghcr.io/ktraister/ew_exchange:303488f583e9268e6d9bd875269b32c52d945c93"
+          image: "ghcr.io/ktraister/ew_exchange:a297616b284a24d412235784d19834ea4003db78"
           imagePullPolicy: Always
           env:
             - name: "MongoURI"
