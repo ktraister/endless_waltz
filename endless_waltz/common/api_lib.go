@@ -41,10 +41,10 @@ func checkAuth(user string, passwd string, logger *logrus.Logger) bool {
 	var result bson.M
 	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
 	if err == nil {
-		logger.Info("Found creds in db, authorized")
+		logger.Debug("Found creds in db, authorized")
 		return true
 	} else if err == mongo.ErrNoDocuments {
-		logger.Warn("No creds found, unauthorized")
+		logger.Info("No creds found, unauthorized")
 		return false
 	} else {
 		logger.Error(err)
