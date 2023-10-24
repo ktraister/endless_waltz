@@ -66,7 +66,7 @@ func listUsers(w http.ResponseWriter, req *http.Request) {
 
 	logger.Debug(fmt.Sprintf("Returning userlist '%v'", userList))
 	w.Write([]byte(userList))
-	logger.Info("Someone hit the listUsers route...")
+	logger.Debug("Someone hit the listUsers route...")
 }
 
 func serveWs(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +111,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	// through on our WebSocket connection
 	receiver(r.Header.Get("User"), client, logger)
 
-	logger.Info("exiting", ws.RemoteAddr().String())
+	logger.Debug("exiting", ws.RemoteAddr().String())
 	delete(clients, client)
 }
 
@@ -162,7 +162,7 @@ func broadcaster(logger *logrus.Logger) {
 		for client := range clients {
 			// send message only to involved users
 			if client.Username == message.To {
-				logger.Info(fmt.Sprintf("Sending message '%s' to client '%s'", message, client.Username))
+				logger.Debug(fmt.Sprintf("Sending message '%s' to client '%s'", message, client.Username))
 				err := client.Conn.WriteJSON(message)
 				if err != nil {
 					logger.Error("Websocket error: ", err)
@@ -179,7 +179,7 @@ func broadcaster(logger *logrus.Logger) {
 			for client := range clients {
 				// send message only to involved users
 				if client.Username == message.From {
-					logger.Info(fmt.Sprintf("Sending blackhole message to client '%s'", client.Username))
+					logger.Debug(fmt.Sprintf("Sending blackhole message to client '%s'", client.Username))
 					message = Message{From: "SYSTEM", To: message.From, Msg: "User not found"}
 					err := client.Conn.WriteJSON(message)
 					if err != nil {
