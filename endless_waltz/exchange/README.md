@@ -46,3 +46,4 @@ the blackholed message is then informed of this by the "SYSTEM" user.
 
 If any websocket connections are encountered, the errored client is removed
 from the websocket exchange. 
+
