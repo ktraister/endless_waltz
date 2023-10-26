@@ -116,6 +116,10 @@ func insertItems(logger *logrus.Logger, ctx context.Context, count int64, otp_db
 	return true
 }
 
+func checkEntropy(logger *logrus.Logger) bool {
+	return true
+}
+
 func main() {
 	//reading in env variable for mongo conn URI
 	MongoURI := os.Getenv("MongoURI")
@@ -129,6 +133,13 @@ func main() {
 	logger.Info("Reaper finished starting up!")
 
 	for {
+		//check entropy file before connecting to db
+		var ok bool
+		ok = checkEntropy(logger)
+		if !ok {
+			logger.Fatal("Entropy Heartbeat File did not pass check...")
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 		defer cancel()
 		credential := options.Credential{
@@ -159,20 +170,22 @@ func main() {
 			threshold = 0
 		}
 		//if count is less than threshold
-		for count < threshold {
-			diff := threshold - count
-			if diff > 100 {
-				diff = 100
+		if count != threshold {
+			for count < threshold {
+				diff := threshold - count
+				if diff > 100 {
+					diff = 100
+				}
+				logger.Info("Found count ", count, ", writing ", diff, " to db...")
+				ok = insertItems(logger, ctx, diff, otp_db)
+				if !ok {
+					break
+				}
+				count = count + diff
 			}
-			logger.Info("Found count ", count, ", writing ", diff, " to db...")
-			ok := insertItems(logger, ctx, diff, otp_db)
-			if !ok {
-				break
-			}
-			count = count + diff
+		} else {
+			logger.Info("Count met threshold, sleeping...")
 		}
-
-		logger.Info("Count met threshold, sleeping...")
 		time.Sleep(10 * time.Second)
 	}
 }
