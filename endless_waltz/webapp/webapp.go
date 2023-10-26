@@ -4,13 +4,13 @@ import (
 	"context"
 	"crypto/sha512"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
-	"errors"
 	"os"
 	"time"
 
@@ -90,7 +90,9 @@ func imgHandler(w http.ResponseWriter, req *http.Request) {
 
 	_, err := os.Stat(path)
 	//return !os.IsNotExist(err)
-	if errors.Is(err, os.ErrNotExist) { return }
+	if errors.Is(err, os.ErrNotExist) {
+		return
+	}
 
 	img, err := os.ReadFile(path)
 	if err != nil {
@@ -230,7 +232,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	//extensible for other db checks into the future
 	//check database to ensure username/email ! already exists
 	//removed email check for now. Have as many accts as you want
-	filters := []primitive.M{bson.M{"User": req.FormValue("username")}}//bson.M{"Email": req.FormValue("email")},
+	filters := []primitive.M{bson.M{"User": req.FormValue("username")}} //bson.M{"Email": req.FormValue("email")},
 
 	//run our extensible DB checks
 	for i, filter := range filters {

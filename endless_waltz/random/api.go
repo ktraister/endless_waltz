@@ -67,7 +67,7 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	reqBody, err := io.ReadAll(req.Body) 
+	reqBody, err := io.ReadAll(req.Body)
 	if err != nil {
 		logger.Error(err)
 		return
@@ -188,7 +188,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
-	router.HandleFunc("/api/healthcheck", health_handler).Methods("GET") 
+	router.HandleFunc("/api/healthcheck", health_handler).Methods("GET")
 	router.HandleFunc("/api/otp", otp_handler).Methods("POST")
 
 	http.ListenAndServe(":8090", router)
