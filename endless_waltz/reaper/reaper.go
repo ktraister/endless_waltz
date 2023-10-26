@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -137,10 +138,14 @@ func main() {
 		client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 		if err != nil {
 			logger.Fatal(err)
-			return
-		} else {
-			logger.Info("Database connection succesful!")
 		}
+
+		err = client.Ping(ctx, readpref.Primary())
+		if err != nil {
+			logger.Fatal(err)
+		}
+		logger.Info("Database connection succesful!")
+
 		otp_db := client.Database("otp").Collection("otp")
 
 		count := otpItemCount(logger, ctx, otp_db)
