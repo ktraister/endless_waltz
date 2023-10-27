@@ -167,7 +167,7 @@ func main() {
 					diff = 100
 				}
 				logger.Info("Found count ", count, ", writing ", diff, " to db...")
-				ok = insertItems(logger, ctx, diff, otp_db)
+				ok := insertItems(logger, ctx, diff, otp_db)
 				if !ok {
 					break
 				}
