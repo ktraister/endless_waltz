@@ -12,6 +12,7 @@ get your new cluster set up:
 ./k3setup.sh
 ```
 
+By default, k8s hosts traefik on port 443 for the cluster. 
 If the cluster is to host the web stack, you'll need to disable traefik on k3s:
 ```
 vim /etc/systemd/system/k3s.service
@@ -43,6 +44,18 @@ Test connectivity from the CLI:
 sudo openvpn --client --config /etc/openvpn/client.conf
 sudo systemctl start openvpn@client
 sudo systemctl enable openvpn@client
+```
+
+The VPN client has issues being long lived. To address this:
+Setup VPN Restart CronJob
+```
+#install cron -- no longer standard on Ubuntu
+sudo apt update && sudo apt install cron
+
+sudo systemctl enable cron
+
+sudo crontab -e 
+#0 * * * * /usr/bin/systemctl restart openvpn@client
 ```
 
 NEXT STEPS:
