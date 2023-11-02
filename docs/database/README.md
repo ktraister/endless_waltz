@@ -37,3 +37,14 @@ db.keys.insertOne({
 })
 db.keys.find({})
 ```
+
+## Backup/Restore
+Mongo Backups are to be handled by a github actions script (forthcoming)
+Backups will need to be shoved in S3. 
+```
+#dump command
+kubectl exec mongo-659c8dc68-mswzv -- /usr/bin/mongodump --archive --authenticationDatabase admin -u $USER -p $PASSWD --db keys > db.dump
+
+#restore command
+kubectl exec mongo-659c8dc68-mswzv -- /usr/bin/mongorestore --archive --authenticationDatabase admin -u $USER -p $PASSWD --db keys < db.dump
+```
