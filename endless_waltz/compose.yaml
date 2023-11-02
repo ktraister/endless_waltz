@@ -78,4 +78,3 @@ services:
     environment:
         - MONGO_INITDB_ROOT_USERNAME=adminuser
         - MONGO_INITDB_ROOT_PASSWORD=password123
-
