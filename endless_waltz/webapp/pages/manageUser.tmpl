@@ -2,16 +2,22 @@
   <main class="px-3">
     <div align=center>
     <img class="mb-4" src="/img/ew.png" alt="" width="500" height="300">  
-      <br>
+    <br>
+    <br>
     <h1>User Information</h1>
-    <p>Username: {{.Username}}</p>
+    <hr style="width:50%">
+    <h3>Username: {{.Username}}</h3>
+    <br>
+    <br>
     <br>
     <h2 style="color:red;">Destructive Actions</h2>
     <hr style="width:50%">
     <p class="lead">
     <form action="/protected" method="POST">
-      <button style="color:red;" class="btn btn-primary w-25 py-2" name="delete">Delete My Account</button>
+      <button style="color: black; background-color: red;" class="btn btn-primary w-25 py-2" name="delete">Change My Password</button>
     </form>
+    <br>
+    <button style="color: black; background-color: red;" class="btn btn-primary w-25 py-2" name="delete" action="/forgotPassword">Delete My Account</button>
     </p>
     </div>
   </main>

@@ -677,6 +677,8 @@ func main() {
 	router.HandleFunc("/unauthorized", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/how_it_works", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/privacy", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/privacy_policy", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/terms_and_conditions", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/logout", logoutPageHandler).Methods("GET")
 	router.HandleFunc("/forgotPassword", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/forgotPasswordSent", staticTemplateHandler).Methods("GET")
