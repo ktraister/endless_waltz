@@ -13,7 +13,9 @@
     <h2 style="color:red;">Destructive Actions</h2>
     <hr style="width:50%">
     <p class="lead">
-    <button style="color: black; background-color: red;" class="btn btn-primary w-25 py-2" name="delete" action="/forgotPassword">Change Password</button>
+    <form action="/forgotPassword">
+      <button style="color: black; background-color: red;" class="btn btn-primary w-25 py-2">Change Password</button>
+    </form>
     <br>
     <form action="/protected" method="POST">
       <input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">      

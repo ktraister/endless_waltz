@@ -6,9 +6,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/gorilla/csrf"
 	"github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
@@ -35,7 +35,7 @@ type sessionData struct {
 	IsAuthenticated bool
 	Username        string
 	Captcha         bool
-        TemplateTag     string
+	TemplateTag     string
 }
 
 func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Request, session *sessions.Session, file string) {
@@ -56,24 +56,21 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 			IsAuthenticated: true,
 			Username:        session.Values["username"].(string),
 			Captcha:         false,
+			TemplateTag:     csrf.Token(req),
 		}
 	} else {
 		data = sessionData{
 			IsAuthenticated: false,
 			Username:        "",
 			Captcha:         false,
+			TemplateTag:     csrf.Token(req),
 		}
 	}
 
 	//add recaptcha JS to pageif needed
 	if file == "/signUp" || file == "/forgotPassword" {
 		data.Captcha = true
-  	        data.TemplateTag = csrf.Token(req)
 	}
-
-	if file == "/protected" || file == "/login" {
-	        data.TemplateTag = csrf.Token(req)
-        }
 
 	// Execute the template with the data and write it to the response
 	err = t.ExecuteTemplate(w, "base", data)
