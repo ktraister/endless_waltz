@@ -13,11 +13,12 @@
     <h2 style="color:red;">Destructive Actions</h2>
     <hr style="width:50%">
     <p class="lead">
-    <form action="/protected" method="POST">
-      <button style="color: black; background-color: red;" class="btn btn-primary w-25 py-2" name="delete">Change My Password</button>
-    </form>
+    <button style="color: black; background-color: red;" class="btn btn-primary w-25 py-2" name="delete" action="/forgotPassword">Change Password</button>
     <br>
-    <button style="color: black; background-color: red;" class="btn btn-primary w-25 py-2" name="delete" action="/forgotPassword">Delete My Account</button>
+    <form action="/protected" method="POST">
+      <input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">      
+      <button style="color: black; background-color: red;" class="btn btn-primary w-25 py-2" name="delete">Delete Account</button>
+    </form>
     </p>
     </div>
   </main>

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/gorilla/csrf"
 	"github.com/sirupsen/logrus"
 	"html/template"
 	"net/http"
@@ -34,6 +35,7 @@ type sessionData struct {
 	IsAuthenticated bool
 	Username        string
 	Captcha         bool
+        TemplateTag     string
 }
 
 func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Request, session *sessions.Session, file string) {
@@ -66,7 +68,12 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 	//add recaptcha JS to pageif needed
 	if file == "/signUp" || file == "/forgotPassword" {
 		data.Captcha = true
+  	        data.TemplateTag = csrf.Token(req)
 	}
+
+	if file == "/protected" || file == "/login" {
+	        data.TemplateTag = csrf.Token(req)
+        }
 
 	// Execute the template with the data and write it to the response
 	err = t.ExecuteTemplate(w, "base", data)
@@ -648,6 +655,7 @@ func notFoundHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	CSRFAuthKey := []byte(os.Getenv("CSRFAuthKey"))
 	MongoURI = os.Getenv("MongoURI")
 	MongoUser = os.Getenv("MongoUser")
 	MongoPass = os.Getenv("MongoPass")
@@ -688,5 +696,5 @@ func main() {
 	router.HandleFunc("/resetPasswordSubmit", resetPasswordSubmitHandler).Methods("POST")
 	router.HandleFunc("/resetPasswordSuccess", staticTemplateHandler).Methods("GET")
 
-	http.ListenAndServe(":8080", router)
+	http.ListenAndServe(":8080", csrf.Protect(CSRFAuthKey)(router))
 }
