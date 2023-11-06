@@ -21,7 +21,7 @@ spec:
         - name: ew-webapp
           securityContext:
             privileged: true
-          image: "ghcr.io/ktraister/ew_webapp:257a33d4e5f0c483e83803cd453e229afa82ba3c"
+          image: "ghcr.io/ktraister/ew_webapp:GITHUB_SHA"
           imagePullPolicy: Always
           env:
             - name: "SessionKey"
