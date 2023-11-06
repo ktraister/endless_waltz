@@ -18,4 +18,4 @@ jobs:
           mongoContainer=`kubectl get pods | grep mongo | tr -s ' ' | cut -d ' ' -f 1`
           kubectl exec $mongoContainer -- /usr/bin/mongodump --archive --authenticationDatabase admin -u ${{ secrets.MONGO_USER }} -p ${{ secrets.MONGO_PASS }} --db keys > db.dump
 
-          aws s3 sync db.dump s3://endlesswaltz-backups
+          aws s3 cp db.dump s3://endlesswaltz-backups
