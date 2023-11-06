@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
@@ -34,6 +35,7 @@ type sessionData struct {
 	IsAuthenticated bool
 	Username        string
 	Captcha         bool
+	TemplateTag     string
 }
 
 func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Request, session *sessions.Session, file string) {
@@ -54,12 +56,14 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 			IsAuthenticated: true,
 			Username:        session.Values["username"].(string),
 			Captcha:         false,
+			TemplateTag:     csrf.Token(req),
 		}
 	} else {
 		data = sessionData{
 			IsAuthenticated: false,
 			Username:        "",
 			Captcha:         false,
+			TemplateTag:     csrf.Token(req),
 		}
 	}
 
@@ -648,6 +652,7 @@ func notFoundHandler(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
+	CSRFAuthKey := []byte(os.Getenv("CSRFAuthKey"))
 	MongoURI = os.Getenv("MongoURI")
 	MongoUser = os.Getenv("MongoUser")
 	MongoPass = os.Getenv("MongoPass")
@@ -688,5 +693,5 @@ func main() {
 	router.HandleFunc("/resetPasswordSubmit", resetPasswordSubmitHandler).Methods("POST")
 	router.HandleFunc("/resetPasswordSuccess", staticTemplateHandler).Methods("GET")
 
-	http.ListenAndServe(":8080", router)
+	http.ListenAndServe(":8080", csrf.Protect(CSRFAuthKey)(router))
 }

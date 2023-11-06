@@ -5,6 +5,7 @@ data:
   SessionKey: 
   EmailUser: 
   EmailPass: 
+  CSRFAuthKey:
 kind: Secret
 metadata:
   name: ew-config
