@@ -7,7 +7,7 @@ on:
       #      - "main"
 
 jobs:
-  build:
+  build_and_push:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -41,6 +41,6 @@ jobs:
       - name: Deploy 
         run: | 
           sed -i "s/GITHUB_SHA/${{ github.sha }}/" infra/k8s/exchange/deployment.yaml
-          echo "${{ secrets.KUBE_CONFIG }}" > ./config.yaml
+          echo "${{ secrets.SHENLONG_KUBECONFIG }}" > ./config.yaml
           export KUBECONFIG=./config.yaml
           kubectl apply -f infra/k8s/exchange
