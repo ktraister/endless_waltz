@@ -1,12 +1,13 @@
 on:
   push:
     paths:
-      - endless_waltz/webapp/**
+      - endless_waltz/exchange/**
+      - infra/k8s/exchange/**
     branches:
       - "main"
 
 jobs:
-  build:
+  build_and_push:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -19,7 +20,7 @@ jobs:
           export GOOS=linux
           export GOARCH=amd64
           export CGO_ENABLED=0
-          cd endless_waltz/webapp
+          cd endless_waltz/exchange
           go build -tags netgo -a -v .
 
       - name: Login to GitHub Container Registry
@@ -32,7 +33,14 @@ jobs:
       - name: Build and push docker image
         uses: docker/build-push-action@v3
         with:
-          context: endless_waltz/webapp
-          file: endless_waltz/webapp/Dockerfile
+          context: endless_waltz/exchange
+          file: endless_waltz/exchange/Dockerfile
           push: true
-          tags: "ghcr.io/ktraister/ew_webapp:${{ github.sha }}"
+          tags: "ghcr.io/ktraister/ew_exchange:${{ github.sha }}"
+
+      - name: Deploy 
+        run: | 
+          sed -i "s/GITHUB_SHA/${{ github.sha }}/" infra/k8s/exchange/deployment.yaml
+          echo "${{ secrets.SHENLONG_KUBECONFIG }}" > ./config.yaml
+          export KUBECONFIG=./config.yaml
+          kubectl apply -f infra/k8s/exchange

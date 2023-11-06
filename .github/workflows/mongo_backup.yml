@@ -1,0 +1,19 @@
+on:
+  workflow_dispatch:
+  schedule: 
+    - cron: '* * * * *'
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Backup & Upload to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AUTOMATION_AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AUTOMATION_AWS_SECRET_KEY }}
+          AWS_DEFAULT_REGION: 'us-east-1'
+        run: | 
+          mongoContainer=`kubectl get pods | grep mongo | tr -s ' ' | cut -d ' ' -f 1`
+          kubectl exec $mongoContainer -- /usr/bin/mongodump --archive --authenticationDatabase admin -u ${{ secrets.MONGO_USER }} -p ${{ secrets.MONGO_PASS }} --db keys > db.dump
+
+          aws s3 sync db.dump s3://endlesswaltz-backups
