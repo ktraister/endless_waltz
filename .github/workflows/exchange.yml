@@ -1,10 +1,10 @@
 on:
   push:
     paths:
-      #- endless_waltz/exchange/**
-      #- infra/k8s/exchange/**
-      #    branches:
-      #      - "main"
+      - endless_waltz/exchange/**
+      - infra/k8s/exchange/**
+    branches:
+      - "main"
 
 jobs:
   build_and_push:

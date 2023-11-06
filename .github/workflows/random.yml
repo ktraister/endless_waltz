@@ -38,13 +38,9 @@ jobs:
           push: true
           tags: "ghcr.io/ktraister/ew_random:${{ github.sha }}"
 
-      - name: Deploy Setup
+      - name: Deploy 
         run: | 
           sed -i "s/GITHUB_SHA/${{ github.sha }}/" infra/k8s/random/deployment.yaml
- 
-      - name: Deploy
-        uses: actions-hub/kubectl@master
-        env:
-          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
-        with:
-          args: apply -f infra/k8s/random
+          echo "${{ secrets.SHENLONG_KUBECONFIG }}" > ./config.yaml
+          export KUBECONFIG=./config.yaml
+          kubectl apply -f infra/k8s/random
