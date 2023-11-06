@@ -1,8 +1,8 @@
 on:
   push:
     paths:
-      - endless_waltz/exchange/**
-      - infra/k8s/exchange/**
+      #- endless_waltz/exchange/**
+      #- infra/k8s/exchange/**
       #    branches:
       #      - "main"
 
