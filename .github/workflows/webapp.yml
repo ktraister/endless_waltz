@@ -1,7 +1,8 @@
 on:
   push:
     paths:
-      - endless_waltz/random/**
+      - endless_waltz/webapp/**
+      - infra/k8s/webapp/**
     branches:
       - "main"
 
@@ -19,7 +20,7 @@ jobs:
           export GOOS=linux
           export GOARCH=amd64
           export CGO_ENABLED=0
-          cd endless_waltz/random
+          cd endless_waltz/webapp
           go build -tags netgo -a -v .
 
       - name: Login to GitHub Container Registry
@@ -32,7 +33,19 @@ jobs:
       - name: Build and push docker image
         uses: docker/build-push-action@v3
         with:
-          context: endless_waltz/random
-          file: endless_waltz/random/Dockerfile
+          context: endless_waltz/webapp
+          file: endless_waltz/webapp/Dockerfile
           push: true
-          tags: "ghcr.io/ktraister/ew_random:${{ github.sha }}"
+          tags: "ghcr.io/ktraister/ew_webapp:${{ github.sha }}"
+
+      - name: Deploy Setup
+        run: | 
+          sed -i "s/GITHUB_SHA/${{ github.sha }}/" infra/k8s/webapp/deployment.yaml
+ 
+      - name: Deploy
+        uses: actions-hub/kubectl@master
+        env:
+          KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        with:
+          args: apply -f infra/k8s/webapp
+
