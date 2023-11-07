@@ -29,6 +29,7 @@ type resetData struct {
 	Captcha         bool
 	Email           string
 	Token           string
+	TemplateTag     string
 }
 
 type sessionData struct {
@@ -85,7 +86,7 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 func imgHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		logger.Error("Could not configure logger in staticTemplateHandler!")
+		logger.Error("Could not configure logger in imgHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -358,7 +359,7 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		logger.Error("Could not configure logger in loginHandler!")
+		logger.Error("Could not configure logger in forgotPasswordHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -366,7 +367,7 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		logger.Error("Failed to parse form data in loginHandler")
+		logger.Error("Failed to parse form data in forgotPasswordHandler")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -417,36 +418,39 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		logger.Error("Could not configure logger in loginHandler!")
+		logger.Error("Could not configure logger in emailVerifyHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
-	logger.Info("EmailVerifyHandler!")
-
+	var email, user, token string
 	// Parse form data
-	err := req.ParseForm()
-	if err != nil {
-		logger.Error("Failed to parse form data in emailVerifyHandler")
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
-		return
+	for k, v := range req.URL.Query() {
+		switch k {
+		case "email":
+			email = v[0]
+		case "user":
+			user = v[0]
+		case "token":
+			token = v[0]
+		}
 	}
 
 	//check for special characters in username
-	ok = checkUserInput(req.FormValue("user"))
+	ok = checkUserInput(user)
 	if !ok {
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	//check email is valid
-	ok = isEmailValid(req.FormValue("email"))
+	ok = isEmailValid(email)
 	if !ok {
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
-	if verifyUserSignup(logger, req.FormValue("email"), req.FormValue("user"), req.FormValue("token")) {
+	if verifyUserSignup(logger, email, user, token) {
 		//show the page for user verification success
 		http.Redirect(w, req, "/verifySuccess", http.StatusSeeOther)
 	} else {
@@ -458,34 +462,40 @@ func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		logger.Error("Could not configure logger in loginHandler!")
+		logger.Error("Could not configure logger in resetPasswordHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
+	//need to do static template if no/incorrect form data
 	// Parse form data
-	err := req.ParseForm()
-	if err != nil {
-		logger.Error("Failed to parse form data in resetPasswordHandler")
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
-		return
+	var email, user, token string
+	for k, v := range req.URL.Query() {
+		switch k {
+		case "email":
+			email = v[0]
+		case "user":
+			user = v[0]
+		case "token":
+			token = v[0]
+		}
 	}
 
 	//check for special characters in username
-	ok = checkUserInput(req.FormValue("user"))
+	ok = checkUserInput(user)
 	if !ok {
-		http.Redirect(w, req, "/resetPassword", http.StatusSeeOther)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	//check email is valid
-	ok = isEmailValid(req.FormValue("email"))
+	ok = isEmailValid(email)
 	if !ok {
-		http.Redirect(w, req, "/resetPassword", http.StatusSeeOther)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
-	if verifyPasswordReset(logger, req.FormValue("email"), req.FormValue("user"), req.FormValue("token")) {
+	if verifyPasswordReset(logger, email, user, token) {
 		// Parse the template
 		t, err := template.New("").ParseFiles("pages/base.tmpl", "pages/resetPassword.tmpl")
 		if err != nil {
@@ -497,10 +507,11 @@ func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 		// Define a data struct for the template
 		data := resetData{
 			IsAuthenticated: false,
-			Username:        req.FormValue("user"),
-			Email:           req.FormValue("email"),
-			Token:           req.FormValue("token"),
+			Username:        user,
+			Email:           email,
+			Token:           token,
 			Captcha:         true,
+			TemplateTag:     csrf.Token(req),
 		}
 
 		// Execute the template with the data and write it to the response
@@ -519,7 +530,7 @@ func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 func resetPasswordSubmitHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		logger.Error("Could not configure logger in loginHandler!")
+		logger.Error("Could not configure logger in resetPasswordSubmitHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -527,7 +538,7 @@ func resetPasswordSubmitHandler(w http.ResponseWriter, req *http.Request) {
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		logger.Error("Failed to parse form data in resetPasswordHandler")
+		logger.Error("Failed to parse form data in resetPasswordSubmitHandler")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -567,7 +578,7 @@ func resetPasswordSubmitHandler(w http.ResponseWriter, req *http.Request) {
 func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		logger.Error("Could not configure logger in loginHandler!")
+		logger.Error("Could not configure logger in protectedPageHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -575,7 +586,7 @@ func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		logger.Error("Failed to parse form data in resetPasswordHandler")
+		logger.Error("Failed to parse form data in protectedPageHandler")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -601,7 +612,7 @@ func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
 func protectedHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		logger.Error("Could not configure logger in loginHandler!")
+		logger.Error("Could not configure logger in protectedHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -609,7 +620,7 @@ func protectedHandler(w http.ResponseWriter, req *http.Request) {
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		logger.Error("Failed to parse form data in resetPasswordHandler")
+		logger.Error("Failed to parse form data in protectedHandler")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -672,7 +683,7 @@ func main() {
 	router.HandleFunc("/login", loginHandler).Methods("POST")
 	router.HandleFunc("/signUp", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/signUp", signUpHandler).Methods("POST")
-	router.HandleFunc("/verifyEmail", emailVerifyHandler).Methods("POST")
+	router.HandleFunc("/verifyEmail", emailVerifyHandler).Methods("GET")
 	router.HandleFunc("/verifySuccess", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/signUpSuccess", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/deleteSuccess", staticTemplateHandler).Methods("GET")
@@ -686,10 +697,9 @@ func main() {
 	router.HandleFunc("/terms_and_conditions", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/logout", logoutPageHandler).Methods("GET")
 	router.HandleFunc("/forgotPassword", staticTemplateHandler).Methods("GET")
-	router.HandleFunc("/forgotPasswordSent", staticTemplateHandler).Methods("GET")
-	router.HandleFunc("/resetPassword", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/forgotPassword", forgotPasswordHandler).Methods("POST")
-	router.HandleFunc("/resetPassword", resetPasswordHandler).Methods("POST")
+	router.HandleFunc("/forgotPasswordSent", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/resetPassword", resetPasswordHandler).Methods("GET")
 	router.HandleFunc("/resetPasswordSubmit", resetPasswordSubmitHandler).Methods("POST")
 	router.HandleFunc("/resetPasswordSuccess", staticTemplateHandler).Methods("GET")
 

@@ -1,7 +1,7 @@
 {{ define "content" }}
 <h1>Welcome to Endless Waltz</h1>
 <h2>Please use the button below to verify your email</h2>
-<form method="post" action="{{.FormHost}}/verifyEmail" class="inline">
+<form method="get" action="{{.FormHost}}/verifyEmail" class="inline">
   <input type="hidden" name="user" value="{{.Username}}">
   <input type="hidden" name="email" value="{{.TargetUser}}">
   <input type="hidden" name="token" value="{{.Token}}">
