@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.18
 WORKDIR /src
 COPY ./random /src/random
 RUN chmod +x /src/random && apk add gcompat
