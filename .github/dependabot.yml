@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "gomod"
+    # Look for `package.json` and `lock` files in the `root` directory
+    directory: "/endless_waltz"
+    # Check the npm registry for updates every day (weekdays)
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "docker"
+    # Look for `package.json` and `lock` files in the `root` directory
+    directory: "/endless_waltz/random"
+    # Check the npm registry for updates every day (weekdays)
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "docker"
+    # Look for `package.json` and `lock` files in the `root` directory
+    directory: "/endless_waltz/reaper"
+    # Check the npm registry for updates every day (weekdays)
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "docker"
+    # Look for `package.json` and `lock` files in the `root` directory
+    directory: "/endless_waltz/exchange"
+    # Check the npm registry for updates every day (weekdays)
+    schedule:
+      interval: "daily"
+  - package-ecosystem: "docker"
+    # Look for `package.json` and `lock` files in the `root` directory
+    directory: "/endless_waltz/webapp"
+    # Check the npm registry for updates every day (weekdays)
+    schedule:
+      interval: "daily"
