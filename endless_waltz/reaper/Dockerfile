@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.18
 WORKDIR /src
 COPY ./reaper /src/reaper
 RUN chmod +x /src/reaper && apk add gcompat
