@@ -25,7 +25,12 @@ spec:
           - name: config 
             mountPath: "/etc/tor/torrc"
             readOnly: true
+          - name: "tor-data-dir"
+            mountPath: "/var/lib/tor"
       volumes:
       - name: config
         secret:
           secretName: tor-config
+      - name: "tor-data-dir"
+        persistentVolumeClaim:
+          claimName: "tor-data"
