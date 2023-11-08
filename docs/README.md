@@ -35,6 +35,9 @@ written in GoLang.
 EW_Messenger lives in ktraister/ew_messenger, and is written in GoLang.
 RTL-Entropy lives in ktraister/ew-rtl-entropy, and is written in C.
 
+Reaper, Random, Exchange, and Webapp share common functions within the 
+`common` directory. Functionality is documented in the [common README](../endless_waltz/common/README.md)
+
 For more information, read the individual READMEs for the appropriate service.
 
 ## Infrastructure
