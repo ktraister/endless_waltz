@@ -4,13 +4,12 @@ go 1.19
 
 require (
 	github.com/google/uuid v1.4.0
-	github.com/gorilla/csrf v1.7.1
+	github.com/gorilla/csrf v1.7.2
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/sessions v1.2.2
 	github.com/gorilla/websocket v1.5.0
 	github.com/sirupsen/logrus v1.9.3
 	go.mongodb.org/mongo-driver v1.13.0
-	golang.org/x/time v0.4.0
 )
 
 require (
@@ -19,7 +18,6 @@ require (
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
