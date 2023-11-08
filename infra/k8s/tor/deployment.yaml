@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tor
+  labels:
+    name: tor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: tor
+  template:
+    metadata:
+      labels:
+        name: tor
+    spec:
+      serviceAccountName: tor
+      containers:
+        - name: tor
+          securityContext:
+            privileged: true
+          image: "tor:GITHUB_SHA"
+          imagePullPolicy: Always
+          volumeMounts:
+          - name: config 
+            mountPath: "/etc/tor/torrc"
+            readOnly: true
+      volumes:
+      - name: config
+        secret:
+          secretName: tor-config
