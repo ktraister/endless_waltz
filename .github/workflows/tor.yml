@@ -1,0 +1,36 @@
+on:
+  push:
+    paths:
+      - infra/tor/**
+#      - infra/k8s/tor/**
+    branches:
+      - "main"
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and push docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: infra/tor
+          file: infra/tor/Dockerfile
+          push: true
+          tags: "ghcr.io/ktraister/ew_tor:${{ github.sha }}"
+
+#      - name: Deploy 
+#        run: | 
+#          sed -i "s/GITHUB_SHA/${{ github.sha }}/" infra/k8s/exchange/deployment.yaml
+#          echo "${{ secrets.SHENLONG_KUBECONFIG }}" > ./config.yaml
+#          export KUBECONFIG=./config.yaml
+#          kubectl apply -f infra/k8s/exchange
