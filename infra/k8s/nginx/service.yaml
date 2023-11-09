@@ -14,5 +14,9 @@ spec:
       targetPort: 443
       protocol: TCP
       name: https
+    - port: 8080
+      targetPort: 8080
+      protocol: TCP
+      name: "tor-http"
   selector:
     name: nginx

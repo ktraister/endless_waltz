@@ -1,0 +1,2 @@
+HiddenServiceDir /var/lib/tor/endlesswaltz/
+HiddenServicePort 80 nginx:8080

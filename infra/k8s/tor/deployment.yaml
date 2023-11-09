@@ -14,16 +14,18 @@ spec:
       labels:
         name: tor
     spec:
+      imagePullSecrets:
+        - name: ghcrcred
       serviceAccountName: tor
       containers:
         - name: tor
           securityContext:
             privileged: true
-          image: "tor:GITHUB_SHA"
+          image: "ghcr.io/ktraister/ew_tor:GITHUB_SHA"
           imagePullPolicy: Always
           volumeMounts:
           - name: config 
-            mountPath: "/etc/tor/torrc"
+            mountPath: "/etc/tor"
             readOnly: true
           - name: "tor-data-dir"
             mountPath: "/var/lib/tor"

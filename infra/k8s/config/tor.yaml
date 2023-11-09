@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: tor-config
+data: 
+  torrc: SGlkZGVuU2VydmljZURpciAvdmFyL2xpYi90b3IvZW5kbGVzc3dhbHR6LwpIaWRkZW5TZXJ2aWNlUG9ydCA4MDkwIGV3LXdlYmFwcDo4MDkwCg==
+
