@@ -10,6 +10,11 @@ and k8s.
 This directory contains configuration files used for the NGINX service. For 
 more information, consult [the NGINX README.md](./nginx/README.md)
 
+## Tor
+This directory contains configuration files and the dockerfile for the Tor 
+client service. There is no entry/exit node configuration, just a simple
+client config to create a `.onion` website for EW. For more information, 
+consult [the Tor README.md](./Tor/README.md)
 
 ## Bare Metal
 This section outlines how to set up new reaper physical hosts. 
