@@ -19,36 +19,36 @@ var MongoUser string
 var MongoPass string
 
 type rl struct {
-    lastRequestTime int64
-    requests int
+	lastRequestTime int64
+	requests        int
 }
 
 var rateLimitMap = map[string]rl{}
 
 func rateLimit(user string) bool {
-    userRL, ok := rateLimitMap[user]
-    now := time.Now().Unix()
-    //we didn't find the item, no limit
-    if !ok {
-	rateLimitMap[user] = rl{lastRequestTime: now, requests: 1}
-	return true
-    }
-    
-    //no requests yet this second, no limit
-    if userRL.lastRequestTime != now {
-	rateLimitMap[user] = rl{lastRequestTime: now, requests: 1}
-	return true
-    }
+	userRL, ok := rateLimitMap[user]
+	now := time.Now().Unix()
+	//we didn't find the item, no limit
+	if !ok {
+		rateLimitMap[user] = rl{lastRequestTime: now, requests: 1}
+		return true
+	}
 
-    //request count has reached threshold (5reqs/1sec)
-    if userRL.requests == 5 {
-	return false
-    } else {
-	//increment and return
-	r := userRL.requests + 1
-	rateLimitMap[user] = rl{lastRequestTime: now, requests: r}
-	return true
-    }
+	//no requests yet this second, no limit
+	if userRL.lastRequestTime != now {
+		rateLimitMap[user] = rl{lastRequestTime: now, requests: 1}
+		return true
+	}
+
+	//request count has reached threshold (5reqs/1sec)
+	if userRL.requests == 5 {
+		return false
+	} else {
+		//increment and return
+		r := userRL.requests + 1
+		rateLimitMap[user] = rl{lastRequestTime: now, requests: r}
+		return true
+	}
 }
 
 func checkAuth(user string, passwd string, logger *logrus.Logger) bool {
