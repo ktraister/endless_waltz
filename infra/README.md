@@ -14,7 +14,7 @@ more information, consult [the NGINX README.md](./nginx/README.md)
 This directory contains configuration files and the dockerfile for the Tor 
 client service. There is no entry/exit node configuration, just a simple
 client config to create a `.onion` website for EW. For more information, 
-consult [the Tor README.md](./Tor/README.md)
+consult [the Tor README.md](./tor/README.md)
 
 ## Bare Metal
 This section outlines how to set up new reaper physical hosts. 
