@@ -94,7 +94,7 @@ func verifyPasswordReset(logger *logrus.Logger, email string, user string, token
 	//actually connect to mongo
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 	if err != nil {
-		logger.Error("verifyUserSignup mongo generic error ", err)
+		logger.Error("verifyPasswordReset mongo generic error ", err)
 		return false
 	}
 
@@ -195,7 +195,7 @@ func verifyUserSignup(logger *logrus.Logger, email string, user string, token st
 	auth_db := client.Database("auth").Collection("keys")
 
 	// Check if the item exists in the collection
-	logger.Debug(fmt.Sprintf("verifying user '%s'", user))
+	logger.Debug(fmt.Sprintf("verifying user '%s' w/ email '%s' and token '%s'", user, email, token))
 	filter := bson.M{"User": user, "Email": email, "EmailVerifyToken": token}
 	var result bson.M
 	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)

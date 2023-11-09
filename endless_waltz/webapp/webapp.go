@@ -13,6 +13,7 @@ import (
 	"html/template"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -190,7 +191,8 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//check for special characters in username
-	ok = checkUserInput(req.FormValue("username"))
+	username := strings.ToLower(req.FormValue("username"))
+	ok = checkUserInput(username)
 	if !ok {
 		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
@@ -212,7 +214,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if !ok {
-		logger.Warn("Captcha check invalid for: ", req.FormValue("username"))
+		logger.Warn("Captcha check invalid for: ", username)
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -237,7 +239,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	//extensible for other db checks into the future
 	//check database to ensure username/email ! already exists
 	//removed email check for now. Have as many accts as you want
-	filters := []primitive.M{bson.M{"User": req.FormValue("username")}} //bson.M{"Email": req.FormValue("email")},
+	filters := []primitive.M{bson.M{"User": username}} //bson.M{"Email": req.FormValue("email")},
 
 	//run our extensible DB checks
 	for i, filter := range filters {
@@ -250,7 +252,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 			}
 			switch i {
 			case 0:
-				data.Username = req.FormValue("username")
+				data.Username = username
 				//removed email check for now
 				//case 1:
 				//    data.Email = req.FormValue("email")
@@ -288,7 +290,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	emailVerifyToken := generateToken()
 
 	//send the email before writing to db
-	err = sendVerifyEmail(logger, req.FormValue("username"), req.FormValue("email"), emailVerifyToken)
+	err = sendVerifyEmail(logger, username, req.FormValue("email"), emailVerifyToken)
 	if err != nil {
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		logger.Error("Email verify outgoing fail: ", err)
@@ -296,7 +298,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//Write to database with information
-	_, err = auth_db.InsertOne(ctx, bson.M{"User": req.FormValue("username"), "Passwd": password, "SignupTime": signUpTime, "Active": false, "Email": req.FormValue("email"), "EmailVerifyToken": emailVerifyToken})
+	_, err = auth_db.InsertOne(ctx, bson.M{"User": username, "Passwd": password, "SignupTime": signUpTime, "Active": false, "Email": req.FormValue("email"), "EmailVerifyToken": emailVerifyToken})
 	if err != nil {
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		logger.Error("Generic mongo error on user signup write: ", err)
@@ -332,7 +334,7 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Get username and password from the form
-	username := req.FormValue("username")
+	username := strings.ToLower(req.FormValue("username"))
 
 	//create our hasher to hash our pass
 	hash := sha512.New()
@@ -373,7 +375,8 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//check for special characters in username
-	ok = checkUserInput(req.FormValue("username"))
+	username := strings.ToLower(req.FormValue("username"))
+	ok = checkUserInput(username)
 	if !ok {
 		http.Redirect(w, req, "/forgotPassword", http.StatusSeeOther)
 		return
@@ -388,7 +391,7 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if !ok {
-		logger.Warn("Recaptcha Check failed for user: ", req.FormValue("username"))
+		logger.Warn("Recaptcha Check failed for user: ", username)
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -397,7 +400,7 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	emailVerifyToken := generateToken()
 
 	//send the email before writing to db
-	err = sendResetEmail(logger, req.FormValue("username"), emailVerifyToken)
+	err = sendResetEmail(logger, username, emailVerifyToken)
 	if err == mongo.ErrNoDocuments {
 		//if no documents returned, a reset has been requested for
 		//non-existent user. Return the same link as normal.
@@ -414,7 +417,7 @@ func forgotPasswordHandler(w http.ResponseWriter, req *http.Request) {
 
 }
 
-//this function should handle a post request with "email" payload
+// this function should handle a post request with "email" payload
 func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
@@ -458,7 +461,7 @@ func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-//this function should handle a post request with "email" payload
+// this function should handle a post request with "email" payload
 func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
