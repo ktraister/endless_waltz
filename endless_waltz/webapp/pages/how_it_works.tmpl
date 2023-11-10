@@ -4,9 +4,8 @@
     <br>
     <br>
     <h1>What is Endless Waltz?<h1>
-    <p class="lead">Endless Waltz is a messenger application that implements a proprietary one-time pad cipher to encrypt each message uniquely.</p>
-    <p class="lead">Due to the nature of the cipher, messages sent by users cannot be intercepted and decrypted.</p>
-    <p class="lead">Even with quantum computing. </p>
+    <p class="lead">Endless Waltz is a messenger application that implements a proprietary one-time pad cipher to encrypt each message uniquely. Built on top of traditional TLS, it aims to take advantage of 70 years of advancement in cryptography. In addition, messages are not stored anywhere in any form, preventing retrieval and decryption</p>
+    <p class="lead">Due to the usage of TLS, nature of the cipher, and messages being destroyed after sending, messages sent by users cannot be decrypted by adversaries.</p>
     <br>
     <br>
     <h1>Getting Started<h1>
@@ -22,7 +21,7 @@
     <br>
     <br>
     <h1>How is the One Time Pad kept secure?<h1>
-    <p class="lead">Once the key is delivered to a client, it is modified by using a Diffie-Hellman handshake in cooperation with the target client. No component of the Endless Waltz circut or an external listener has knowledge of the final Pad (key) used for encryption.</p>
+    <p class="lead">Once the key is delivered to a client, it is modified by using a Diffie-Hellman handshake in cooperation with the target client. No component of the Endless Waltz circut or an external listener has knowledge of the final Pad (key) used for encryption. All actions take place over TLS encrypted connections</p>
     <a class="lead" href="https://en.wikipedia.org/wiki/Diffie–Hellman_key_exchange">Read more about the Diffie-Hellman handshake at Wikipedia</a>
     <br>
     <br>

@@ -31,8 +31,6 @@ To ensure a certain level of security, password complexity requirements are
 enforced on Server/Client side by Go/JS. This is enforced on reset as well.
 
 ### CSRF
-CSRF is possible with the current webapp implementation. Will be addressing
-in issue #199.
-
+CSRF was possible with the old webapp implementation. Addressed in issue #199.
 
 ## NGINX
