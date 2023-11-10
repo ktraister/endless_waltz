@@ -67,6 +67,7 @@ support development of the applications.
   - [random_numbers](./random_numbers/README.md): used to generate new prime numbers for rn.go in the messenger application. 
   - [passwd](./passwd/README.md): used to generate password hashes for user that match go output
   - [security](./security/README.md): used to generate password hashes for user that match go output
+  - [cubic](./cubic/README.md): used to generate live ISOs for EW_messenger
 
 ### Context
 Context is important to be able to understand what you read. Therefor, I plan
