@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tor
+  labels:
+    name: tor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: tor
+  template:
+    metadata:
+      labels:
+        name: tor
+    spec:
+      imagePullSecrets:
+        - name: ghcrcred
+      serviceAccountName: tor
+      containers:
+        - name: tor
+          securityContext:
+            privileged: true
+          image: "ghcr.io/ktraister/ew_tor:GITHUB_SHA"
+          imagePullPolicy: Always
+          volumeMounts:
+          - name: config 
+            mountPath: "/etc/tor"
+            readOnly: true
+          - name: "tor-data-dir"
+            mountPath: "/var/lib/tor"
+      volumes:
+      - name: config
+        secret:
+          secretName: tor-config
+      - name: "tor-data-dir"
+        persistentVolumeClaim:
+          claimName: "tor-data"

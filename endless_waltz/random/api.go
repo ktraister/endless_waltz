@@ -48,6 +48,13 @@ func health_handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	ok = rateLimit(req.Header.Get("User"))
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
 	w.Write([]byte("HEALTHY"))
 	logger.Info("Someone hit the health check route...")
 }
@@ -60,10 +67,18 @@ func otp_handler(w http.ResponseWriter, req *http.Request) {
 		fmt.Println("ERROR: Could not configure logger!")
 		return
 	}
+
 	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"))
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
 		return
 	}
 

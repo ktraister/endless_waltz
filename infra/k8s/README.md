@@ -66,6 +66,16 @@ cd webapp && kubectl apply -f .
 cd exchange && kubectl apply -f .
 ```
 
+#deploy nginx
+```
+cd nginx && kubectl apply -f .
+```
+
+#deploy tor
+```
+cd tor && kubectl apply -f .
+```
+
 #expose load balancer ports
 ```
 kubectl expose deployment nginx --type=LoadBalancer --name=nginx-lb
