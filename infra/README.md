@@ -17,8 +17,11 @@ client config to create a `.onion` website for EW. For more information,
 consult [the Tor README.md](./tor/README.md)
 
 ## Bare Metal
-This section outlines how to set up new reaper physical hosts. 
-
+This section outlines how to set up new k3s hosts. 
+This should only be needed if we take a step back from managed k8s services. 
+Below is some legacy code that was removed by the Kyber refactor :) 
+```
+Rache Bartmoss FTW
 ### Physical Host
 Reaper hosts can be any machine with at least 1 core, 2G of ram, and USB port.
 The Reaper host will require an `RTL2832U OEM SDR` with an antenna to collect 
@@ -31,12 +34,12 @@ Install Ubuntu 22.04 on your new reaper host, and follow the directions in
 [the Bare Metal README.md](./bare_metal/README.md)
 
 ToDo: Improve randomness antenna setup (grounding, vaccume tube)
+```
 
 ## K8s
 This section has the service files that define the state for the k8s services.
-These files will be applied on new reaper hosts, and also cloud infra!
-To finish a new Reaper box or deploy new infra, follow the directions in 
-[the K8s Infra README.md](./k8s/README.md)
+These files will be applied on our new cloud infra! To finish. follow the directions 
+in the [the K8s Infra README.md](./k8s/README.md)
 
 ## Architecture
 ### Current (POC)

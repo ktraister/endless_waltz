@@ -46,11 +46,6 @@ cd config && echo "edit" && kubectl apply -f .
 cd mongo && kubectl apply -f .
 ```
 
-#deploy reaper
-```
-cd reaper && kubectl apply -f .
-```
-
 #deploy random
 ```
 cd random && kubectl apply -f .

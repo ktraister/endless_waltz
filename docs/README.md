@@ -8,10 +8,10 @@ LAST UPDATED: 11 October 23
 ## Naming Conventions
 The project gets its name from the movie Gundam Wing: Endless Waltz, and hosts
 are named to reflect this. The environment contains:
-  - Zero: Physical development machine, hosting dev and prod infra
   - Shenlong: PROD GCP Cloud server hosting k3s 
   - HeavyArms: AWS Cloud server hosting k3s for dev infra work
   - DeathScythe: My laptop :) 
+  - *Zero: former physical machine, hosting dev and prod infra*
   - *Sandrock: Available*
   - *Wing: Available*
   - *Epion: Available*
@@ -23,19 +23,16 @@ are named to reflect this. The environment contains:
 
 ## Applications
 The EW Messenger has six discreet applications:
-  - [RTL-Entropy](https://github.com/ktraister/ew-rtl-entropy) 
-  - [Reaper](../endless_waltz/reaper/README.md)
   - [RandomAPI](../endless_waltz/random/README.md)
   - [Exchange](../endless_waltz/exchange/README.md)
   - [WebApp](../endless_waltz/webapp/README.md)
   - [Messenger](https://github.com/ktraister/ew_messenger)
 
-Everything except RTL-Entropy and Messenger live in this repository and is 
+Everything except Messenger lives in this repository and is 
 written in GoLang.
 EW_Messenger lives in ktraister/ew_messenger, and is written in GoLang.
-RTL-Entropy lives in ktraister/ew-rtl-entropy, and is written in C.
 
-Reaper, Random, Exchange, and Webapp share common functions within the 
+Random, Exchange, and Webapp share common functions within the 
 `common` directory. Functionality is documented in the [common README](../endless_waltz/common/README.md)
 
 For more information, read the individual READMEs for the appropriate service.
@@ -43,12 +40,7 @@ For more information, read the individual READMEs for the appropriate service.
 ## Infrastructure
 The standard paradigm of the EW infrastructure is to deploy Alpine containers 
 on Kubernetes in both the Cloud and on physical machines. K3s is used on the 
-physical machine side, and in the Cloud for the POC. The Physical machine is 
-also outfitted with an RTL-SDR (Software Defined Radio) to collect random data.
-A VPN is used to connect the physical host to the cloud hosts for one time pad
-transmission.
-
-Note: One radio/antenna on Zero is for dev, the other for prod. 
+small dev deployments, while a managed service should be used for production
 
 For more information, read the [infrastructure READMEs](../infra/README.md).
 
@@ -64,7 +56,6 @@ support development of the applications.
   - [CertBot](./CertBot/README.md): docs for TLS Certs using CertBot
   - [LiveISO](./LiveISO/README.md): docs for the Endless Waltz LiveISO setup
   - [automation](./automation/README.md): docs for the Endless Waltz LiveISO setup
-  - [random_numbers](./random_numbers/README.md): used to generate new prime numbers for rn.go in the messenger application. 
   - [passwd](./passwd/README.md): used to generate password hashes for user that match go output
   - [security](./security/README.md): used to generate password hashes for user that match go output
   - [cubic](./cubic/README.md): used to generate live ISOs for EW_messenger
