@@ -20,6 +20,8 @@ The purpose of this route is to provide the client with an easy way to test
 it's credentials for authentication & authorization. Hitting this route also
 proves to the client that the RandomAPI is prepared to handle traffic.
 
+This code was mothballed when Kyber was rolled out :)
+```
 #### /api/otp (POST)
 This route provides clients with raw one-time pads. The JSON body of the
 request should contain the "host" identifier, set either to "client or 
@@ -34,3 +36,4 @@ If "client" is set, the db is queried for an item that has the UUID matching
 the UUID in the JSON body. The raw pad in the record is then returned to the 
 requester. The db record that was referenced is then deleted. If there is no 
 UUID in the body, the requester is warned and conn is terminated. 
+```
