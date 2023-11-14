@@ -10,10 +10,6 @@ live within `endless_waltz/.github/workflows`.
 Full CI/CD is in place for `exchange`, `random`, `webapp`. Build and 
 deploy of the container is handled in the respective workflow. 
 
-## CI
-CI ONLY is handled for `reaper` and `ew-entropy`. Container is built, 
-but not deployed due to the sensitive nature of the reaper service.
-
 ## Merge Checks
 Merge checks are performed on application code before allowing merge. 
 These checks are in place for all services. 
