@@ -1,8 +1,8 @@
 on:
   push:
     paths:
-      - infra/tor/**
-      - infra/k8s/tor/**
+      - infra/proxy/**
+      - infra/k8s/proxy/**
     branches:
       - "main"
 
@@ -23,10 +23,10 @@ jobs:
       - name: Build and push docker image
         uses: docker/build-push-action@v3
         with:
-          context: infra/tor
-          file: infra/tor/Dockerfile
+          context: infra/proxy
+          file: infra/proxy/Dockerfile
           push: true
-          tags: "ghcr.io/ktraister/ew_tor:${{ github.sha }}"
+          tags: "ghcr.io/ktraister/ew_proxy:${{ github.sha }}"
 
       - name: Deploy 
         run: | 
