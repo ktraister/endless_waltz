@@ -60,8 +60,8 @@ func handleChannel(newChannel ssh.NewChannel, logger *logrus.Logger) {
         return
     }
 
-    host := "icanhazip.com"
-    port := "80"
+    host := "endlesswaltz.xyz"
+    port := "443"
     logger.Debug(fmt.Sprintf("net.Split --> host: %s port: %s", host, port))
     if err != nil {
 	    logger.Error("Failed to split host and port: ", err)
