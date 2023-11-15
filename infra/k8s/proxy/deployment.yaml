@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ew-proxy
+  labels:
+    name: ew-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: ew-proxy
+  template:
+    metadata:
+      labels:
+        name: ew-proxy
+    spec:
+      imagePullSecrets:
+        - name: ghcrcred
+      serviceAccountName: ew-proxy
+      containers:
+        - name: ew-proxy
+          securityContext:
+            privileged: true
+          image: "ghcr.io/ktraister/ew_proxy:GITHUB_SHA"
+          imagePullPolicy: Always
+          env:
+            - name: "MongoURI"
+              valueFrom:
+                secretKeyRef:
+                  key:  MongoURI
+                  name: ew-config
+            - name: "MongoUser"
+              valueFrom:
+                secretKeyRef:
+                  key:  username
+                  name: mongo-creds
+            - name: "MongoPass"
+              valueFrom:
+                secretKeyRef:
+                  key:  password
+                  name: mongo-creds
+          ports:
+            - containerPort: 2222

@@ -3,6 +3,7 @@ endless_waltz/client/client
 endless_waltz/random/random
 endless_waltz/reaper/reaper
 endless_waltz/exchange/exchange
+endless_waltz/proxy/proxy
 endless_waltz/cli/cli
 endless_waltz/gui/gui
 endless_waltz/webapp/webapp

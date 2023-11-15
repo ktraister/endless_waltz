@@ -1,8 +1,8 @@
 on:
   push:
     paths:
-      - infra/tor/**
-      - infra/k8s/tor/**
+      - endless_waltz/proxy/**
+      - infra/k8s/proxy/**
     branches:
       - "main"
 
@@ -12,6 +12,16 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+
+      - name: Go Build
+        run: | 
+          export GOOS=linux
+          export GOARCH=amd64
+          export CGO_ENABLED=0
+          cd endless_waltz/proxy
+          go build -tags netgo -a -v .
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v2
@@ -23,14 +33,14 @@ jobs:
       - name: Build and push docker image
         uses: docker/build-push-action@v3
         with:
-          context: infra/tor
-          file: infra/tor/Dockerfile
+          context: endless_waltz/proxy
+          file: endless_waltz/proxy/Dockerfile
           push: true
-          tags: "ghcr.io/ktraister/ew_tor:${{ github.sha }}"
+          tags: "ghcr.io/ktraister/ew_proxy:${{ github.sha }}"
 
       - name: Deploy 
         run: | 
-          sed -i "s/GITHUB_SHA/${{ github.sha }}/" infra/k8s/exchange/deployment.yaml
+          sed -i "s/GITHUB_SHA/${{ github.sha }}/" infra/k8s/proxy/deployment.yaml
           echo "${{ secrets.SHENLONG_KUBECONFIG }}" > ./config.yaml
           export KUBECONFIG=./config.yaml
-          kubectl apply -f infra/k8s/exchange
+          kubectl apply -f infra/k8s/proxy

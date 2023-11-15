@@ -58,6 +58,23 @@ services:
       MongoPass: password123
       LogLevel: Debug
 
+  ew-proxy:
+    depends_on:
+      mongo:
+        condition: service_started
+    build:
+      context: proxy 
+    environment:
+      ProxyTo: nginx:443
+      MongoURI: mongodb://mongo:27017/
+      MongoUser: adminuser
+      MongoPass: password123
+      LogLevel: Debug
+    volumes:
+      - ./proxy/private_key:/src/private_key
+    ports:
+      - "2222:2222"
+
   mongo:
     image: mongo
     restart: always
