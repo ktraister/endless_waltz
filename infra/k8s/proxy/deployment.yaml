@@ -39,5 +39,14 @@ spec:
                 secretKeyRef:
                   key:  password
                   name: mongo-creds
+          volumeMounts:
+          - name: config 
+            mountPath: "/src/keys"
+            readOnly: true
           ports:
             - containerPort: 2222
+      volumes:
+      - name: keys
+        secret:
+          secretName: proxy-config
+
