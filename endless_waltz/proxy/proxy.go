@@ -76,12 +76,12 @@ func handleChannel(newChannel ssh.NewChannel, logger *logrus.Logger) {
 
     destConn, err := net.Dial("tcp", net.JoinHostPort(host, port))
     if err != nil {
-	    logger.Error("Failed to dial destination: %v", err)
+	    logger.Error("Failed to dial destination: ", err)
 	    newChannel.Reject(ssh.ConnectionFailed, err.Error())
 	    return
     }
     
-    logger.Debug("Proxying HTTPS connection to %s", req.Host)
+    logger.Debug("Proxying HTTPS connection to ", req.Host)
     
 
     go func() {
