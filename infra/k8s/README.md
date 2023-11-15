@@ -75,3 +75,8 @@ cd tor && kubectl apply -f .
 ```
 kubectl expose deployment nginx --type=LoadBalancer --name=nginx-lb
 ```
+
+#expose proxy service ports
+```
+kubectl expose deployment ew-proxy --type=LoadBalancer --name=proxy-lb
+```

@@ -120,7 +120,7 @@ func main() {
     }
 
     //Generate a host key - will copy into docker container
-    privateBytes, err := os.ReadFile("private_key")
+    privateBytes, err := os.ReadFile("./keys/private_key")
     if err != nil {
         logger.Error(err)
     }

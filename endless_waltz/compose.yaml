@@ -71,7 +71,7 @@ services:
       MongoPass: password123
       LogLevel: Debug
     volumes:
-      - ./proxy/private_key:/src/private_key
+      - ./proxy/private_key:/src/keys/private_key
     ports:
       - "2222:2222"
 
