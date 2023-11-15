@@ -6,6 +6,7 @@ import (
     "io"
     "net"
     "net/http"
+    "strings"
     "crypto/sha512"
     "encoding/hex" 
 
@@ -39,7 +40,14 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig, logger *logrus.Lo
     }
 }
 
+func splitHostPort(data string) (string, string) {
+    data = strings.Split(data, "r")[0]
+    data = strings.Split(data, "\\")[0]
+    return data, "80"
+}
+
 func handleChannel(newChannel ssh.NewChannel, logger *logrus.Logger) {
+    logger.Error(newChannel.ChannelType())
     if newChannel.ChannelType() != "direct-tcpip" {
         logger.Debug("Unsupported channel type")
         newChannel.Reject(ssh.UnknownChannelType, "unsupported channel type")
@@ -52,10 +60,11 @@ func handleChannel(newChannel ssh.NewChannel, logger *logrus.Logger) {
         return
     }
 
-    hostAndPort := string(newChannel.ExtraData())
-    host, port, err := net.SplitHostPort(hostAndPort)
+    host := "icanhazip.com"
+    port := "80"
+    logger.Debug(fmt.Sprintf("net.Split --> host: %s port: %s", host, port))
     if err != nil {
-	    logger.Error("Failed to split host and port: %v", err)
+	    logger.Error("Failed to split host and port: ", err)
 	    newChannel.Reject(ssh.ConnectionFailed, err.Error())
 	    return
     }
