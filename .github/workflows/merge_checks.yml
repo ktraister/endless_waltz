@@ -91,3 +91,27 @@ jobs:
           file: ./endless_waltz/exchange/Dockerfile
           push: false
 
+  proxy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+
+      - name: Go Build and Test
+        run: | 
+          export GOOS=linux
+          export GOARCH=amd64
+          export CGO_ENABLED=0
+          cd ./endless_waltz/proxy
+          go test -v
+          go build -tags netgo -a -v .
+
+      - name: Build and push docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: ./endless_waltz/proxy
+          file: ./endless_waltz/proxy/Dockerfile
+          push: false
+
