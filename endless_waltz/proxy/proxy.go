@@ -5,8 +5,6 @@ import (
     "os"
     "io"
     "net"
-    "net/http"
-    "strings"
     "crypto/sha512"
     "encoding/hex" 
 
@@ -40,14 +38,7 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig, logger *logrus.Lo
     }
 }
 
-func splitHostPort(data string) (string, string) {
-    data = strings.Split(data, "r")[0]
-    data = strings.Split(data, "\\")[0]
-    return data, "80"
-}
-
 func handleChannel(newChannel ssh.NewChannel, logger *logrus.Logger) {
-    logger.Error(newChannel.ChannelType())
     if newChannel.ChannelType() != "direct-tcpip" {
         logger.Debug("Unsupported channel type")
         newChannel.Reject(ssh.UnknownChannelType, "unsupported channel type")
@@ -62,18 +53,6 @@ func handleChannel(newChannel ssh.NewChannel, logger *logrus.Logger) {
 
     host := "endlesswaltz.xyz"
     port := "443"
-    logger.Debug(fmt.Sprintf("net.Split --> host: %s port: %s", host, port))
-    if err != nil {
-	    logger.Error("Failed to split host and port: ", err)
-	    newChannel.Reject(ssh.ConnectionFailed, err.Error())
-	    return
-    }
-
-    req := &http.Request{
-	    Method: "CONNECT",
-	    Host:   net.JoinHostPort(host, port),
-    }       
-
     destConn, err := net.Dial("tcp", net.JoinHostPort(host, port))
     if err != nil {
 	    logger.Error("Failed to dial destination: ", err)
@@ -81,7 +60,7 @@ func handleChannel(newChannel ssh.NewChannel, logger *logrus.Logger) {
 	    return
     }
     
-    logger.Debug("Proxying HTTPS connection to ", req.Host)
+    logger.Debug("Proxying HTTPS connection for ", channel)
     
 
     go func() {
