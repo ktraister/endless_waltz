@@ -65,6 +65,7 @@ services:
     build:
       context: proxy 
     environment:
+      ENV: local
       ProxyTo: nginx:443
       MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser

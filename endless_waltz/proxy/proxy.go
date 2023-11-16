@@ -53,6 +53,11 @@ func handleChannel(newChannel ssh.NewChannel, user string, logger *logrus.Logger
 
 	host := "endlesswaltz.xyz"
 	port := "443"
+
+	if os.Getenv("ENV") == "local" {
+	    host = "localhost"
+        }
+
 	destConn, err := net.Dial("tcp", net.JoinHostPort(host, port))
 	if err != nil {
 		logger.Error("Failed to dial destination: ", err)
@@ -94,7 +99,7 @@ func main() {
 	//SSH server configuration
 	sshConfig := &ssh.ServerConfig{
 		PasswordCallback: func(c ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
-			if checkAuth(c.User(), hashPass(password), logger) {
+			if checkAuth(c.User(), string(password), logger) {
 				return nil, nil
 			}
 			return nil, fmt.Errorf("Password incorrect")
