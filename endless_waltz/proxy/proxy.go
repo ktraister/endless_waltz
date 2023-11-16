@@ -61,15 +61,19 @@ func handleChannel(newChannel ssh.NewChannel, logger *logrus.Logger) {
     }
     
     logger.Debug("Proxying HTTPS connection for ", channel)
-    
 
     go func() {
-	    defer channel.Close()
-	    defer destConn.Close()
-
-	    go io.Copy(destConn, channel)
-	    io.Copy(channel, destConn)
+	    _, err := io.Copy(destConn, channel)
+	    if err != nil {
+		    fmt.Println("Error copying data from destination to client:", err)
+	    }
     }()
+     
+    _, err = io.Copy(channel, destConn)
+    if err != nil {
+	    fmt.Println("Error copying data from client to destination:", err)
+    }
+
 
     go func() {
 	    for req := range requests {
