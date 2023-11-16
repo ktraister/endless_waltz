@@ -55,7 +55,7 @@ func handleChannel(newChannel ssh.NewChannel, user string, logger *logrus.Logger
 	port := "443"
 
 	if os.Getenv("ENV") == "local" {
-	    host = "localhost"
+	    host = "nginx"
         }
 
 	destConn, err := net.Dial("tcp", net.JoinHostPort(host, port))
