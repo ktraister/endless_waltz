@@ -66,6 +66,13 @@ func checkAuth(user string, passwd string, logger *logrus.Logger) bool {
 		return false
 	}
 
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+		    logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
+
 	auth_db := client.Database("auth").Collection("keys")
 
 	// Check if the item exists in the collection
