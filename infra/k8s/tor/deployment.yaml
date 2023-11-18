@@ -21,6 +21,13 @@ spec:
         - name: tor
           securityContext:
             privileged: true
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "64m"
+            limits:
+              memory: "256Mi"
+              cpu: "128m"
           image: "ghcr.io/ktraister/ew_tor:GITHUB_SHA"
           imagePullPolicy: Always
           volumeMounts:

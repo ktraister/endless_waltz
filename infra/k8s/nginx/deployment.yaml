@@ -17,6 +17,13 @@ spec:
       serviceAccountName: nginx
       containers:
         - name: nginx
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "64m"
+            limits:
+              memory: "128Mi"
+              cpu: "128m"
           securityContext:
             privileged: true
           image: "nginx:1.25-alpine"
