@@ -17,6 +17,13 @@ spec:
     spec:
       containers:
       - image: mongo:4.2.23-bionic
+        resources:
+          requests:
+            memory: "3072Mi"
+            cpu: "1500m"
+          limits:
+            memory: "4096Mi"
+            cpu: "2000m"
         name: mongo
         args: ["--dbpath","/data/db"]
         livenessProbe:
