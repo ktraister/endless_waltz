@@ -21,6 +21,13 @@ spec:
         - name: ew-proxy
           securityContext:
             privileged: true
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "64m"
+            limits:
+              memory: "128Mi"
+              cpu: "128m"
           image: "ghcr.io/ktraister/ew_proxy:GITHUB_SHA"
           imagePullPolicy: Always
           env:

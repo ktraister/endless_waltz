@@ -21,6 +21,13 @@ spec:
         - name: ew-webapp
           securityContext:
             privileged: true
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "128m"
+            limits:
+              memory: "256Mi"
+              cpu: "256m"
           image: "ghcr.io/ktraister/ew_webapp:GITHUB_SHA"
           imagePullPolicy: Always
           env:
