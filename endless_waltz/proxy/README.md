@@ -4,11 +4,8 @@ firewall. Like the one here in rm 224 Hilton.
 
 Connection using ssh:
 ```
-#this command works for proxying through ssh
-ssh -v -NTD 127.0.0.1:9090 shenlong
-
-#this command should work for my service
-ssh -v -NTD 127.0.0.1:9090 zero@localhost -p 2222
+Ended up using this command instead to forward a single port-to-port:
+ssh -v -L 9090:endlesswaltz.xyz:443 zero53@localhost -p 2222
 ```
 
 ## Operation

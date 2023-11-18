@@ -20,6 +20,7 @@ The purpose of this route is to provide the client with an easy way to test
 it's credentials for authentication & authorization. Hitting this route also
 proves to the client that the RandomAPI is prepared to handle traffic.
 
+---
 This code was mothballed when Kyber was rolled out :)
 ```
 #### /api/otp (POST)
