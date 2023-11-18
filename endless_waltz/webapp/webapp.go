@@ -325,6 +325,13 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
+ 
+	ok = rateLimit(req.FormValue("username"), 1) 
+        if !ok {
+                http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)          
+                logger.Info("request denied 429 rate limit")
+                return
+        }
 
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("username"))

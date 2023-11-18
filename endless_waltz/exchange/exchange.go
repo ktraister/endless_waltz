@@ -41,6 +41,13 @@ func listUsers(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	ok = rateLimit(req.Header.Get("User"), 2)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
 	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
@@ -78,6 +85,13 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user := strings.Split(r.Header.Get("User"), "_")[0]
+
+	ok = rateLimit(user, 2)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
 
 	ok = checkAuth(user, r.Header.Get("Passwd"), logger)
 	if !ok {
