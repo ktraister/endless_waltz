@@ -86,7 +86,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 	user := strings.Split(r.Header.Get("User"), "_")[0]
 
-	ok = rateLimit(user, 2)
+	ok = rateLimit(user, 3)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
