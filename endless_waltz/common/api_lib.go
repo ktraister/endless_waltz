@@ -25,7 +25,7 @@ type rl struct {
 
 var rateLimitMap = map[string]rl{}
 
-func rateLimit(user string) bool {
+func rateLimit(user string, limit int) bool {
 	userRL, ok := rateLimitMap[user]
 	now := time.Now().Unix()
 	//we didn't find the item, no limit
@@ -41,7 +41,7 @@ func rateLimit(user string) bool {
 	}
 
 	//request count has reached threshold (5reqs/1sec)
-	if userRL.requests == 5 {
+	if userRL.requests == limit {
 		return false
 	} else {
 		//increment and return
@@ -69,7 +69,7 @@ func checkAuth(user string, passwd string, logger *logrus.Logger) bool {
 	// Defer the close operation to ensure the client is closed when the main function exits
 	defer func() {
 		if err := client.Disconnect(ctx); err != nil {
-		    logger.Error("error in deferred mongo cleanup func: ", err)
+			logger.Error("error in deferred mongo cleanup func: ", err)
 		}
 	}()
 

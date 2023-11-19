@@ -326,6 +326,9 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Get username and password from the form
+	username := strings.ToLower(req.FormValue("username"))
+ 
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("username"))
 	if !ok {
@@ -333,8 +336,12 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// Get username and password from the form
-	username := strings.ToLower(req.FormValue("username"))
+	ok = rateLimit(req.FormValue("username"), 1) 
+        if !ok {
+                http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)          
+                logger.Info("request denied 429 rate limit")
+                return
+        }
 
 	//create our hasher to hash our pass
 	hash := sha512.New()
