@@ -41,6 +41,18 @@ This section has the service files that define the state for the k8s services.
 These files will be applied on our new cloud infra! To finish. follow the directions 
 in the [the K8s Infra README.md](./k8s/README.md)
 
+### Firewall
+The current architecture has the exposed nginx service running on 80, 443, and 8080.
+This is required in order to redirect traffic from one node to another, but
+also opens the possiblitiy of external clients hitting the load balancer on port 80. 
+This should not be allowed. Inbound access should be limited at the firewall
+```
+Allowed Ports:
+  80 - NGINX HTTPS redirect
+ 443 - NGINX HTTPS
+2222 - EW-Proxy 
+```
+
 ## Architecture
 ### Current (POC)
 The POC Infra is currently active. It is true to this diagram:
