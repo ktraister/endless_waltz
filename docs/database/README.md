@@ -41,8 +41,10 @@ db.keys.find({})
 Mongo Backups are handled by a github actions script, and then pushed to s3
 ```
 #dump command
-kubectl exec mongo-659c8dc68-mswzv -- /usr/bin/mongodump --archive --authenticationDatabase admin -u $USER -p $PASSWD --db keys > db.dump
+kubectl exec mongo-659c8dc68-mswzv -- /usr/bin/mongodump --archive --authenticationDatabase admin -u $USER -p $PASSWD > db.dump
 
 #restore command
-kubectl exec mongo-659c8dc68-mswzv -- /usr/bin/mongorestore --archive --authenticationDatabase admin -u $USER -p $PASSWD --db keys < db.dump
+docker cp db.dump 864ee1eeb02c:/tmp/db.dump
+  Successfully copied 5.12kB to 864ee1eeb02c:/tmp/db.dump
+docker exec 864ee1eeb02c /usr/bin/mongorestore --authenticationDatabase admin -u $USER -p $PASS --archive=/tmp/db.dump
 ```
