@@ -37,6 +37,7 @@ type sessionData struct {
 	IsAuthenticated bool
 	Username        string
 	Captcha         bool
+	CaptchaFail     bool
 	TemplateTag     string
 }
 
@@ -51,6 +52,7 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	//BUG -- session is overwritten on every load, insecure and causing error display behaviour to go weird
 	var data sessionData
 	// Define a data struct for the template
 	if session.Values["username"] != nil {
@@ -73,6 +75,11 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 	if file == "/signUp" || file == "/forgotPassword" {
 		data.Captcha = true
 	}
+
+	//add capcha fail if needed
+	if session.Values["CaptchaFail"] == true {
+	        data.CaptchaFail = true
+        }
 
 	// Execute the template with the data and write it to the response
 	err = t.ExecuteTemplate(w, "base", data)
@@ -171,8 +178,15 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	session, err := store.Get(req, "session-name")
+	if err != nil {
+		logger.Error("Could not get session in logoutPageHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
 	// Parse form data
-	err := req.ParseForm()
+	err = req.ParseForm()
 	if err != nil {
 		logger.Error("Failed to parse form data in signUpHandler")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -215,7 +229,8 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	if !ok {
 		logger.Warn("Captcha check invalid for: ", username)
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		session.Values["CaptchaFail"] = true
+        	http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
 	}
 
@@ -246,33 +261,14 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		var result bson.M
 		err := auth_db.FindOne(ctx, filter).Decode(&result)
 		if err != mongo.ErrNoDocuments {
-			data := sessionData{
-				Username: "",
-				Captcha:  true,
-			}
 			switch i {
 			case 0:
-				data.Username = username
+				session.Values["Username"] = username
 				//removed email check for now
 				//case 1:
 				//    data.Email = req.FormValue("email")
 			}
-			//template out the page here
-			t, err := template.New("").ParseFiles("pages/base.tmpl", "pages/signUp.tmpl")
-			if err != nil {
-				logger.Error("failed to parse template")
-				http.Redirect(w, req, "/error", http.StatusSeeOther)
-				return
-			}
-
-			// Execute the template with the data and write it to the response
-			err = t.ExecuteTemplate(w, "base", data)
-			if err != nil {
-				logger.Error("Failed to execute template: ", err)
-				http.Redirect(w, req, "/error", http.StatusSeeOther)
-				return
-			}
-
+			http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 			return
 		}
 	}
