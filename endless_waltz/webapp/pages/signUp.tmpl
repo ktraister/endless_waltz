@@ -29,6 +29,11 @@
           <span id="passwordConfirmError" style="color: red;"></span>
 	</div>
 	<br>
+        {{ if .CaptchaFail }}
+        <span id="captchaSubmitError" style="color: red;">Captcha check failed - please try again</span>
+	<br>
+	<br>
+        {{ end }}
 	<div class="g-recaptcha" data-sitekey="6LcQtnsoAAAAAB2DskA6q-uUKpzbyEFvAQ0Kjzcm"></div>
 	<br>
 	<p style="font-size: 10px;">By clicking "Sign Up", you agree with the <a href="/privacy_policy">privacy policy</a> and <a href="/terms_and_conditions">terms and conditions</a>.</p>
