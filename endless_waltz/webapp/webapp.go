@@ -52,23 +52,22 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	//BUG -- session is overwritten on every load, insecure and causing error display behaviour to go weird
+	//ensure values are set
+	if session.Values["username"] == nil {
+		session.Values["username"] = ""
+	}
+	if session.Values["authenticated"] == nil {
+		session.Values["authenticated"] = false
+	}
+	session.Save(req, w)
+
 	var data sessionData
 	// Define a data struct for the template
-	if session.Values["username"] != nil {
-		data = sessionData{
-			IsAuthenticated: true,
-			Username:        session.Values["username"].(string),
-			Captcha:         false,
-			TemplateTag:     csrf.Token(req),
-		}
-	} else {
-		data = sessionData{
-			IsAuthenticated: false,
-			Username:        "",
-			Captcha:         false,
-			TemplateTag:     csrf.Token(req),
-		}
+	data = sessionData{
+		IsAuthenticated: session.Values["authenticated"].(bool),
+		Username:        session.Values["username"].(string),
+		Captcha:         false,
+		TemplateTag:     csrf.Token(req),
 	}
 
 	//add recaptcha JS to pageif needed
@@ -78,8 +77,8 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 
 	//add capcha fail if needed
 	if session.Values["CaptchaFail"] == true {
-	        data.CaptchaFail = true
-        }
+		data.CaptchaFail = true
+	}
 
 	// Execute the template with the data and write it to the response
 	err = t.ExecuteTemplate(w, "base", data)
@@ -159,13 +158,12 @@ func logoutPageHandler(w http.ResponseWriter, req *http.Request) {
 
 	//end their session
 	session.Options.MaxAge = -1
+	session.Values["authenticated"] = false
 	err = session.Save(req, w)
 	if err != nil {
 		logger.Error("Unable to delete session")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 	}
-
-	session.Values["authenticated"] = false
 
 	parseTemplate(logger, w, req, session, "logOutSuccess")
 }
@@ -230,9 +228,15 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	if !ok {
 		logger.Warn("Captcha check invalid for: ", username)
 		session.Values["CaptchaFail"] = true
-        	http.Redirect(w, req, "/signUp", http.StatusSeeOther)
+		session.Save(req, w)
+		logger.Debug("CaptchaFail, redirecting: ", session.Values["CaptchaFail"])
+		http.Redirect(w, req, "/signUp", http.StatusFound)
 		return
 	}
+
+	//reset session values just in case
+	session.Values["CaptchaFail"] = false
+	session.Save(req, w)
 
 	//setup database access
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
@@ -263,12 +267,14 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		if err != mongo.ErrNoDocuments {
 			switch i {
 			case 0:
-				session.Values["Username"] = username
+				session.Values["username"] = username
 				//removed email check for now
 				//case 1:
 				//    data.Email = req.FormValue("email")
 			}
-			http.Redirect(w, req, "/signUp", http.StatusSeeOther)
+			session.Save(req, w)
+			logger.Debug("username in use: ", username)
+			http.Redirect(w, req, "/signUp", http.StatusFound)
 			return
 		}
 	}
@@ -324,7 +330,7 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 
 	// Get username and password from the form
 	username := strings.ToLower(req.FormValue("username"))
- 
+
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("username"))
 	if !ok {
@@ -332,12 +338,12 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.FormValue("username"), 1) 
-        if !ok {
-                http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)          
-                logger.Info("request denied 429 rate limit")
-                return
-        }
+	ok = rateLimit(req.FormValue("username"), 1)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
 
 	//create our hasher to hash our pass
 	hash := sha512.New()
