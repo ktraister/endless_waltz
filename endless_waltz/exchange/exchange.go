@@ -111,13 +111,13 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	clients.Range(func(key, value interface{}) bool {
 		client := key.(*Client)
 		if client.Username == r.Header.Get("User") {
+		        logger.Warn(fmt.Sprintf("Client %s is already connected, bouncing", client.Username))
 			bounceFlag = true
 			return false
 		}
 		return true
 	})
 	if bounceFlag {
- 	        logger.Warn(fmt.Sprintf("Client %s is already connected, bouncing", client.Username))
 		return
 	}
 
