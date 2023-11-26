@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"os"
-	"strings"
-
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
+	"golang.org/x/sync/syncmap"
+	"net/http"
+	"os"
+	"strings"
 )
 
 type Client struct {
@@ -25,7 +26,7 @@ type Message struct {
 	Msg  string `json:"msg,omitempty"`
 }
 
-var clients = make(map[*Client]bool)
+var clients = syncmap.Map{}
 var broadcast = make(chan Message)
 
 var upgrader = websocket.Upgrader{
@@ -56,18 +57,22 @@ func listUsers(w http.ResponseWriter, req *http.Request) {
 	}
 
 	// Create a map to store the slice values
-	userMap := make(map[string]struct{})
-	for c, _ := range clients {
-		user := strings.Split(c.Username, "_")[0]
+	users := []string{}
+	clients.Range(func(key, value interface{}) bool {
+		client := key.(*Client)
+		user := strings.Split(client.Username, "_")[0]
 		// Check if an item is in the slice
-		if _, found := userMap[user]; !found {
+		if !slices.Contains(users, user) {
 			logger.Debug("Adding to userlist: ", user)
-			userMap[user] = struct{}{}
+			users = append(users, user)
 		}
-	}
+
+		// this will continue iterating
+		return true
+	})
 
 	userList := ""
-	for user, _ := range userMap {
+	for _, user := range users {
 		userList = userList + user + ":"
 	}
 
@@ -102,11 +107,18 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 	// Ensure client not already connected!
 	// Bad things happen :)
-	for c, _ := range clients {
-		if c.Username == r.Header.Get("User") {
-			logger.Warn(fmt.Sprintf("Client %s is already connected, bouncing", c.Username))
-			return
+	bounceFlag := false
+	clients.Range(func(key, value interface{}) bool {
+		client := key.(*Client)
+		if client.Username == r.Header.Get("User") {
+			bounceFlag = true
+			return false
 		}
+		return true
+	})
+	if bounceFlag {
+ 	        logger.Warn(fmt.Sprintf("Client %s is already connected, bouncing", client.Username))
+		return
 	}
 
 	// upgrade this connection to a WebSocket
@@ -118,15 +130,15 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 	// register client
 	client := &Client{Conn: ws}
-	clients[client] = true
-	logger.Info("clients", len(clients), clients, ws.RemoteAddr())
+	clients.Store(client, true)
+	logger.Info("registered new client; ", client, ws.RemoteAddr())
 
 	// listen indefinitely for new messages coming
 	// through on our WebSocket connection
 	receiver(r.Header.Get("User"), client, logger)
 
 	logger.Debug("exiting", ws.RemoteAddr().String())
-	delete(clients, client)
+	clients.Delete(client)
 }
 
 func receiver(user string, client *Client, logger *logrus.Logger) {
@@ -173,7 +185,8 @@ func broadcaster(logger *logrus.Logger) {
 		}
 		sendFlag := 0
 		clientStr := ""
-		for client := range clients {
+		clients.Range(func(key, value interface{}) bool {
+			client := key.(*Client)
 			// send message only to involved users
 			if client.Username == message.To {
 				logger.Debug(fmt.Sprintf("Sending message '%s' to client '%s'", message, client.Username))
@@ -181,16 +194,19 @@ func broadcaster(logger *logrus.Logger) {
 				if err != nil {
 					logger.Error("Websocket error: ", err)
 					client.Conn.Close()
-					delete(clients, client)
+					clients.Delete(key)
 				}
 				sendFlag = 1
+				return false
 			}
 			clientStr = clientStr + "," + client.Username
-		}
+			return true
+		})
 		if sendFlag == 0 {
 			logger.Info(fmt.Sprintf("Message '%s' was blackholed because '%s' was not matched in '%s'", message, message.To, clientStr))
 			//let the client know here
-			for client := range clients {
+			clients.Range(func(key, value interface{}) bool {
+				client := key.(*Client)
 				// send message only to involved users
 				if client.Username == message.From {
 					logger.Debug(fmt.Sprintf("Sending blackhole message to client '%s'", client.Username))
@@ -199,10 +215,11 @@ func broadcaster(logger *logrus.Logger) {
 					if err != nil {
 						logger.Error("Websocket error: ", err)
 						client.Conn.Close()
-						delete(clients, client)
+						clients.Delete(key)
 					}
 				}
-			}
+				return true
+			})
 		}
 	}
 }
