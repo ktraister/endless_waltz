@@ -9,6 +9,9 @@
 	  <input type="text" name="email" class="form-control" id="floatingEmail" placeholder="Email" required>
 	  <label for="floatingEmail">Email</label>
     	  <span id="emailError" style="color: red;"></span>
+	  {{ if ne .Email "" }}
+    	  <span id="userSubmitError" style="color: red;">Email '{{.Email}}' is already in use.</span>
+	  {{ end }}
 	</div>
 	<div class="form-floating">
 	  <input type="text" name="username" class="form-control" id="floatingUser" placeholder="Username" required>
