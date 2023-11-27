@@ -2,6 +2,7 @@ on:
   push:
     paths:
       - endless_waltz/random/**
+      - endless_waltz/common/**
       - infra/k8s/random/**
     branches:
       - "main"

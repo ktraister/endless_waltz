@@ -99,10 +99,10 @@ func main() {
 	//SSH server configuration
 	sshConfig := &ssh.ServerConfig{
 		PasswordCallback: func(c ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
-		        if !rateLimit(c.User(), 1) {
-			        return nil, fmt.Errorf("RateLimit")
-                        } 
-		        if checkAuth(c.User(), string(password), logger) {
+			if !rateLimit(c.User(), 1) {
+				return nil, fmt.Errorf("RateLimit")
+			}
+			if checkAuth(c.User(), string(password), logger) {
 				return nil, nil
 			}
 			return nil, fmt.Errorf("Password incorrect")

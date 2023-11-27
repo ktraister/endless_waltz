@@ -2,6 +2,7 @@ on:
   push:
     paths:
       - endless_waltz/proxy/**
+      - endless_waltz/common/**
       - infra/k8s/proxy/**
     branches:
       - "main"
