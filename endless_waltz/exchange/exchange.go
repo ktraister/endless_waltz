@@ -11,11 +11,13 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type Client struct {
 	Conn     *websocket.Conn
 	Username string
+	LastPing int64
 }
 
 type Message struct {
@@ -28,6 +30,7 @@ type Message struct {
 
 var clients = syncmap.Map{}
 var broadcast = make(chan Message)
+var ping = make(chan Message)
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -129,7 +132,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// register client
-	client := &Client{Conn: ws}
+	client := &Client{Conn: ws, LastPing: time.Now().Unix()}
 	clients.Store(client, true)
 	logger.Info("registered new client; ", client, ws.RemoteAddr())
 
@@ -168,10 +171,46 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 			// do mapping on startup
 			client.Username = m.User
 			logger.Info("client successfully mapped", &client, client)
+		} else if m.Type == "ping" {
+			logger.Debug("received ping, handling: ", m)
+			ping <- *m
 		} else {
 			logger.Debug("received message, broadcasting: ", m)
 			broadcast <- *m
 		}
+	}
+}
+
+func pingRec(logger *logrus.Logger) {
+	for {
+		message := <-ping
+		now := time.Now().Unix()
+		clients.Range(func(key, value interface{}) bool {
+			client := key.(*Client)
+			// send message only to involved users
+			if client.Username == message.From {
+				//client should write keepalive time
+				client.LastPing = now
+			}
+			return true
+		})
+	}
+}
+
+func reaper(logger *logrus.Logger) {
+	for {
+		now := time.Now().Unix()
+		clients.Range(func(key, value interface{}) bool {
+			client := key.(*Client)
+			// send message only to involved users
+			if client.LastPing-now > 10 {
+				client.Conn.Close()
+				clients.Delete(key)
+				logger.Warn("deleting stale conn for ", client.Username)
+			}
+			return true
+		})
+		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -235,6 +274,8 @@ func main() {
 	logger.Info("Exchange Server finished starting up!")
 
 	go broadcaster(logger)
+	go pingRec(logger)
+	go reaper(logger)
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
