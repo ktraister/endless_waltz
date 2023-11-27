@@ -39,6 +39,7 @@ type sessionData struct {
 	Captcha         bool
 	CaptchaFail     bool
 	TemplateTag     string
+	Email           string
 }
 
 func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Request, session *sessions.Session, file string) {
@@ -68,6 +69,7 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 		Username:        session.Values["username"].(string),
 		Captcha:         false,
 		TemplateTag:     csrf.Token(req),
+		Email:           session.Values["email"].(string),
 	}
 
 	//add recaptcha JS to pageif needed
@@ -124,12 +126,7 @@ func staticTemplateHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := store.Get(req, "session-name")
-	if err != nil {
-		logger.Error("Could not get session in staticTemplateHandler!")
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
-		return
-	}
+	session, _ := store.Get(req, "session-name")
 
 	path := ""
 	if req.URL.Path == "/" {
@@ -258,7 +255,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	//extensible for other db checks into the future
 	//check database to ensure username/email ! already exists
 	//removed email check for now. Have as many accts as you want
-	filters := []primitive.M{bson.M{"User": username}} //bson.M{"Email": req.FormValue("email")},
+	filters := []primitive.M{bson.M{"User": username}, bson.M{"Email": req.FormValue("email")}}
 
 	//run our extensible DB checks
 	for i, filter := range filters {
@@ -268,12 +265,12 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 			switch i {
 			case 0:
 				session.Values["username"] = username
-				//removed email check for now
-				//case 1:
-				//    data.Email = req.FormValue("email")
+				logger.Debug("username in use: ", username)
+			case 1:
+				session.Values["email"] = req.FormValue("email")
+				logger.Debug("email in use: ", req.FormValue("email"))
 			}
 			session.Save(req, w)
-			logger.Debug("username in use: ", username)
 			http.Redirect(w, req, "/signUp", http.StatusFound)
 			return
 		}
