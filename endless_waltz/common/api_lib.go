@@ -3,15 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"time"
-
+	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	"github.com/gorilla/mux"
-	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/syncmap"
+	"net/http"
+	"time"
 )
 
 var MongoURI string
@@ -23,20 +22,23 @@ type rl struct {
 	requests        int
 }
 
-var rateLimitMap = map[string]rl{}
+var rateLimitMap = syncmap.Map{}
 
 func rateLimit(user string, limit int) bool {
-	userRL, ok := rateLimitMap[user]
+	value, ok := rateLimitMap.Load(user)
 	now := time.Now().Unix()
 	//we didn't find the item, no limit
 	if !ok {
-		rateLimitMap[user] = rl{lastRequestTime: now, requests: 1}
+		rateLimitMap.Store(user, rl{lastRequestTime: now, requests: 1})
 		return true
 	}
 
+	//typecase here once we're sure we got a struct back
+	userRL := value.(rl)
+
 	//no requests yet this second, no limit
 	if userRL.lastRequestTime != now {
-		rateLimitMap[user] = rl{lastRequestTime: now, requests: 1}
+		rateLimitMap.Store(user, rl{lastRequestTime: now, requests: 1})
 		return true
 	}
 
@@ -46,7 +48,7 @@ func rateLimit(user string, limit int) bool {
 	} else {
 		//increment and return
 		r := userRL.requests + 1
-		rateLimitMap[user] = rl{lastRequestTime: now, requests: r}
+		rateLimitMap.Store(user, rl{lastRequestTime: now, requests: r})
 		return true
 	}
 }

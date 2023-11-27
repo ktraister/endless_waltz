@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-
 func health_handler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {

@@ -2,6 +2,7 @@ on:
   push:
     paths:
       - endless_waltz/webapp/**
+      - endless_waltz/common/**
       - infra/k8s/webapp/**
     branches:
       - "main"

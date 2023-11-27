@@ -2,6 +2,7 @@ on:
   push:
     paths:
       - endless_waltz/exchange/**
+      - endless_waltz/common/**
       - infra/k8s/exchange/**
     branches:
       - "main"
