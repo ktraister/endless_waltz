@@ -60,6 +60,10 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 	if session.Values["authenticated"] == nil {
 		session.Values["authenticated"] = false
 	}
+	if session.Values["email"] == nil {
+		session.Values["email"] = ""
+	}
+
 	session.Save(req, w)
 
 	var data sessionData
