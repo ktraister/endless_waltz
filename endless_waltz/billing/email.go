@@ -36,7 +36,7 @@ func templateEmail(logger *logrus.Logger, path string, data emailData) (string, 
 	return rendered.String(), nil
 }
 
-func sendCryptoBillingEmail(logger *logrus.Logger, username string, targetUser string, token string) error {
+func sendCryptoBillingEmail(logger *logrus.Logger, username string, targetUser string, token string) {
 	emailUser := os.Getenv("EmailUser")
 	emailPass := os.Getenv("EmailPass")
 
@@ -57,8 +57,7 @@ func sendCryptoBillingEmail(logger *logrus.Logger, username string, targetUser s
 
 	emailContent, err := templateEmail(logger, "billingTemplate", emailData)
 	if err != nil {
-		logger.Error("Unable to template email")
-		return err
+		logger.Error("Unable to template email: ", err)
 	}
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
@@ -72,14 +71,11 @@ func sendCryptoBillingEmail(logger *logrus.Logger, username string, targetUser s
 	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
 
 	if err != nil {
-		logger.Error("unable to send email to gmail server")
-		return err
+		logger.Error("unable to send email to gmail server: ", err)
 	}
-
-	return nil
 }
 
-func sendCryptoBillingReminder(logger *logrus.Logger, username string, targetUser string, token string) error {
+func sendCryptoBillingReminder(logger *logrus.Logger, username string, targetUser string, token string) {
 	emailUser := os.Getenv("EmailUser")
 	emailPass := os.Getenv("EmailPass")
 
@@ -100,8 +96,7 @@ func sendCryptoBillingReminder(logger *logrus.Logger, username string, targetUse
 
 	emailContent, err := templateEmail(logger, "billingReminderTemplate", emailData)
 	if err != nil {
-		logger.Error("Unable to template email")
-		return err
+		logger.Error("Unable to template email: ", err)
 	}
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
@@ -115,14 +110,11 @@ func sendCryptoBillingReminder(logger *logrus.Logger, username string, targetUse
 	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
 
 	if err != nil {
-		logger.Error("unable to send email to gmail server")
-		return err
+		logger.Error("unable to send email to gmail server: ", err)
 	}
-
-	return nil
 }
 
-func sendCryptoBillingDisabled(logger *logrus.Logger, username string, targetUser string, token string) error {
+func sendCryptoBillingDisabled(logger *logrus.Logger, username string, targetUser string, token string) {
 	emailUser := os.Getenv("EmailUser")
 	emailPass := os.Getenv("EmailPass")
 
@@ -143,8 +135,7 @@ func sendCryptoBillingDisabled(logger *logrus.Logger, username string, targetUse
 
 	emailContent, err := templateEmail(logger, "disableTemplate", emailData)
 	if err != nil {
-		logger.Error("Unable to template email")
-		return err
+		logger.Error("Unable to template email: ", err)
 	}
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
@@ -158,9 +149,9 @@ func sendCryptoBillingDisabled(logger *logrus.Logger, username string, targetUse
 	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
 
 	if err != nil {
-		logger.Error("unable to send email to gmail server")
-		return err
+		logger.Error("unable to send email to gmail server: ", err)
 	}
 
-	return nil
 }
+
+//send crypto payment thank you email

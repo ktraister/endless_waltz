@@ -54,11 +54,14 @@ services:
     build:
       context: billing
     environment:
+      ENV: local
       MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
       CoinbaseAPIKey: ${CoinbaseAPIKey}
+      EmailUser: ${EmailUser}
+      EmailPass: ${EmailPass}
         #entrypoint: "ash -c"
         #command: "exit 0"
         

@@ -142,6 +142,8 @@ func cryptoBillingInit(logger *logrus.Logger) {
 
 	db := client.Database("auth").Collection("keys")
 
+	//ADD CHECK FOR CYCLE END!!
+	today := time.Now().Format("01-02-2006")
 	//find all records where Active:true, cryptoBilling:true, billingEmailSent: false, billingCyclePaid: false
 	filter := bson.M{"Active": true, "cryptoBilling": true, "billingEmailSent": false, "billingCyclePaid": false}
 
@@ -164,20 +166,23 @@ func cryptoBillingInit(logger *logrus.Logger) {
 			continue
 		}
 
-		//send the INIT billing email
-		sendCryptoBillingEmail(logger, result["User"].(string), result["Email"].(string), result["billingToken"].(string))
+		billingToken := generateToken()
 
 		//set billingEmailSent true
 		updateFilter := bson.M{"_id": result["_id"]}
 		update := bson.M{
 			"$set": bson.M{
 				"billingEmailSent": true,
+				"billingToken": billingToken,
 			},
 		}
 		_, err = db.UpdateOne(ctx, updateFilter, update)
 		if err != nil {
 			logger.Error("Init mongo update error: ", err)
 		}
+
+		//send the INIT billing email
+		sendCryptoBillingEmail(logger, result["User"].(string), result["Email"].(string), billingToken)
 	}
 
 	// Check for errors during cursor iteration
@@ -212,6 +217,8 @@ func cryptoBillingReminder(logger *logrus.Logger) {
 
 	db := client.Database("auth").Collection("keys")
 
+	//ADD CHECK FOR CYCLE END!!
+	today := time.Now().Format("01-02-2006")
 	//find all records where Active:true, cryptoBilling:true, billingEmailSent: true, billingReminderSent, false, billingCyclePaid:false
 	filter := bson.M{"Active": true, "cryptoBilling": true, "billingEmailSent": true, "billingReminderSent": false, "billingCyclePaid": false}
 
@@ -341,7 +348,7 @@ func main() {
 	LogType := os.Getenv("LogType")
 
 	logger := createLogger(LogLevel, LogType)
-	logger.Info("Random Server finished starting up!")
+	logger.Info("Billing binary finished starting up!")
 
 	//crypto billing
 	//crypto resolve payments
