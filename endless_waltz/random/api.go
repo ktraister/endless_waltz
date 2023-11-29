@@ -114,7 +114,7 @@ func crypto_handler(w http.ResponseWriter, req *http.Request) {
 	//https://docs.cloud.coinbase.com/commerce/reference/createcharge
 	httpClient := &http.Client{}
 
-	payload := strings.NewReader(`{"name":"username"}`)
+	payload := strings.NewReader(`{"name":"Endless Waltz Monthly Payment","pricing_type":"fixed_price","local_price":{"amount":"2.99","currency":"USD"}}`)
 
 	cReq, err := http.NewRequest("POST", "https://api.commerce.coinbase.com/charges", payload)
 	if err != nil {
@@ -144,7 +144,7 @@ func crypto_handler(w http.ResponseWriter, req *http.Request) {
 	fmt.Println(string(body))
 
 	//redirect the user
-
+	http.Redirect(w, req, body["data"]["redirect_url"], http.StatusSeeOther)
 }
 
 func main() {

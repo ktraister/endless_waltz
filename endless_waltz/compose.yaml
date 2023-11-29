@@ -27,6 +27,7 @@ services:
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
+      CoinbaseAPIKey: ${CoinbaseAPIKey}
 
   ew-webapp:
     depends_on:
@@ -45,6 +46,21 @@ services:
       LogLevel: Debug
       EmailUser: ${EmailUser}
       EmailPass: ${EmailPass}
+
+  ew-billing:
+    depends_on:
+      mongo:
+        condition: service_started
+    build:
+      context: billing
+    environment:
+      MongoURI: mongodb://mongo:27017/
+      MongoUser: adminuser
+      MongoPass: password123
+      LogLevel: Debug
+      CoinbaseAPIKey: ${CoinbaseAPIKey}
+        #entrypoint: "ash -c"
+        #command: "exit 0"
         
   ew-exchange:
     depends_on:
