@@ -1,11 +1,45 @@
-### MongoDB
+# MongoDB
 MongoDB is a NoSQL database known for high speed and flexibility. It serves as 
 the persistent data store for one-time pads and user authentication data. 
 
 ## Application
-The application uses two distinct database collections within Mongo:
-`auth` and `otp`. `auth` is used for storing user credentials, whose records
+The application uses one distinct database collections within Mongo:
+`auth`. `auth` is used for storing user credentials, whose records
 include notes and will eventually other information.  
+
+### Data Structure
+This is a single mongo record. Mongo does not force us into a rigid schema, 
+so this is the maximum that can be set by all application paths.
+```
+  {
+    //mongo specific id
+    _id: ObjectId('654d20acd11f0aaed34ff843'),
+
+    //account values -- active:false will disallow login
+    SignupTime: '1699553450',
+    Active: true,
+
+    //user credentials
+    Email: 'kayleigh.traister@gmail.com',
+    EmailVerifyToken: 'Z8HOJHZ...FCmrI1PS37',
+    User: 'zero53',
+    Passwd: '',
+
+    //password reset values
+    passwordResetTime: Long('1699553760'),
+    passwordResetToken: 'lnnpU...oSypNlf',
+
+    //billing values
+    cryptoBilling: true
+    stripeBilling: false
+    billingEmailSent: false            //crypto specific
+    billingReminderSent: false         //crypto specific
+    billingCycleEnd: '1-1-2024'          //MM-DD-YYYY
+    billingCyclePaid: true
+    billingCharge: '2E8YCQWQ',   //also crypto specific
+    billingToken: 'lnnpU...oSypNlf',   //also crypto specific
+  },
+```
 
 ## Infrastructure
 Currently, Mongo is served within K8s using a persistent volume claim to 
@@ -30,7 +64,7 @@ db.keys.insertOne({
     SignupTime: '1697504433',
     Active: true,
     Email: 'Kayleigh.traister@gmail.com',
-    EmailVerifyToken: 'N5ZJgRAWO0keQI81YGawv9xNxMc0EKjFgFAvzVwxPm9srDn7WzDS8M66AdAPpSiIWN3V4cF7BjD8VoLemsDa9P1bCeGGGnHHClDefAaIDcaZ6qFhQuCsqWSAOAUqJQPu',
+    EmailVerifyToken: 'N5ZJgRA...AOAUqJQPu',
     User: 'Kayleigh',
     Passwd: ''
 })

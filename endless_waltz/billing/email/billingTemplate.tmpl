@@ -1,0 +1,15 @@
+{{ define "content" }}
+<!-- I can do something here to format it differently for local testing -->
+<h1>Endless Waltz Monthly Crypto Billing</h1>
+<h2>Your account will be suspended in seven days if you do not make a payment</h2>
+<h2>Please use the button below to create a payment when you're ready.</h2>
+<h2>The billing page will be active for 1 hour after pressing the button.</h2>
+<form method="get" action="{{.FormHost}}/api/cryptoPayment" class="inline">
+  <input type="hidden" name="user" value="{{.Username}}">
+  <input type="hidden" name="email" value="{{.TargetUser}}">
+  <input type="hidden" name="token" value="{{.Token}}">
+  <button type="submit" class="btn btn-primary w-50 py-2">
+  Reset Password
+  </button>
+</form>
+{{end}}
