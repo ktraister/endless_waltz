@@ -39,6 +39,8 @@ so this is the maximum that can be set by all application paths.
     billingCharge: '2E8YCQWQ',   //also crypto specific
     billingToken: 'lnnpU...oSypNlf',   //also crypto specific
   },
+
+db.keys.updateOne( { User: "zero53" }, { $set: { "cryptoBilling": true, billingCycleEnd: "12-06-2023", billingEmailSent: false, billingCyclePaid: false, billingReminderSent: false }, $currentDate: { lastModified: true } } )
 ```
 
 ## Infrastructure
