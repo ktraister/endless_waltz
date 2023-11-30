@@ -13,8 +13,11 @@ spec:
           imagePullSecrets:
             - name: ghcrcred
           serviceAccountName: ew-billing
+          restartPolicy: OnFailure
           containers:
             - name: ew-billing
+              image: "ghcr.io/ktraister/ew_billing:GITHUB_SHA"
+              imagePullPolicy: Always
               securityContext:
                 privileged: true
               resources:
@@ -24,8 +27,6 @@ spec:
                 limits:
                   memory: "128Mi"
                   cpu: "128m"
-              image: "ghcr.io/ktraister/ew_billing:GITHUB_SHA"
-              imagePullPolicy: Always
               env:
                 - name: "MongoURI"
                   valueFrom:
