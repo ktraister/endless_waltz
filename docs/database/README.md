@@ -34,9 +34,9 @@ so this is the maximum that can be set by all application paths.
     stripeBilling: false
     billingEmailSent: false            //crypto specific
     billingReminderSent: false         //crypto specific
-    billingCycleEnd: '1-1-2024'          //MM-DD-YYYY
+    billingCycleEnd: '1-1-2024'        //MM-DD-YYYY
     billingCyclePaid: true
-    billingCharge: '2E8YCQWQ',   //also crypto specific
+    billingCharge: '2E8YCQWQ',         //also crypto specific
     billingToken: 'lnnpU...oSypNlf',   //also crypto specific
   },
 

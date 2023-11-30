@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
+	"encoding/json"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -94,21 +95,6 @@ func crypto_handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//update the billing token now that it's been used
-	updateFilter := bson.M{"_id": result["_id"]}
-	update := bson.M{
-		"$set": bson.M{
-			"Active":       false,
-			"billingToken": generateToken(),
-		},
-	}
-	_, err = db.UpdateOne(ctx, updateFilter, update)
-	if err != nil {
-		logger.Error("Disable mongo update error: ", err)
-		http.Error(w, "500 Error", http.StatusInternalServerError)
-		return
-	}
-
 	//create the billing charge
 	//https://docs.cloud.coinbase.com/commerce/docs/accepting-crypto#creating-a-charge
 	//https://docs.cloud.coinbase.com/commerce/reference/createcharge
@@ -140,11 +126,32 @@ func crypto_handler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "500 Error", http.StatusInternalServerError)
 		return
 	}
+	var cbResp map[string]interface{}
+	json.Unmarshal(body, &cbResp)
 
-	fmt.Println(string(body))
+        //need to check here if the api returned an error
+	if cbResp["error"] != nil {
+	        logger.Error("Error from coinbase API: ", cbResp["error"])
+		http.Error(w, "500 Error", http.StatusInternalServerError)
+		return
+        }
+
+	//update the billing token now that it's been used
+	updateFilter := bson.M{"_id": result["_id"]}
+	update := bson.M{
+		"$set": bson.M{
+    	                "billingCharge": cbResp["data"].(map[string]interface{})["code"],
+		},
+	}
+	_, err = db.UpdateOne(ctx, updateFilter, update)
+	if err != nil {
+		logger.Error("Disable mongo update error: ", err)
+		http.Error(w, "500 Error", http.StatusInternalServerError)
+		return
+	}
 
 	//redirect the user
-	http.Redirect(w, req, body["data"]["redirect_url"], http.StatusSeeOther)
+	http.Redirect(w, req, cbResp["data"].(map[string]interface{})["hosted_url"].(string), http.StatusSeeOther)
 }
 
 func main() {
@@ -160,7 +167,7 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
 	router.HandleFunc("/api/healthcheck", health_handler).Methods("GET")
-	router.HandleFunc("/api/cryptoBilling", crypto_handler).Methods("POST")
+	router.HandleFunc("/api/cryptoPayment", crypto_handler).Methods("GET")
 
 	http.ListenAndServe(":8090", router)
 }
