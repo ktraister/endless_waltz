@@ -287,9 +287,6 @@ func cryptoDisableAccount(logger *logrus.Logger) {
 
 	db := client.Database("auth").Collection("keys")
 
-	//find all records where Active:true, cryptoBilling:true, billingEmailSent: true, billingReminderSent, true, \
-	//     billingCyclePaid:false, billingCycleEnd:$lt.Today
-	// Today - MM-DD-YY
 	today := time.Now().Format("01-02-2006")
 	filter := bson.M{"Active": true, "cryptoBilling": true, "billingEmailSent": true, "billingReminderSent": true, "billingCyclePaid": false, "billingCycleEnd": bson.M{"$lt": today}}
 
@@ -316,13 +313,13 @@ func cryptoDisableAccount(logger *logrus.Logger) {
 		updateFilter := bson.M{"_id": result["_id"]}
 		update := bson.M{
 			"$set": bson.M{
-				"Active":       false,
-				"billingToken": generateToken(),
+				"Active": false,
 			},
 		}
 		_, err = db.UpdateOne(ctx, updateFilter, update)
 		if err != nil {
 			logger.Error("Disable mongo update error: ", err)
+			continue
 		}
 
 		//send disable email
