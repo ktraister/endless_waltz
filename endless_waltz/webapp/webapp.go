@@ -300,11 +300,32 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//Write to database with information
-	_, err = auth_db.InsertOne(ctx, bson.M{"User": username, "Passwd": password, "SignupTime": signUpTime, "Active": false, "Email": req.FormValue("email"), "EmailVerifyToken": emailVerifyToken})
-	if err != nil {
+	today := time.Now()
+	threshold := today.Add(168 * time.Hour).Format("01-02-2006")
+	if req.FormValue("payment") == "crypto" {
+		//Write to database with information
+		//we'll need to update this insert depending on card/crypto payment
+		_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
+			"Passwd":              password,
+			"SignupTime":          signUpTime,
+			"Active":              false,
+			"Email":               req.FormValue("email"),
+			"EmailVerifyToken":    emailVerifyToken,
+			"cryptoBilling":       true,
+			"billingCycleEnd":     threshold,
+			"billingEmailSent":    false,
+			"billingCyclePaid":    false,
+			"billingReminderSent": false,
+			"billingToken":        generateToken(),
+		})
+		if err != nil {
+			http.Redirect(w, req, "/error", http.StatusSeeOther)
+			logger.Error("Generic mongo error on user signup write: ", err)
+			return
+		}
+	} else {
+		logger.Error("Unrecognized Input")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
-		logger.Error("Generic mongo error on user signup write: ", err)
 		return
 	}
 

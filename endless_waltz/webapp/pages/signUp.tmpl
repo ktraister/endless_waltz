@@ -4,7 +4,7 @@
       <form method="POST" action="/signUp">
 	<input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">
 	<img class="mb-4" src="/img/Icon.png" alt="" width="72" height="57">
-	<h1 class="h3 mb-3 fw-normal">Create an account</h1>
+	<h1 class="h1 mb-3 fw-normal">Create an Account</h1>
 	<div class="form-floating">
 	  <input type="text" name="email" class="form-control" id="floatingEmail" placeholder="Email" required>
 	  <label for="floatingEmail">Email</label>
@@ -30,6 +30,59 @@
 	  <input type="password" name="confirm_password" class="form-control" id="floatingConfirm" placeholder="Confirm Password" required>
 	  <label for="floatingConfirm">Confirm Password</label>
           <span id="passwordConfirmError" style="color: red;"></span>
+	</div>
+	<br>
+	<br>
+	<h2 class="h1 mb-3 fw-normal">Billing Options</h2>
+        <p>Running a great (and discreet) service costs money.</p>
+	<div class="grid-container">
+	  <div class="grid-item"></div>
+	  <div class="grid-item">Crypto Payments</div>
+	  <div class="grid-item">Free Trial</div>  
+	  <div class="grid-item">
+	    <p class="h6 mb-6 fw-normal">7 Days</p>
+	  </div>
+	  <div class="grid-item">Monthly Cost</div>  
+	  <div class="grid-item">
+	    <p class="h6 mb-6 fw-normal">$2.99 USD</p>
+	  </div>
+	  <div class="grid-item">Accepted</div>
+	  <div class="grid-item">
+	    <p class="h6 mb-6 fw-normal">Bitcoin</p>
+	    <p class="h6 mb-6 fw-normal">Bitcoin Cash</p>
+	    <p class="h6 mb-6 fw-normal">Litecoin</p>
+	    <p class="h6 mb-6 fw-normal">Ethereum</p>
+	  </div>
+	  <div class="grid-item">Pros</div>
+	  <div class="grid-item">
+	    <p class="h6 mb-6 fw-normal">Lower Cost</p>
+	    <p class="h6 mb-6 fw-normal">Total Anonymity</p>
+	  </div>
+	  <div class="grid-item">Cons</div>
+	  <div class="grid-item">
+	    <p class="h6 mb-6 fw-normal">Requires manual interaction</p>
+	  </div>
+	</div>
+	<br>
+	<!--
+	<div class="button-container">
+	  <button class="btn btn-secondary w-20 py-2" id="crypto_button" onclick="crypto()">Pay with Crypto</button>
+	  &nbsp;
+	  <button class="btn btn-secondary w-20 py-2" id="card_button" onclick="card()">Pay With Card</button>
+        </div>
+	<br>
+	<br>
+	<div id="card" class="hidden">
+	  <h2 class="h2 mb-3 fw-normal">Pay with Card</h2>
+	  <input type="hidden" name="payment" value="card">
+	  <p></p>
+	</div>
+	-->
+	<br>
+	<div id="crypto">
+	  <h2 class="h2 mb-3 fw-normal">Selected: Pay with Crypto</h2>
+	  <input type="hidden" name="payment" value="crypto">
+          <p>Crypto payments require us to send you monthly emails with payment links. Be sure to make payments on time to avoid service interruption.</p>
 	</div>
 	<br>
         {{ if .CaptchaFail }}
@@ -106,6 +159,18 @@
         }
  
     });
+    function crypto() {
+	var content1 = document.getElementById("crypto");
+	var content2 = document.getElementById("card");
+        content1.classList.remove("hidden");
+        content2.classList.add("hidden");
+    }
+    function card() {
+	var content1 = document.getElementById("crypto");
+	var content2 = document.getElementById("card");
+        content2.classList.remove("hidden");
+        content1.classList.add("hidden");
+    }
     </script>
   </main>
 
