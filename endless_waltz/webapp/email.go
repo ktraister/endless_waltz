@@ -36,6 +36,40 @@ func templateEmail(logger *logrus.Logger, path string, data emailData) (string, 
 	return rendered.String(), nil
 }
 
+func sendSignupEmail(logger *logrus.Logger, username string, targetUser string) error {
+	emailUser := os.Getenv("EmailUser")
+	emailPass := os.Getenv("EmailPass")
+
+	//connect to our server, set up a message and send it
+	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
+
+	//stubbed for now, but determine the billing type, and use it to template email
+	//checkBillingMethod(logger, username)
+
+	emailContent, err := templateEmail(logger, "signUpTemplate", emailData{})
+	if err != nil {
+		logger.Error("Unable to template email")
+		return err
+	}
+
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	from := emailUser
+	to := []string{targetUser}
+	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
+		"Subject: Welcome to Endless Waltz\r\n" +
+		mime +
+		emailContent)
+
+	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
+
+	if err != nil {
+		logger.Error("unable to send email to gmail server")
+		return err
+	}
+
+	return nil
+}
+
 func sendVerifyEmail(logger *logrus.Logger, username string, targetUser string, token string) error {
 	emailUser := os.Getenv("EmailUser")
 	emailPass := os.Getenv("EmailPass")
@@ -65,7 +99,7 @@ func sendVerifyEmail(logger *logrus.Logger, username string, targetUser string, 
 	from := emailUser
 	to := []string{targetUser}
 	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
-		"Subject: Welcome to Endless Waltz\r\n" +
+		"Subject: Verify Your Email Address\r\n" +
 		mime +
 		emailContent)
 
@@ -116,7 +150,7 @@ func sendResetEmail(logger *logrus.Logger, username string, token string) error 
 	from := emailUser
 	to := []string{targetUser}
 	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
-		"Subject: Welcome to Endless Waltz\r\n" +
+		"Subject: Reset Your Password\r\n" +
 		mime +
 		emailContent)
 
