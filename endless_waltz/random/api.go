@@ -2,17 +2,21 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"io"
+	"bytes"
 	"strings"
-	"encoding/json"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
+	"github.com/stripe/stripe-go/v76"
+	"github.com/stripe/stripe-go/v76/checkout/session"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
@@ -129,18 +133,18 @@ func crypto_handler(w http.ResponseWriter, req *http.Request) {
 	var cbResp map[string]interface{}
 	json.Unmarshal(body, &cbResp)
 
-        //need to check here if the api returned an error
+	//need to check here if the api returned an error
 	if cbResp["error"] != nil {
-	        logger.Error("Error from coinbase API: ", cbResp["error"])
+		logger.Error("Error from coinbase API: ", cbResp["error"])
 		http.Error(w, "500 Error", http.StatusInternalServerError)
 		return
-        }
+	}
 
 	//update the billing token now that it's been used
 	updateFilter := bson.M{"_id": result["_id"]}
 	update := bson.M{
 		"$set": bson.M{
-    	                "billingCharge": cbResp["data"].(map[string]interface{})["code"],
+			"billingCharge": cbResp["data"].(map[string]interface{})["code"],
 		},
 	}
 	_, err = db.UpdateOne(ctx, updateFilter, update)
@@ -153,6 +157,83 @@ func crypto_handler(w http.ResponseWriter, req *http.Request) {
 	//redirect the user
 	http.Redirect(w, req, cbResp["data"].(map[string]interface{})["hosted_url"].(string), http.StatusSeeOther)
 }
+
+// below code mostly provided by stripe. Blame them.
+func createCheckoutSession(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
+	//stripe.Key := os.Getenv("StripeAPIKey")
+	/*
+	domain := "https://endlesswaltz.xyz"
+	if os.Getenv("ENV") == "local" {
+		domain = "https://localhost"
+	}
+	params := &stripe.CheckoutSessionParams{
+		//UiMode:    stripe.String("embedded"),
+		//ReturnUrl: stripe.String(domain + "/return.html?session_id={CHECKOUT_SESSION_ID}"),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			&stripe.CheckoutSessionLineItemParams{
+				// Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+				Price:    stripe.String("{{PRICE_ID}}"),
+				Quantity: stripe.Int64(1),
+			},
+		},
+		Mode: stripe.String(string(stripe.CheckoutSessionModePayment)),
+	}
+
+	//s, err := session.New(params)
+	if err != nil {
+		logger.Error("session.New: %v", err)
+	}
+	*/
+
+	writeJSON(w, struct {
+		ClientSecret string `json:"clientSecret"`
+	}{
+		//ClientSecret: s.client_secret,
+	}, logger)
+}
+
+func retrieveCheckoutSession(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	s, _ := session.Get(req.URL.Query().Get("session_id"), nil)
+
+	writeJSON(w, struct {
+		Status        string `json:"status"`
+		CustomerEmail string `json:"customer_email"`
+	}{
+		Status:        string(s.Status),
+		CustomerEmail: string(s.CustomerDetails.Email),
+	}, logger)
+}
+
+func writeJSON(w http.ResponseWriter, v interface{}, logger *logrus.Logger) {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(v); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		logger.Error("json.NewEncoder.Encode: %v", err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if _, err := io.Copy(w, &buf); err != nil {
+		logger.Error("io.Copy: %v", err)
+		return
+	}
+}
+
+//End stripe code
 
 func main() {
 	MongoURI = os.Getenv("MongoURI")
@@ -168,6 +249,8 @@ func main() {
 	router.Use(LoggerMiddleware(logger))
 	router.HandleFunc("/api/healthcheck", health_handler).Methods("GET")
 	router.HandleFunc("/api/cryptoPayment", crypto_handler).Methods("GET")
+	router.HandleFunc("/api/create-checkout-session", createCheckoutSession)
+	router.HandleFunc("/api/session-status", retrieveCheckoutSession)
 
 	http.ListenAndServe(":8090", router)
 }

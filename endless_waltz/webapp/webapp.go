@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
+	"github.com/stripe/stripe-go/v76"
 	"html/template"
 	"net/http"
 	"os"
@@ -37,6 +38,7 @@ type sessionData struct {
 	IsAuthenticated bool
 	Username        string
 	Captcha         bool
+	Stripe          bool
 	CaptchaFail     bool
 	TemplateTag     string
 	Email           string
@@ -72,6 +74,7 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 		IsAuthenticated: session.Values["authenticated"].(bool),
 		Username:        session.Values["username"].(string),
 		Captcha:         false,
+		Stripe:          false,
 		TemplateTag:     csrf.Token(req),
 		Email:           session.Values["email"].(string),
 	}
@@ -79,6 +82,11 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 	//add recaptcha JS to pageif needed
 	if file == "/signUp" || file == "/forgotPassword" {
 		data.Captcha = true
+	}
+
+	//add stripe js where needed
+	if file == "/signUp" {
+		data.Stripe = true
 	}
 
 	//add capcha fail if needed
@@ -703,6 +711,8 @@ func main() {
 	MongoPass = os.Getenv("MongoPass")
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
+	stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
+	//stripe.Key := os.Getenv("StripeAPIKey")
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("WebApp Server finished starting up!")

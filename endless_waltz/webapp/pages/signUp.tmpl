@@ -64,7 +64,6 @@
 	  </div>
 	</div>
 	<br>
-	<!--
 	<div class="button-container">
 	  <button class="btn btn-secondary w-20 py-2" id="crypto_button" onclick="crypto()">Pay with Crypto</button>
 	  &nbsp;
@@ -72,14 +71,14 @@
         </div>
 	<br>
 	<br>
-	<div id="card" class="hidden">
+	<div id="card">
 	  <h2 class="h2 mb-3 fw-normal">Pay with Card</h2>
 	  <input type="hidden" name="payment" value="card">
-	  <p></p>
+	  <div id="checkout">
+	  </div>
 	</div>
-	-->
 	<br>
-	<div id="crypto">
+	<div id="crypto" class="hidden">
 	  <h2 class="h2 mb-3 fw-normal">Selected: Pay with Crypto</h2>
 	  <input type="hidden" name="payment" value="crypto">
           <p>Crypto payments require us to send you monthly emails with payment links. Be sure to make payments on time to avoid service interruption.</p>
@@ -170,6 +169,27 @@
 	var content2 = document.getElementById("card");
         content2.classList.remove("hidden");
         content1.classList.add("hidden");
+    }
+
+    // This is your test publishable API key.
+    const stripe = Stripe("pk_test_51O9xNoGcdL8YMSExrCgpNzGy7XyHsCfcBPDPSiBLygEZubB1yS4SEYy2GCQ601PtYO56ZaYc8XrrIak76sgrduFJ00h3ae9fER");
+
+    initialize();
+
+    // Create a Checkout Session as soon as the page loads
+    async function initialize() {
+      const response = await fetch("/api/create-checkout-session", {
+	method: "POST",
+      });
+
+      const { clientSecret } = await response.json();
+
+      const checkout = await stripe.initEmbeddedCheckout({
+	clientSecret,
+      });
+
+      // Mount Checkout
+      checkout.mount('#checkout');
     }
     </script>
   </main>
