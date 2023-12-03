@@ -45,6 +45,34 @@ func deleteUser(logger *logrus.Logger, user string) bool {
 	}
 }
 
+func checkBillingMethod(logger *logrus.Logger, user string) (string, error) {
+	//creating context to connect to mongo
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	credential := options.Credential{
+		Username: MongoUser,
+		Password: MongoPass,
+	}
+	//actually connect to mongo
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
+	if err != nil {
+		logger.Error("Could not connect to mongo:", err)
+		return "", err
+	}
+
+	auth_db := client.Database("auth").Collection("keys")
+
+	filter := bson.M{"User": user}
+	var result bson.M
+	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		logger.Error("Generic mongo read error: ", err)
+		return "", err
+	}
+
+	return "", nil
+}
+
 func prepareUserPassReset(logger *logrus.Logger, user string, token string) (string, error) {
 	//creating context to connect to mongo
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

@@ -492,6 +492,12 @@ func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if verifyUserSignup(logger, email, user, token) {
+		//send the welcome email
+		err := sendSignupEmail(logger, user, email)
+		if err != nil {
+			http.Redirect(w, req, "/error", http.StatusSeeOther)
+			return
+		}
 		//show the page for user verification success
 		http.Redirect(w, req, "/verifySuccess", http.StatusSeeOther)
 	} else {
