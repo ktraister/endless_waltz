@@ -322,7 +322,6 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 			"cryptoBilling":       true,
 			"billingCycleEnd":     threshold,
 			"billingEmailSent":    false,
-			"billingCyclePaid":    false,
 			"billingReminderSent": false,
 			"billingToken":        generateToken(),
 		})

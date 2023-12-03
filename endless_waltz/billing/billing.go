@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,6 +19,26 @@ import (
 )
 
 var MongoURI, MongoUser, MongoPass string
+var day, month, year int
+
+func nextBillingCycle(input string) string {
+	parts := strings.Split(input, "-")
+	day, _ = strconv.Atoi(parts[1])
+	month, _ = strconv.Atoi(parts[0])
+	year, _ = strconv.Atoi(parts[2])
+
+	if day > 28 {
+		day = 28
+	}
+	if month == 12 {
+		month = 1
+		year = year + 1
+	} else {
+		month = month + 1
+	}
+
+	return fmt.Sprintf("%d-%d-%d", month, day, year)
+}
 
 func cryptoResolvePayments(logger *logrus.Logger) {
 	//creating context to connect to mongo
@@ -43,7 +66,7 @@ func cryptoResolvePayments(logger *logrus.Logger) {
 
 	//find all records where billingCharge != nil
 	filter := bson.D{
-		{"item", bson.D{
+		{"billingCharge", bson.D{
 			{"$exists", true},
 		}},
 	}
@@ -91,23 +114,45 @@ func cryptoResolvePayments(logger *logrus.Logger) {
 			logger.Error("Resolve error reading response: ", err)
 			continue
 		}
-		fmt.Println(string(body))
 
-		/*
-			if paid {
-				//set billingCharge nil
-				updateFilter := bson.M{"_id": result["_id"]}
-				update := bson.M{
-					"$set": bson.M{
-						"billingEmailSent": true,
-					},
-				}
-				_, err = db.UpdateOne(ctx, updateFilter, update)
-				if err != nil {
-					logger.Error("Resolve mongo update error: ", err)
-				}
+		var cbResp map[string]interface{}
+		json.Unmarshal(body, &cbResp)
+		//need to check here if the api returned an error
+		if cbResp["error"] != nil {
+			logger.Error("Error from coinbase API: ", cbResp["error"])
+			return
+		}
+
+		timeline := cbResp["data"].(map[string]interface{})["timeline"].([]interface{})
+		paid := false
+		for _, item := range timeline {
+			status := item.(map[string]interface{})["status"]
+			if status == "COMPLETED" {
+				paid = true
+				break
 			}
-		*/
+		}
+
+		if paid {
+			//set billingCharge nil
+			updateFilter := bson.M{"_id": result["_id"]}
+			update := bson.M{
+				"$set": bson.M{
+					"billingEmailSent":    false,
+					"billingReminderSent": false,
+					"billingCycleEnd":     nextBillingCycle(result["billingCycleEnd"].(string)),
+					"billingToken":        generateToken(),
+				},
+				"$unset": bson.M{
+					"billingCharge": "",
+				},
+			}
+			_, err = db.UpdateOne(ctx, updateFilter, update)
+			if err != nil {
+				logger.Error("Resolve mongo update error: ", err)
+			}
+			sendCryptoBillingThanks(logger, result["User"].(string), result["Email"].(string))
+		}
 	}
 
 	// Check for errors during cursor iteration
@@ -144,7 +189,7 @@ func cryptoBillingInit(logger *logrus.Logger) {
 
 	today := time.Now()
 	threshold := today.Add(168 * time.Hour).Format("01-02-2006")
-	filter := bson.M{"Active": true, "cryptoBilling": true, "billingEmailSent": false, "billingCyclePaid": false, "billingCycleEnd": bson.M{"$lte": threshold}}
+	filter := bson.M{"Active": true, "cryptoBilling": true, "billingEmailSent": false, "billingCycleEnd": bson.M{"$lte": threshold}}
 
 	// Perform the query
 	cursor, err := db.Find(context.TODO(), filter)
@@ -216,8 +261,8 @@ func cryptoBillingReminder(logger *logrus.Logger) {
 
 	today := time.Now()
 	threshold := today.Add(48 * time.Hour).Format("01-02-2006")
-	//find all records where Active:true, cryptoBilling:true, billingEmailSent: true, billingReminderSent, false, billingCyclePaid:false
-	filter := bson.M{"Active": true, "cryptoBilling": true, "billingEmailSent": true, "billingReminderSent": false, "billingCyclePaid": false, "billingCycleEnd": bson.M{"$lte": threshold}}
+	//find all records where Active:true, cryptoBilling:true, billingEmailSent: true, billingReminderSent, false,
+	filter := bson.M{"Active": true, "cryptoBilling": true, "billingEmailSent": true, "billingReminderSent": false, "billingCycleEnd": bson.M{"$lte": threshold}}
 
 	// Perform the query
 	cursor, err := db.Find(context.TODO(), filter)
@@ -288,7 +333,7 @@ func cryptoDisableAccount(logger *logrus.Logger) {
 	db := client.Database("auth").Collection("keys")
 
 	today := time.Now().Format("01-02-2006")
-	filter := bson.M{"Active": true, "cryptoBilling": true, "billingEmailSent": true, "billingReminderSent": true, "billingCyclePaid": false, "billingCycleEnd": bson.M{"$lt": today}}
+	filter := bson.M{"Active": true, "cryptoBilling": true, "billingEmailSent": true, "billingReminderSent": true, "billingCycleEnd": bson.M{"$lt": today}}
 
 	// Perform the query
 	cursor, err := db.Find(context.TODO(), filter)

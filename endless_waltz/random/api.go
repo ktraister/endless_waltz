@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"strings"
 	"time"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,7 +22,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func health_handler(w http.ResponseWriter, req *http.Request) {
+func healthHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -47,11 +48,18 @@ func health_handler(w http.ResponseWriter, req *http.Request) {
 	logger.Info("Someone hit the health check route...")
 }
 
-func crypto_handler(w http.ResponseWriter, req *http.Request) {
+func cryptoPaymentHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 1)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
 		return
 	}
 
@@ -81,6 +89,7 @@ func crypto_handler(w http.ResponseWriter, req *http.Request) {
 	db := client.Database("auth").Collection("keys")
 
 	// Check if the item exists in the collection
+	// we're using the billingToken as a OTP
 	user := req.FormValue("user")
 	email := req.FormValue("email")
 	token := req.FormValue("token")
@@ -99,16 +108,18 @@ func crypto_handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	domain := "https://endlesswaltz.xyz"
+	if os.Getenv("ENV") == "local" {
+		domain = "https://localhost"
+	}
+
 	//create the billing charge
 	//https://docs.cloud.coinbase.com/commerce/docs/accepting-crypto#creating-a-charge
 	//https://docs.cloud.coinbase.com/commerce/reference/createcharge
-	httpClient := &http.Client{}
-
-	payload := strings.NewReader(`{"name":"Endless Waltz Monthly Payment","pricing_type":"fixed_price","local_price":{"amount":"2.99","currency":"USD"}}`)
-
+	payload := strings.NewReader(fmt.Sprintf(`{"name":"Endless Waltz Monthly Payment","redirect_url":"%s","pricing_type":"fixed_price","local_price":{"amount":"1.00","currency":"USD"}}`, domain))
 	cReq, err := http.NewRequest("POST", "https://api.commerce.coinbase.com/charges", payload)
 	if err != nil {
-		logger.Error("Disable mongo update error: ", err)
+		logger.Error("Error creating billing charge: ", err)
 		http.Error(w, "500 Error", http.StatusInternalServerError)
 		return
 	}
@@ -116,9 +127,10 @@ func crypto_handler(w http.ResponseWriter, req *http.Request) {
 	cReq.Header.Add("Content-Type", "application/json")
 	cReq.Header.Add("Accept", "application/json")
 	cReq.Header.Add("X-CC-Api-Key", os.Getenv("CoinbaseAPIKey"))
+	httpClient := &http.Client{}
 	res, err := httpClient.Do(cReq)
 	if err != nil {
-		logger.Error("Disable mongo update error: ", err)
+		logger.Error("Error performing https request to coinbase: ", err)
 		http.Error(w, "500 Error", http.StatusInternalServerError)
 		return
 	}
@@ -140,7 +152,7 @@ func crypto_handler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//update the billing token now that it's been used
+	//update the billing charge in the db
 	updateFilter := bson.M{"_id": result["_id"]}
 	update := bson.M{
 		"$set": bson.M{
@@ -223,12 +235,12 @@ func writeJSON(w http.ResponseWriter, v interface{}, logger *logrus.Logger) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(v); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		logger.Error("json.NewEncoder.Encode: %v", err)
+		logger.Error("json.NewEncoder.Encode: ", err)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	if _, err := io.Copy(w, &buf); err != nil {
-		logger.Error("io.Copy: %v", err)
+		logger.Error("io.Copy: ", err)
 		return
 	}
 }
@@ -247,8 +259,8 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
-	router.HandleFunc("/api/healthcheck", health_handler).Methods("GET")
-	router.HandleFunc("/api/cryptoPayment", crypto_handler).Methods("GET")
+	router.HandleFunc("/api/healthcheck", healthHandler).Methods("GET")
+	router.HandleFunc("/api/cryptoPayment", cryptoPaymentHandler).Methods("GET")
 	router.HandleFunc("/api/create-checkout-session", createCheckoutSession)
 	router.HandleFunc("/api/session-status", retrieveCheckoutSession)
 

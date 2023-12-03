@@ -23,6 +23,7 @@ services:
     build:
       context: random
     environment:
+      ENV: local
       MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser
       MongoPass: password123

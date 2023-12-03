@@ -154,4 +154,31 @@ func sendCryptoBillingDisabled(logger *logrus.Logger, username string, targetUse
 
 }
 
-//send crypto payment thank you email
+// send crypto payment thank you email
+func sendCryptoBillingThanks(logger *logrus.Logger, username string, targetUser string) {
+	emailUser := os.Getenv("EmailUser")
+	emailPass := os.Getenv("EmailPass")
+
+	//connect to our server, set up a message and send it
+	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
+
+	emailContent, err := templateEmail(logger, "acceptedTemplate", emailData{})
+	if err != nil {
+		logger.Error("Unable to template email: ", err)
+	}
+
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	from := emailUser
+	to := []string{targetUser}
+	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
+		"Subject: Your Payment Has Been Accepted\r\n" +
+		mime +
+		emailContent)
+
+	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
+
+	if err != nil {
+		logger.Error("unable to send email to gmail server: ", err)
+	}
+
+}
