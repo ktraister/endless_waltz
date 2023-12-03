@@ -196,7 +196,7 @@ func createCheckoutSession(w http.ResponseWriter, req *http.Request) {
 
 	s, err := session.New(params)
 	if err != nil {
-		logger.Error("session.New: %v", err)
+		logger.Error("session.New: ", err)
 	}
 
 	writeJSON(w, struct {
