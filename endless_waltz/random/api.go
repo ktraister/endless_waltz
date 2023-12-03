@@ -56,7 +56,7 @@ func cryptoPaymentHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 1)
+	ok = rateLimit(req.FormValue("user"), 1)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
@@ -181,13 +181,8 @@ func createCheckoutSession(w http.ResponseWriter, req *http.Request) {
 
 	stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
 	//stripe.Key := os.Getenv("StripeAPIKey")
-	/*
-	domain := "https://endlesswaltz.xyz"
-	if os.Getenv("ENV") == "local" {
-		domain = "https://localhost"
-	}
 	params := &stripe.CheckoutSessionParams{
-		//UiMode:    stripe.String("embedded"),
+		UIMode:    stripe.String("embedded"),
 		//ReturnUrl: stripe.String(domain + "/return.html?session_id={CHECKOUT_SESSION_ID}"),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			&stripe.CheckoutSessionLineItemParams{
@@ -199,16 +194,15 @@ func createCheckoutSession(w http.ResponseWriter, req *http.Request) {
 		Mode: stripe.String(string(stripe.CheckoutSessionModePayment)),
 	}
 
-	//s, err := session.New(params)
+	s, err := session.New(params)
 	if err != nil {
 		logger.Error("session.New: %v", err)
 	}
-	*/
 
 	writeJSON(w, struct {
 		ClientSecret string `json:"clientSecret"`
 	}{
-		//ClientSecret: s.client_secret,
+		ClientSecret: s.ClientSecret,
 	}, logger)
 }
 
