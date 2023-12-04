@@ -1,7 +1,7 @@
 {{ define "content" }}    
   <main class="form-signin w-50 m-auto align-items-center">
     <div align=center>
-      <form method="POST" action="/signUp">
+      <form method="POST" action="/register">
 	<input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">
 	<img class="mb-4" src="/img/Icon.png" alt="" width="72" height="72">
 	<h1 class="h2 mb-3 fw-normal">Set Your Password</h1>
@@ -67,7 +67,7 @@
       const queryString = window.location.search;
       const urlParams = new URLSearchParams(queryString);
       const sessionId = urlParams.get('session_id');
-      const response = await fetch(`/session-status?session_id=${sessionId}`);
+      const response = await fetch(`/api/session-status?session_id=${sessionId}`);
       const session = await response.json();
 
       if (session.status == 'open') {

@@ -65,6 +65,22 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 		session.Values["email"] = ""
 	}
 
+	var session_id string
+	for k, v := range req.URL.Query() {
+		switch k {
+		case "session_id":
+			session_id = v[0]
+		}
+	}
+
+	fmt.Println(session.Values["billing"])
+	fmt.Println(session_id)
+
+	if session.Values["billing"] == nil && session_id != "" {
+	        logger.Debug("setting card billing")
+	        session.Values["billing"] = "card"
+	}
+
 	session.Save(req, w)
 
 	var data sessionData
@@ -176,6 +192,32 @@ func logoutPageHandler(w http.ResponseWriter, req *http.Request) {
 	parseTemplate(logger, w, req, session, "logOutSuccess")
 }
 
+func billingHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		logger.Error("Could not configure logger in logoutPageHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	session, err := store.Get(req, "session-name")
+	if err != nil {
+		logger.Error("Could not get session in logoutPageHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	//end their session
+	session.Values["billing"] = "crypto"
+	err = session.Save(req, w)
+	if err != nil {
+		logger.Error("Unable to save session")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+	}
+
+	http.Redirect(w, req, "/register", http.StatusSeeOther)
+}
+
 func registerHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
@@ -201,16 +243,34 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 
 	//confirm passwords match
 	if req.FormValue("password") != req.FormValue("confirm_password") {
-		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
+		http.Redirect(w, req, "/register", http.StatusSeeOther)
 		return
 	}
 
 	if !isPasswordValid(req.FormValue("password")) {
+		http.Redirect(w, req, "/register", http.StatusSeeOther)
+		return
+	}
+
+	//check for special characters in username
+	username := strings.ToLower(session.Values["username"].(string))
+	ok = checkUserInput(username)
+	if !ok {
+		logger.Debug("Username check failed: ", username)
 		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 		return
 	}
 
-	username := session.Values["username"].(string)
+	logger.Debug("1")
+
+	//check email is valid
+        email := session.Values["email"].(string)
+	ok = isEmailValid(email)
+	if !ok {
+		logger.Debug("Email check failed: ", email)
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
+		return
+	}
 
 	//check recaptcha post here
 	logger.Debug(req.FormValue("g-recaptcha-response"))
@@ -225,7 +285,7 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 		session.Values["CaptchaFail"] = true
 		session.Save(req, w)
 		logger.Debug("CaptchaFail, redirecting: ", session.Values["CaptchaFail"])
-		http.Redirect(w, req, "/signUp", http.StatusFound)
+		http.Redirect(w, req, "/register", http.StatusFound)
 		return
 	}
 
@@ -263,21 +323,29 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 	emailVerifyToken := generateToken()
 
 	//send the email before writing to db
-	err = sendVerifyEmail(logger, username, req.FormValue("email"), emailVerifyToken)
+	err = sendVerifyEmail(logger, username, email, emailVerifyToken)
 	if err != nil {
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		logger.Error("Email verify outgoing fail: ", err)
 		return
 	}
 
+	logger.Debug("2")
+
 	today := time.Now()
 	threshold := today.Add(168 * time.Hour).Format("01-02-2006")
-	if session.Values["billing"] == "crypto" {
+	fmt.Println(session.Values)
+
+        var billingFlag string
+	if session.Values["billing"] != nil {
+	billingFlag = session.Values["billing"].(string)
+        }
+	if billingFlag == "crypto" {
 		_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
 			"Passwd":              password,
 			"SignupTime":          signUpTime,
 			"Active":              false,
-			"Email":               req.FormValue("email"),
+			"Email":               email,
 			"EmailVerifyToken":    emailVerifyToken,
 			"cryptoBilling":       true,
 			"billingCycleEnd":     threshold,
@@ -290,12 +358,13 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 			logger.Error("Generic mongo error on user signup write: ", err)
 			return
 		}
-	} else if session.Values["billing"] == "crypto" {
+        //card wont get set w/o post, so lets get creative here
+	} else if billingFlag == "card" {
 		_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
 			"Passwd":              password,
 			"SignupTime":          signUpTime,
 			"Active":              false,
-			"Email":               req.FormValue("email"),
+			"Email":               email,
 			"EmailVerifyToken":    emailVerifyToken,
 			"cardBilling":         true,
 			"billingCycleEnd":     threshold,
@@ -311,9 +380,10 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	logger.Debug("3")
+
 	//redirect to main page 5 seconds later using html
 	http.Redirect(w, req, "/signUpSuccess", http.StatusSeeOther)
-
 }
 
 func signUpHandler(w http.ResponseWriter, req *http.Request) {
@@ -791,6 +861,7 @@ func main() {
 	router.HandleFunc("/signUp", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/signUp", signUpHandler).Methods("POST")
 	router.HandleFunc("/billing", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/billing", billingHandler).Methods("POST")
 	router.HandleFunc("/register", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/register", registerHandler).Methods("POST")
 	router.HandleFunc("/verifyEmail", emailVerifyHandler).Methods("GET")
