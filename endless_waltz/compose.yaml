@@ -29,6 +29,7 @@ services:
       MongoPass: password123
       LogLevel: Debug
       CoinbaseAPIKey: ${CoinbaseAPIKey}
+      StripeAPIKey: ${StripeAPIKey}
 
   ew-webapp:
     depends_on:

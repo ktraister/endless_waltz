@@ -179,19 +179,23 @@ func createCheckoutSession(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
-	//stripe.Key := os.Getenv("StripeAPIKey")
+	domain := "https://endlesswaltz.xyz"
+	if os.Getenv("ENV") == "local" {
+		domain = "https://localhost"
+	}
+
 	params := &stripe.CheckoutSessionParams{
 		UIMode:    stripe.String("embedded"),
-		//ReturnUrl: stripe.String(domain + "/return.html?session_id={CHECKOUT_SESSION_ID}"),
+		ReturnURL: stripe.String(domain + "/register?session_id={CHECKOUT_SESSION_ID}"),
+		//RedirectOnCompletion: stripe.String("never"),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			&stripe.CheckoutSessionLineItemParams{
 				// Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-				Price:    stripe.String("{{PRICE_ID}}"),
+				Price:    stripe.String("price_1OJe1UGcdL8YMSExsJZxn1J1"),
 				Quantity: stripe.Int64(1),
 			},
 		},
-		Mode: stripe.String(string(stripe.CheckoutSessionModePayment)),
+		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 	}
 
 	s, err := session.New(params)
@@ -247,9 +251,12 @@ func main() {
 	MongoPass = os.Getenv("MongoPass")
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
+	//stripe.Key = os.Getenv("StripeAPIKey")
+	 stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Random Server finished starting up!")
+	logger.Info(stripe.Key)
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))

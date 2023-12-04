@@ -1,0 +1,84 @@
+{{ define "content" }}    
+  <main class="form-signin w-50 m-auto align-items-center">
+    <div align=center>
+      <form method="POST" action="/signUp">
+	<input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">
+	<img class="mb-4" src="/img/Icon.png" alt="" width="72" height="72">
+	<h1 class="h2 mb-3 fw-normal">Set Your Password</h1>
+	<div class="form-floating" id="password">
+	  <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password" required>
+	  <label for="floatingPassword">Password</label>
+	  <span id="passwordError" style="color: red;"></span>
+	</div>
+	<div class="form-floating" id="passwordConfirm">
+	  <input type="password" name="confirm_password" class="form-control" id="floatingConfirm" placeholder="Confirm Password" required>
+	  <label for="floatingConfirm">Confirm Password</label>
+          <span id="passwordConfirmError" style="color: red;"></span>
+	</div>
+	<br>
+	<br>
+	  <br>
+	  {{ if .CaptchaFail }}
+	  <span id="captchaSubmitError" style="color: red;">Captcha check failed - please try again</span>
+	  <br>
+	  <br>
+	  {{ end }}
+	  <div class="g-recaptcha" data-sitekey="6LcQtnsoAAAAAB2DskA6q-uUKpzbyEFvAQ0Kjzcm"></div>
+	  <br>
+	  <p style="font-size: 10px;">By clicking "Sign Up", you agree with the <a href="/privacy_policy">privacy policy</a> and <a href="/terms_and_conditions">terms and conditions</a>.</p>
+	  <button class="btn btn-primary w-50 py-2" type="submit" value="SignUp">Sign Up</button>
+	</div>
+	<br>
+	<br>
+      </form>
+    </div>
+    <script>
+    document.querySelector('form').addEventListener('submit', function(event) {
+        const password = document.querySelector('#floatingPassword').value;
+        const Cpassword = document.querySelector('#floatingConfirm').value;
+        const passwordError = document.querySelector('#passwordError');
+        const CpasswordError = document.querySelector('#passwordConfirmError');
+
+        //password length and complexity check 
+        format = /^(?=.*[A-Z])(?=.*[!@#$&*])(?=.*[0-9])(?=.*[a-z]).{8,}$/;
+        if (! format.test(password)) {
+            passwordError.textContent = passText;
+            event.preventDefault(); // Prevent form submission
+	    return
+
+	}  else {
+            passwordError.textContent = ''; // Clear any previous error message
+        }
+
+        //pass match check
+        if (password != Cpassword) {
+            passwordConfirmError.textContent = 'Password does not match confirmation';
+            event.preventDefault(); // Prevent form submission
+	    return
+        }  else {
+            passwordConfirmError.textContent = ''; // Clear any previous error message
+        }
+ 
+    });
+
+    initialize();
+
+    async function initialize() {
+      const queryString = window.location.search;
+      const urlParams = new URLSearchParams(queryString);
+      const sessionId = urlParams.get('session_id');
+      const response = await fetch(`/session-status?session_id=${sessionId}`);
+      const session = await response.json();
+
+      if (session.status == 'open') {
+        //billing failed, redirect
+	window.replace('/billing')
+      } else if (session.status == 'complete') {
+        //else 
+        document.cookie = `sessionId=${sessionId}; path=/`;
+      }
+    }
+    </script>
+  </main>
+
+{{ end }}

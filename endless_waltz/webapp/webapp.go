@@ -10,7 +10,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
-	"github.com/stripe/stripe-go/v76"
 	"html/template"
 	"net/http"
 	"os"
@@ -80,12 +79,12 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 	}
 
 	//add recaptcha JS to pageif needed
-	if file == "/signUp" || file == "/forgotPassword" {
+	if file == "/register" || file == "/forgotPassword" {
 		data.Captcha = true
 	}
 
 	//add stripe js where needed
-	if file == "/signUp" {
+	if file == "/billing" {
 		data.Stripe = true
 	}
 
@@ -177,10 +176,10 @@ func logoutPageHandler(w http.ResponseWriter, req *http.Request) {
 	parseTemplate(logger, w, req, session, "logOutSuccess")
 }
 
-func signUpHandler(w http.ResponseWriter, req *http.Request) {
+func registerHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		logger.Error("Could not configure logger in signUpHandler!")
+		logger.Error("Could not configure logger in registerHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -211,20 +210,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//check for special characters in username
-	username := strings.ToLower(req.FormValue("username"))
-	ok = checkUserInput(username)
-	if !ok {
-		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
-		return
-	}
-
-	//check email is valid
-	ok = isEmailValid(req.FormValue("email"))
-	if !ok {
-		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
-		return
-	}
+	username := session.Values["username"].(string)
 
 	//check recaptcha post here
 	logger.Debug(req.FormValue("g-recaptcha-response"))
@@ -264,30 +250,6 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	}
 	auth_db := client.Database("auth").Collection("keys")
 
-	//extensible for other db checks into the future
-	//check database to ensure username/email ! already exists
-	//removed email check for now. Have as many accts as you want
-	filters := []primitive.M{bson.M{"User": username}, bson.M{"Email": req.FormValue("email")}}
-
-	//run our extensible DB checks
-	for i, filter := range filters {
-		var result bson.M
-		err := auth_db.FindOne(ctx, filter).Decode(&result)
-		if err != mongo.ErrNoDocuments {
-			switch i {
-			case 0:
-				session.Values["username"] = username
-				logger.Debug("username in use: ", username)
-			case 1:
-				session.Values["email"] = req.FormValue("email")
-				logger.Debug("email in use: ", req.FormValue("email"))
-			}
-			session.Save(req, w)
-			http.Redirect(w, req, "/signUp", http.StatusFound)
-			return
-		}
-	}
-
 	//create our hasher to hash our pass
 	hash := sha512.New()
 	hash.Write([]byte(req.FormValue("password")))
@@ -310,9 +272,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 
 	today := time.Now()
 	threshold := today.Add(168 * time.Hour).Format("01-02-2006")
-	if req.FormValue("payment") == "crypto" {
-		//Write to database with information
-		//we'll need to update this insert depending on card/crypto payment
+	if session.Values["billing"] == "crypto" {
 		_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
 			"Passwd":              password,
 			"SignupTime":          signUpTime,
@@ -330,6 +290,21 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 			logger.Error("Generic mongo error on user signup write: ", err)
 			return
 		}
+	} else if session.Values["billing"] == "crypto" {
+		_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
+			"Passwd":              password,
+			"SignupTime":          signUpTime,
+			"Active":              false,
+			"Email":               req.FormValue("email"),
+			"EmailVerifyToken":    emailVerifyToken,
+			"cardBilling":         true,
+			"billingCycleEnd":     threshold,
+		})
+		if err != nil {
+			http.Redirect(w, req, "/error", http.StatusSeeOther)
+			logger.Error("Generic mongo error on user signup write: ", err)
+			return
+		}
 	} else {
 		logger.Error("Unrecognized Input")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -339,6 +314,91 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	//redirect to main page 5 seconds later using html
 	http.Redirect(w, req, "/signUpSuccess", http.StatusSeeOther)
 
+}
+
+func signUpHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		logger.Error("Could not configure logger in signUpHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	session, err := store.Get(req, "session-name")
+	if err != nil {
+		logger.Error("Could not get session in logoutPageHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	// Parse form data
+	err = req.ParseForm()
+	if err != nil {
+		logger.Error("Failed to parse form data in signUpHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	//check for special characters in username
+	username := strings.ToLower(req.FormValue("username"))
+	ok = checkUserInput(username)
+	if !ok {
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
+		return
+	}
+
+	//check email is valid
+	ok = isEmailValid(req.FormValue("email"))
+	if !ok {
+		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
+		return
+	}
+
+	//everything is valid so far, set our session values
+	session.Values["username"] = username
+	session.Values["email"] = req.FormValue("email")
+	session.Save(req, w)
+
+	//setup database access
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+	credential := options.Credential{
+		Username: MongoUser,
+		Password: MongoPass,
+	}
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
+	if err != nil {
+		logger.Error("generic mongo signup error: ", err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	} else {
+		logger.Info("Database connection succesful!")
+	}
+	auth_db := client.Database("auth").Collection("keys")
+
+	//extensible for other db checks into the future
+	//check database to ensure username/email ! already exists
+	//removed email check for now. Have as many accts as you want
+	filters := []primitive.M{bson.M{"User": username}} //REMOVE EMAIL CHECK FOR NOW, bson.M{"Email": req.FormValue("email")}}
+
+	//run our extensible DB checks
+	for i, filter := range filters {
+		var result bson.M
+		err := auth_db.FindOne(ctx, filter).Decode(&result)
+		if err != mongo.ErrNoDocuments {
+			switch i {
+			case 0:
+				logger.Debug("username in use: ", username)
+			case 1:
+				logger.Debug("email in use: ", req.FormValue("email"))
+			}
+			http.Redirect(w, req, "/signUp", http.StatusFound)
+			return
+		}
+	}
+
+	//all is well, redirect to billing page next
+	http.Redirect(w, req, "/billing", http.StatusSeeOther)
 }
 
 func loginHandler(w http.ResponseWriter, req *http.Request) {
@@ -716,8 +776,6 @@ func main() {
 	MongoPass = os.Getenv("MongoPass")
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
-	stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
-	//stripe.Key := os.Getenv("StripeAPIKey")
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("WebApp Server finished starting up!")
@@ -732,6 +790,9 @@ func main() {
 	router.HandleFunc("/login", loginHandler).Methods("POST")
 	router.HandleFunc("/signUp", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/signUp", signUpHandler).Methods("POST")
+	router.HandleFunc("/billing", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/register", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/register", registerHandler).Methods("POST")
 	router.HandleFunc("/verifyEmail", emailVerifyHandler).Methods("GET")
 	router.HandleFunc("/verifySuccess", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/signUpSuccess", staticTemplateHandler).Methods("GET")
