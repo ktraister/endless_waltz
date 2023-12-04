@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"math/rand"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -10,6 +12,7 @@ import (
 
 var charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWQYZ1234567890"
 var disallowed = "{}!@#$%^&*()~`+="
+var day, month, year int
 
 func generateToken() string {
 	rand.Seed(time.Now().Unix())
@@ -59,4 +62,23 @@ func checkUserInput(input string) bool {
 		}
 	}
 	return true
+}
+
+func nextBillingCycle(input string) string {
+	parts := strings.Split(input, "-")
+	day, _ = strconv.Atoi(parts[1])
+	month, _ = strconv.Atoi(parts[0])
+	year, _ = strconv.Atoi(parts[2])
+
+	if day > 28 {
+		day = 28
+	}
+	if month == 12 {
+		month = 1
+		year = year + 1
+	} else {
+		month = month + 1
+	}
+
+	return fmt.Sprintf("%d-%d-%d", month, day, year)
 }

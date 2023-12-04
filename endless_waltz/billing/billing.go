@@ -7,8 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,26 +17,6 @@ import (
 )
 
 var MongoURI, MongoUser, MongoPass string
-var day, month, year int
-
-func nextBillingCycle(input string) string {
-	parts := strings.Split(input, "-")
-	day, _ = strconv.Atoi(parts[1])
-	month, _ = strconv.Atoi(parts[0])
-	year, _ = strconv.Atoi(parts[2])
-
-	if day > 28 {
-		day = 28
-	}
-	if month == 12 {
-		month = 1
-		year = year + 1
-	} else {
-		month = month + 1
-	}
-
-	return fmt.Sprintf("%d-%d-%d", month, day, year)
-}
 
 func cryptoResolvePayments(logger *logrus.Logger) {
 	//creating context to connect to mongo

@@ -1,25 +1,25 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"io"
-	"bytes"
 	"strings"
 	"time"
-	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/stripe/stripe-go/v76"
-	"github.com/stripe/stripe-go/v76/checkout/session"
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
+	"github.com/stripe/stripe-go/v76"
+	"github.com/stripe/stripe-go/v76/checkout/session"
 )
 
 func healthHandler(w http.ResponseWriter, req *http.Request) {
@@ -252,7 +252,7 @@ func main() {
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
 	//stripe.Key = os.Getenv("StripeAPIKey")
-	 stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
+	stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Random Server finished starting up!")

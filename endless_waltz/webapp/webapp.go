@@ -77,8 +77,8 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 	fmt.Println(session_id)
 
 	if session.Values["billing"] == nil && session_id != "" {
-	        logger.Debug("setting card billing")
-	        session.Values["billing"] = "card"
+		logger.Debug("setting card billing")
+		session.Values["billing"] = "card"
 	}
 
 	session.Save(req, w)
@@ -261,10 +261,8 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	logger.Debug("1")
-
 	//check email is valid
-        email := session.Values["email"].(string)
+	email := session.Values["email"].(string)
 	ok = isEmailValid(email)
 	if !ok {
 		logger.Debug("Email check failed: ", email)
@@ -330,17 +328,16 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	logger.Debug("2")
-
 	today := time.Now()
-	threshold := today.Add(168 * time.Hour).Format("01-02-2006")
-	fmt.Println(session.Values)
 
-        var billingFlag string
+	var billingFlag string
 	if session.Values["billing"] != nil {
-	billingFlag = session.Values["billing"].(string)
-        }
+		fmt.Println("setting billing from session!")
+		billingFlag = session.Values["billing"].(string)
+	}
 	if billingFlag == "crypto" {
+		threshold := today.Add(168 * time.Hour).Format("01-02-2006")
+
 		_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
 			"Passwd":              password,
 			"SignupTime":          signUpTime,
@@ -358,16 +355,17 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 			logger.Error("Generic mongo error on user signup write: ", err)
 			return
 		}
-        //card wont get set w/o post, so lets get creative here
 	} else if billingFlag == "card" {
+		threshold := nextBillingCycle(today.Format("01-02-2006"))
+
 		_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
-			"Passwd":              password,
-			"SignupTime":          signUpTime,
-			"Active":              false,
-			"Email":               email,
-			"EmailVerifyToken":    emailVerifyToken,
-			"cardBilling":         true,
-			"billingCycleEnd":     threshold,
+			"Passwd":           password,
+			"SignupTime":       signUpTime,
+			"Active":           false,
+			"Email":            email,
+			"EmailVerifyToken": emailVerifyToken,
+			"cardBilling":      true,
+			"billingCycleEnd":  threshold,
 		})
 		if err != nil {
 			http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -379,8 +377,6 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
-
-	logger.Debug("3")
 
 	//redirect to main page 5 seconds later using html
 	http.Redirect(w, req, "/signUpSuccess", http.StatusSeeOther)
