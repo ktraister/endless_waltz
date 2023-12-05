@@ -9,11 +9,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/sirupsen/logrus"
+	"github.com/stripe/stripe-go/v76"
+	"github.com/stripe/stripe-go/v76/subscription"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-
-	"github.com/sirupsen/logrus"
 )
 
 var MongoURI, MongoUser, MongoPass string
@@ -58,6 +59,7 @@ func cryptoResolvePayments(logger *logrus.Logger) {
 	defer cursor.Close(context.TODO())
 
 	index := 0
+	mod := 0
 	// Iterate over the result records
 	for cursor.Next(context.TODO()) {
 		index += 1
@@ -112,6 +114,7 @@ func cryptoResolvePayments(logger *logrus.Logger) {
 		}
 
 		if paid {
+			mod += 1
 			//set billingCharge nil
 			updateFilter := bson.M{"_id": result["_id"]}
 			update := bson.M{
@@ -138,7 +141,7 @@ func cryptoResolvePayments(logger *logrus.Logger) {
 		logger.Error("Resolve mongo cursor error: ", err)
 	}
 
-	logger.Info(fmt.Sprintf("Resolve Updated %d records", index))
+	logger.Info(fmt.Sprintf("Resolve inspected %d records, updated %d", index, mod))
 }
 
 func cryptoBillingInit(logger *logrus.Logger) {
@@ -357,6 +360,115 @@ func cryptoDisableAccount(logger *logrus.Logger) {
 	logger.Info(fmt.Sprintf("Disable Updated %d records", index))
 }
 
+func stripeSubscriptionChecks(logger *logrus.Logger) {
+	//creating context to connect to mongo
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	credential := options.Credential{
+		Username: MongoUser,
+		Password: MongoPass,
+	}
+	//actually connect to mongo
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
+	if err != nil {
+		logger.Error("Disable mongo connect error: ", err)
+		return
+	}
+
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
+
+	db := client.Database("auth").Collection("keys")
+
+	//find all records where cardBilling = true
+	filter := bson.M{
+		"cardBilling": true,
+	}
+
+	// Perform the query
+	cursor, err := db.Find(context.TODO(), filter)
+	if err != nil {
+		logger.Error("Disable mongo find error", err)
+		return
+	}
+	defer cursor.Close(context.TODO())
+
+	index := 0
+	mod := 0
+	// Iterate over the result records
+	for cursor.Next(context.TODO()) {
+		index += 1
+		var result bson.M
+		err := cursor.Decode(&result)
+		if err != nil {
+			logger.Error("Disable mongo result decode error: ", err)
+			continue
+		}
+
+		if result["cardBillingId"] == nil {
+			logger.Warn(fmt.Sprintf("Mongo document for %s has no subscription ID", result["User"].(string)))
+			continue
+		}
+
+		params := &stripe.SubscriptionParams{}
+		sub, err := subscription.Get(result["cardBillingId"].(string), params)
+		if err != nil {
+			logger.Error("Error getting stripe subscription data: ", err)
+			continue
+		}
+
+		//stripe will keep track of billing cycles and all for us (!!!)
+		//Possible values are `incomplete`, `incomplete_expired`, `trialing`, `active`, `past_due`, `canceled`, or `unpaid`.
+		logger.Debug(fmt.Sprintf("checking sub %s for user %s, status --> %s", result["cardBillingId"], result["User"], sub.Status))
+		if sub.Status != `trialing` && sub.Status != `active` {
+			//account should be disabled
+			if result["Active"] == true {
+				mod += 1
+				//disable account
+				updateFilter := bson.M{"_id": result["_id"]}
+				update := bson.M{
+					"$set": bson.M{
+						"Active": false,
+					},
+				}
+				_, err = db.UpdateOne(ctx, updateFilter, update)
+				if err != nil {
+					logger.Error("Disable mongo update error: ", err)
+					continue
+				}
+			}
+		} else {
+			//account should be enabled
+			if result["Active"] == false {
+				mod += 1
+				//disable account
+				updateFilter := bson.M{"_id": result["_id"]}
+				update := bson.M{
+					"$set": bson.M{
+						"Active": true,
+					},
+				}
+				_, err = db.UpdateOne(ctx, updateFilter, update)
+				if err != nil {
+					logger.Error("Disable mongo update error: ", err)
+					continue
+				}
+			}
+		}
+	}
+
+	// Check for errors during cursor iteration
+	if err := cursor.Err(); err != nil {
+		logger.Error("Disable mongo cursor error: ", err)
+	}
+
+	logger.Info(fmt.Sprintf("StripeChecks inspected %d records, updated %d records", index, mod))
+}
+
 // this could just be a cron job that runs daily...
 func main() {
 	MongoURI = os.Getenv("MongoURI")
@@ -367,6 +479,9 @@ func main() {
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Billing binary finished starting up!")
+
+	//stripe.Key = os.Getenv("StripeAPIKey")
+	stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
 
 	//crypto billing
 	//crypto resolve payments
@@ -380,4 +495,7 @@ func main() {
 
 	//crypto billing disable after cycle end
 	cryptoDisableAccount(logger)
+
+	//check if card-billed accounts should be locked
+	stripeSubscriptionChecks(logger)
 }

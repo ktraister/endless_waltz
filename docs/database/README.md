@@ -41,8 +41,7 @@ so this is the maximum that can be set by all application paths.
 
     //card billing values
     cardBilling: true
-    cardBillingEmail: "foo@bar.com"
-    cardBillingName: "foo bar"
+    cardBillingId: "cus_P81rSXvuzrd44t" //subscription ID is used to tie customer to subscription in stripe
   },
 
 db.keys.updateOne( { User: "zero53" }, { $set: { "cryptoBilling": true, billingCycleEnd: "12-06-2023", billingEmailSent: false, billingReminderSent: false }, $currentDate: { lastModified: true } } )

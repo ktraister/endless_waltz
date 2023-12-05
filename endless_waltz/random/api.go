@@ -224,13 +224,13 @@ func retrieveCheckoutSession(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte("{}"))
 	} else {
-	        //we grab the session details using the stripe SDK
+		//we grab the session details using the stripe SDK
 		s, _ := session.Get(session_id, nil)
 
 		writeJSON(w, struct {
-			Status        string `json:"status"`
+			Status string `json:"status"`
 		}{
-			Status:        string(s.Status),
+			Status: string(s.Status),
 		}, logger)
 	}
 }

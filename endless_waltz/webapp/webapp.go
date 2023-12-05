@@ -76,18 +76,14 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 		}
 	}
 
-	fmt.Println(session.Values["billing"])
-	fmt.Println(session_id)
-
 	//set here. See if this can be moved later, but since this is a catchall function, maybe not
 	if session_id != "" {
 		logger.Debug("setting card billing")
 		session.Values["billing"] = "card"
-                s, err := stripe.Get(session_id, nil)
-		if err == nil {  
-		session.Values["billingEmail"] = s.CustomerDetails.Email
-		session.Values["billingName"] = s.CustomerDetails.Name
-	    }
+		s, err := stripe.Get(session_id, nil)
+		if err == nil {
+			session.Values["billingId"] = s.Subscription.ID
+		}
 	}
 
 	session.Save(req, w)
@@ -225,13 +221,13 @@ func billingHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if req.FormValue("billing") == "crypto" {
-	session.Values["billing"] = "crypto"
-	err = session.Save(req, w)
-	if err != nil {
-		logger.Error("Unable to save session")
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		session.Values["billing"] = "crypto"
+		err = session.Save(req, w)
+		if err != nil {
+			logger.Error("Unable to save session")
+			http.Redirect(w, req, "/error", http.StatusSeeOther)
+		}
 	}
-    }
 
 	http.Redirect(w, req, "/register", http.StatusSeeOther)
 }
@@ -374,26 +370,18 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	} else if billingFlag == "card" {
-	        //need to check as early as possible if these values are nil
-		if session.Values["billingEmail"] == nil || session.Values["billingEmail"] == nil  {
-			logger.Debug(fmt.Sprintf("requires session value is nil: %s, %s", session.Values["billingEmail"], session.Values["billingEmail"]))
+		//need to check as early as possible if these values are nil
+		if session.Values["billingId"] == nil {
+			logger.Debug(fmt.Sprintf("requires session value is nil: %s, %s", session.Values["billingId"]))
 			http.Redirect(w, req, "/billing", http.StatusSeeOther)
 			return
 		}
 
-
 		//check billing details are valid if exists
-		billingEmail := session.Values["billingEmail"].(string)
-		ok = isEmailValid(billingEmail)
+		billingId := session.Values["billingId"].(string)
+		ok = checkUserInput(billingId)
 		if !ok {
-			logger.Debug("billingEmail check failed: ", email)
-			http.Redirect(w, req, "/signUp", http.StatusSeeOther)
-			return
-		}
-		billingName := session.Values["billingName"].(string)
-		ok = checkUserInput(billingName)
-		if !ok {
-			logger.Debug("billingName check failed: ", email)
+			logger.Debug("billingId check failed: ", email)
 			http.Redirect(w, req, "/signUp", http.StatusSeeOther)
 			return
 		}
@@ -407,8 +395,7 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 			"Email":            email,
 			"EmailVerifyToken": emailVerifyToken,
 			"cardBilling":      true,
-			"cardBillingEmail": billingName,
-			"cardBillingName":  billingEmail,
+			"cardBillingId":    billingId,
 			"billingCycleEnd":  threshold,
 		})
 		if err != nil {
@@ -886,8 +873,8 @@ func main() {
 	MongoPass = os.Getenv("MongoPass")
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
-        //s.Key = os.Getenv("StripeAPIKey")
-        s.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
+	//s.Key = os.Getenv("StripeAPIKey")
+	s.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("WebApp Server finished starting up!")
