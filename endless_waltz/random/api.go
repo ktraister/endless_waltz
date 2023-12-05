@@ -218,15 +218,23 @@ func retrieveCheckoutSession(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	s, _ := session.Get(req.URL.Query().Get("session_id"), nil)
+	session_id := req.URL.Query().Get("session_id")
+	if session_id == "null" {
+		fmt.Println("Null session id, returning {}")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte("{}"))
+	} else {
 
-	writeJSON(w, struct {
-		Status        string `json:"status"`
-		CustomerEmail string `json:"customer_email"`
-	}{
-		Status:        string(s.Status),
-		CustomerEmail: string(s.CustomerDetails.Email),
-	}, logger)
+		s, _ := session.Get(session_id, nil)
+
+		writeJSON(w, struct {
+			Status        string `json:"status"`
+			CustomerEmail string `json:"customer_email"`
+		}{
+			Status:        string(s.Status),
+			CustomerEmail: string(s.CustomerDetails.Email),
+		}, logger)
+	}
 }
 
 func writeJSON(w http.ResponseWriter, v interface{}, logger *logrus.Logger) {

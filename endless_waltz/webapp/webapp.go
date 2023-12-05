@@ -207,13 +207,22 @@ func billingHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//end their session
+	// Parse form data
+	err = req.ParseForm()
+	if err != nil {
+		logger.Error("Failed to parse form data in signUpHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	if req.FormValue("billing") == "crypto" {
 	session.Values["billing"] = "crypto"
 	err = session.Save(req, w)
 	if err != nil {
 		logger.Error("Unable to save session")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 	}
+    }
 
 	http.Redirect(w, req, "/register", http.StatusSeeOther)
 }

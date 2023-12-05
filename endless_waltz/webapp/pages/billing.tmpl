@@ -52,9 +52,11 @@
       <h2 class="h2 mb-3 fw-normal">Selected: Pay with Crypto</h2>
       <p>Crypto payments require us to send you monthly emails with payment links. Be sure to make payments on time to avoid service interruption.</p>
       <br>
-      <a href="/register">
+      <form method="POST" action="/billing">
+      <input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">
+      <input type="hidden" name="billing" value="crypto">
       <button class="btn btn-primary w-50 py-2" type="submit" value="SignUp">Finish Creating Account</button>
-      </a>
+      </form>
     </div>
     <br>
     <br>
