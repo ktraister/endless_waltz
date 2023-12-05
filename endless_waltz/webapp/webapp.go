@@ -317,9 +317,14 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 		logger.Error("generic mongo signup error: ", err)
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
-	} else {
-		logger.Info("Database connection succesful!")
 	}
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
+
 	auth_db := client.Database("auth").Collection("keys")
 
 	//create our hasher to hash our pass
@@ -468,9 +473,14 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		logger.Error("generic mongo signup error: ", err)
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
-	} else {
-		logger.Info("Database connection succesful!")
 	}
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
+
 	auth_db := client.Database("auth").Collection("keys")
 
 	//extensible for other db checks into the future

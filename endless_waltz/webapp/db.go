@@ -28,6 +28,13 @@ func deleteUser(logger *logrus.Logger, user string) bool {
 		return false
 	}
 
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
+
 	auth_db := client.Database("auth").Collection("keys")
 
 	// Check if the item exists in the collection
@@ -59,6 +66,12 @@ func checkBillingMethod(logger *logrus.Logger, user string) (string, error) {
 		logger.Error("Could not connect to mongo:", err)
 		return "", err
 	}
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
 
 	auth_db := client.Database("auth").Collection("keys")
 
@@ -87,6 +100,12 @@ func prepareUserPassReset(logger *logrus.Logger, user string, token string) (str
 		logger.Error("Could not connect to mongo:", err)
 		return "", err
 	}
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
 
 	auth_db := client.Database("auth").Collection("keys")
 
@@ -125,6 +144,12 @@ func verifyPasswordReset(logger *logrus.Logger, email string, user string, token
 		logger.Error("verifyPasswordReset mongo generic error ", err)
 		return false
 	}
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
 
 	auth_db := client.Database("auth").Collection("keys")
 
@@ -168,6 +193,12 @@ func submitPasswordReset(logger *logrus.Logger, email string, user string, token
 		logger.Error("verifyUserSignup mongo generic error ", err)
 		return false
 	}
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
 
 	auth_db := client.Database("auth").Collection("keys")
 
@@ -219,6 +250,12 @@ func verifyUserSignup(logger *logrus.Logger, email string, user string, token st
 		logger.Error("verifyUserSignup mongo generic error ", err)
 		return false
 	}
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
 
 	auth_db := client.Database("auth").Collection("keys")
 
