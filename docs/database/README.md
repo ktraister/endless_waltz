@@ -29,14 +29,20 @@ so this is the maximum that can be set by all application paths.
     passwordResetTime: Long('1699553760'),
     passwordResetToken: 'lnnpU...oSypNlf',
 
-    //billing values
+    //global billing values
+    billingCycleEnd: '01-01-2024'        //MM-DD-YYYY
+
+    //crypto billing values
     cryptoBilling: true
-    stripeBilling: false
     billingEmailSent: false            //crypto specific
     billingReminderSent: false         //crypto specific
-    billingCycleEnd: '1-1-2024'        //MM-DD-YYYY
     billingCharge: '2E8YCQWQ',         //also crypto specific
     billingToken: 'lnnpU...oSypNlf',   //also crypto specific
+
+    //card billing values
+    cardBilling: true
+    cardBillingEmail: "foo@bar.com"
+    cardBillingName: "foo bar"
   },
 
 db.keys.updateOne( { User: "zero53" }, { $set: { "cryptoBilling": true, billingCycleEnd: "12-06-2023", billingEmailSent: false, billingReminderSent: false }, $currentDate: { lastModified: true } } )

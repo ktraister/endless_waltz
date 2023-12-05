@@ -20,6 +20,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	s "github.com/stripe/stripe-go/v76"
+	stripe "github.com/stripe/stripe-go/v76/checkout/session"
 )
 
 var store = sessions.NewCookieStore([]byte(os.Getenv("SessionKey")))
@@ -76,9 +79,15 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 	fmt.Println(session.Values["billing"])
 	fmt.Println(session_id)
 
-	if session.Values["billing"] == nil && session_id != "" {
+	//set here. See if this can be moved later, but since this is a catchall function, maybe not
+	if session_id != "" {
 		logger.Debug("setting card billing")
 		session.Values["billing"] = "card"
+                s, err := stripe.Get(session_id, nil)
+		if err == nil {  
+		session.Values["billingEmail"] = s.CustomerDetails.Email
+		session.Values["billingName"] = s.CustomerDetails.Name
+	    }
 	}
 
 	session.Save(req, w)
@@ -365,6 +374,30 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 	} else if billingFlag == "card" {
+	        //need to check as early as possible if these values are nil
+		if session.Values["billingEmail"] == nil || session.Values["billingEmail"] == nil  {
+			logger.Debug(fmt.Sprintf("requires session value is nil: %s, %s", session.Values["billingEmail"], session.Values["billingEmail"]))
+			http.Redirect(w, req, "/billing", http.StatusSeeOther)
+			return
+		}
+
+
+		//check billing details are valid if exists
+		billingEmail := session.Values["billingEmail"].(string)
+		ok = isEmailValid(billingEmail)
+		if !ok {
+			logger.Debug("billingEmail check failed: ", email)
+			http.Redirect(w, req, "/signUp", http.StatusSeeOther)
+			return
+		}
+		billingName := session.Values["billingName"].(string)
+		ok = checkUserInput(billingName)
+		if !ok {
+			logger.Debug("billingName check failed: ", email)
+			http.Redirect(w, req, "/signUp", http.StatusSeeOther)
+			return
+		}
+
 		threshold := nextBillingCycle(today.Format("01-02-2006"))
 
 		_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
@@ -374,6 +407,8 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 			"Email":            email,
 			"EmailVerifyToken": emailVerifyToken,
 			"cardBilling":      true,
+			"cardBillingEmail": billingName,
+			"cardBillingName":  billingEmail,
 			"billingCycleEnd":  threshold,
 		})
 		if err != nil {
@@ -851,6 +886,8 @@ func main() {
 	MongoPass = os.Getenv("MongoPass")
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
+        //s.Key = os.Getenv("StripeAPIKey")
+        s.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("WebApp Server finished starting up!")

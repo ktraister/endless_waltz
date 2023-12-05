@@ -70,12 +70,9 @@
       const response = await fetch(`/api/session-status?session_id=${sessionId}`);
       const session = await response.json();
 
-      if (session.status == 'open') {
+      if (session.status != 'complete') {
         //billing failed, redirect
 	window.replace('/billing')
-      } else if (session.status == 'complete') {
-        //else 
-        document.cookie = `sessionId=${sessionId}; path=/`;
       }
     }
     </script>
