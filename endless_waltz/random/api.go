@@ -187,7 +187,6 @@ func createCheckoutSession(w http.ResponseWriter, req *http.Request) {
 	params := &stripe.CheckoutSessionParams{
 		UIMode:    stripe.String("embedded"),
 		ReturnURL: stripe.String(domain + "/register?session_id={CHECKOUT_SESSION_ID}"),
-		//RedirectOnCompletion: stripe.String("never"),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			&stripe.CheckoutSessionLineItemParams{
 				// Provide the exact Price ID (for example, pr_1234) of the product you want to sell
@@ -196,6 +195,9 @@ func createCheckoutSession(w http.ResponseWriter, req *http.Request) {
 			},
 		},
 		Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
+			TrialPeriodDays: stripe.Int64(30), // Set the trial period in days
+		},
 	}
 
 	s, err := session.New(params)

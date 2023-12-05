@@ -372,7 +372,7 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 	} else if billingFlag == "card" {
 		//need to check as early as possible if these values are nil
 		if session.Values["billingId"] == nil {
-			logger.Debug(fmt.Sprintf("requires session value is nil: %s, %s", session.Values["billingId"]))
+			logger.Debug(fmt.Sprintf("requires session value is nil: %s", session.Values["billingId"]))
 			http.Redirect(w, req, "/billing", http.StatusSeeOther)
 			return
 		}
