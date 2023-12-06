@@ -53,7 +53,7 @@ func rateLimit(user string, limit int) bool {
 	}
 }
 
-//checkAuth needs to get updated to allow users to login with deactive accts
+// checkAuth needs to get updated to allow users to login with deactive accts
 func checkAuth(user string, passwd string, logger *logrus.Logger) bool {
 	//creating context to connect to mongo
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)

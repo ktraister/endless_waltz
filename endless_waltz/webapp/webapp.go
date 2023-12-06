@@ -93,21 +93,22 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 			logger.Error("Failed to get user data: ", err)
 			http.Redirect(w, req, "/error", http.StatusSeeOther)
 			return
-                }
+		}
 
 		//set values from session
 		data.IsAuthenticated = session.Values["authenticated"].(bool)
 		data.TemplateTag = csrf.Token(req)
+		data.Stripe = true
 	} else {
-	    // Define a data struct for the norm template
-	    data = sessionData{
-		    IsAuthenticated: session.Values["authenticated"].(bool),
-		    Username:        session.Values["username"].(string),
-		    Captcha:         false,
-		    Stripe:          false,
-		    TemplateTag:     csrf.Token(req),
-		    Email:           session.Values["email"].(string),
-	    }
+		// Define a data struct for the norm template
+		data = sessionData{
+			IsAuthenticated: session.Values["authenticated"].(bool),
+			Username:        session.Values["username"].(string),
+			Captcha:         false,
+			Stripe:          false,
+			TemplateTag:     csrf.Token(req),
+			Email:           session.Values["email"].(string),
+		}
 	}
 
 	//add recaptcha JS to pageif needed
@@ -670,7 +671,7 @@ func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 
 	if verifyUserSignup(logger, email, user, token) {
 		//send the welcome email
-		err := sendSignupEmail(logger, user, email)
+		err := sendSignupEmail(logger, user)
 		if err != nil {
 			http.Redirect(w, req, "/error", http.StatusSeeOther)
 			return
@@ -881,6 +882,92 @@ func protectedHandler(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/deleteSuccess", http.StatusSeeOther)
 }
 
+func switchToCryptoHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		logger.Error("Could not configure logger in protectedHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	// Parse form data
+	err := req.ParseForm()
+	if err != nil {
+		logger.Error("Failed to parse form data in protectedHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	session, err := store.Get(req, "session-name")
+	if err != nil {
+		logger.Error("Could not get session in protectedHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	// Check if the user is authenticated
+	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+		http.Redirect(w, req, "/unauthorized", http.StatusSeeOther)
+		return
+	}
+
+	err = switchToCrypto(logger, session.Values["username"].(string))
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error while switching user %s to crypto: ", session.Values["username"].(string)), err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+	}
+
+	http.Redirect(w, req, "/protected", http.StatusSeeOther)
+}
+
+func switchToCardHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		logger.Error("Could not configure logger in protectedHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	session, err := store.Get(req, "session-name")
+	if err != nil {
+		logger.Error("Could not get session in protectedHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	var session_id string
+	for k, v := range req.URL.Query() {
+		switch k {
+		case "session_id":
+			session_id = v[0]
+		}
+	}
+
+	//set here. See if this can be moved later, but since this is a catchall function, maybe not
+	if session_id != "" {
+		logger.Debug("setting card billing")
+		session.Values["billing"] = "card"
+		s, err := stripe.Get(session_id, nil)
+		if err == nil {
+			session.Values["billingId"] = s.Subscription.ID
+		}
+	}
+
+	// Check if the user is authenticated
+	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+		http.Redirect(w, req, "/unauthorized", http.StatusSeeOther)
+		return
+	}
+
+	err = switchToCard(logger, session)
+	if err != nil {
+		logger.Error(fmt.Sprintf("Error while switching user %s to card: ", session.Values["username"].(string)), err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+	}
+
+	http.Redirect(w, req, "/protected", http.StatusSeeOther)
+}
+
 func notFoundHandler(w http.ResponseWriter, req *http.Request) {
 	logger, _ := req.Context().Value("logger").(*logrus.Logger)
 	session, _ := store.Get(req, "session-name")
@@ -920,6 +1007,8 @@ func main() {
 	router.HandleFunc("/deleteSuccess", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedPageHandler).Methods("GET")
 	router.HandleFunc("/protected", protectedHandler).Methods("POST")
+	router.HandleFunc("/switchToCrypto", switchToCryptoHandler).Methods("POST")
+	router.HandleFunc("/switchToCard", switchToCardHandler).Methods("GET")
 	router.HandleFunc("/downloads", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/unauthorized", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/how_it_works", staticTemplateHandler).Methods("GET")

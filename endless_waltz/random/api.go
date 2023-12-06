@@ -22,6 +22,10 @@ import (
 	"github.com/stripe/stripe-go/v76/checkout/session"
 )
 
+type User struct {
+	Username string `json:"username"`
+}
+
 func healthHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
@@ -170,7 +174,6 @@ func cryptoPaymentHandler(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, cbResp["data"].(map[string]interface{})["hosted_url"].(string), http.StatusSeeOther)
 }
 
-// below code mostly provided by stripe. Blame them.
 func createCheckoutSession(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
@@ -199,6 +202,119 @@ func createCheckoutSession(w http.ResponseWriter, req *http.Request) {
 			TrialPeriodDays: stripe.Int64(30), // Set the trial period in days
 		},
 	}
+
+	s, err := session.New(params)
+	if err != nil {
+		logger.Error("session.New: ", err)
+	}
+
+	writeJSON(w, struct {
+		ClientSecret string `json:"clientSecret"`
+	}{
+		ClientSecret: s.ClientSecret,
+	}, logger)
+}
+
+func modifyCheckoutSession(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	domain := "https://endlesswaltz.xyz"
+	if os.Getenv("ENV") == "local" {
+		domain = "https://localhost"
+	}
+
+	//creating context to connect to mongo
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	credential := options.Credential{
+		Username: MongoUser,
+		Password: MongoPass,
+	}
+	//actually connect to mongo
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Init mongo connect error: ", err)
+		return
+	}
+
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
+
+	db := client.Database("auth").Collection("keys")
+
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+	var u User
+	err = json.Unmarshal(body, &u)
+	if err != nil {
+		http.Error(w, "Error parsing JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	// WE NEED TO DO SOMETHING TO PASS A USER TO THIS FUNCTION
+	// add params to post in json :)
+	user := u.Username
+	logger.Warn("Incoming user ", user)
+
+	// Check if the item exists in the collection
+	filter := bson.M{"User": user}
+	var result bson.M
+	err = db.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Database findOne error: ", err)
+		return
+	}
+
+	billingDate, err := time.Parse("02-01-2006", result["billingCycleEnd"].(string))
+	today := time.Now()
+	duration := billingDate.Sub(today)
+	daysLeft := int64(duration.Hours() / 24)
+
+	var params *stripe.CheckoutSessionParams
+	if daysLeft >= 1 {
+	    params = &stripe.CheckoutSessionParams{
+		    UIMode:    stripe.String("embedded"),
+		    ReturnURL: stripe.String(domain + "/switchToCard?session_id={CHECKOUT_SESSION_ID}"),
+		    LineItems: []*stripe.CheckoutSessionLineItemParams{
+			    &stripe.CheckoutSessionLineItemParams{
+				    // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+				    Price:    stripe.String("price_1OJe1UGcdL8YMSExsJZxn1J1"),
+				    Quantity: stripe.Int64(1),
+			    },
+		    },
+		    Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		    SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
+			    TrialPeriodDays: stripe.Int64(daysLeft), // Set the trial period in days
+		    },
+	    }
+        } else {
+	    params = &stripe.CheckoutSessionParams{
+		    UIMode:    stripe.String("embedded"),
+		    ReturnURL: stripe.String(domain + "/switchToCard?session_id={CHECKOUT_SESSION_ID}"),
+		    LineItems: []*stripe.CheckoutSessionLineItemParams{
+			    &stripe.CheckoutSessionLineItemParams{
+				    // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+				    Price:    stripe.String("price_1OJe1UGcdL8YMSExsJZxn1J1"),
+				    Quantity: stripe.Int64(1),
+			    },
+		    },
+		    Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+	    }
+        }
 
 	s, err := session.New(params)
 	if err != nil {
@@ -251,8 +367,6 @@ func writeJSON(w http.ResponseWriter, v interface{}, logger *logrus.Logger) {
 	}
 }
 
-//End stripe code
-
 func main() {
 	MongoURI = os.Getenv("MongoURI")
 	MongoUser = os.Getenv("MongoUser")
@@ -271,6 +385,7 @@ func main() {
 	router.HandleFunc("/api/healthcheck", healthHandler).Methods("GET")
 	router.HandleFunc("/api/cryptoPayment", cryptoPaymentHandler).Methods("GET")
 	router.HandleFunc("/api/create-checkout-session", createCheckoutSession)
+	router.HandleFunc("/api/modify-checkout-session", modifyCheckoutSession)
 	router.HandleFunc("/api/session-status", retrieveCheckoutSession)
 
 	http.ListenAndServe(":8090", router)

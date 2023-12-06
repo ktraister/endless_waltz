@@ -12,15 +12,36 @@
     <br>
     <br>
     <br>
-    <h2 style="color:yellow;">Billing Information</h1>
+    <h2 style="color:#0d6efd;">Billing Information</h1>
     <hr style="width:50%">
     {{ if .Card }}
     <h3>Payment Method: Card w/ Stripe</h3>
     <h3>Next Payment: {{.BillingCycleEnd}}</h3>
+    <br>
+    <form action="/switchToCrypto" method="POST">
+      <input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">      
+      <button id="crypto_button" class="btn btn-primary w-25 py-2">Switch to Crypto Billing</button>
+    </form>
+    <div class="hidden" id="checkout">
+    </div>
+    <br>
+    <button id="card_button" onclick="card()" class="btn btn-primary w-25 py-2">Update Payment Information</button>
+    <button id="nvm_button" onclick="cancel()" class="hidden btn btn-primary w-25 py-2">Cancel</button>
     {{ end }}
     {{ if .Crypto }}
     <h3>Payment Method: Crypto</h3>
     <h3>Next Payment Due: {{.BillingCycleEnd}}</h3>
+    <form action="/api/cryptoPayment" method="GET">
+      <input type="hidden" name="user" value="{{.Username}}">      
+      <input type="hidden" name="email" value="{{.Email}}">      
+      <input type="hidden" name="token" value="{{.Token}}">      
+      <button id="crypto_button" class="btn btn-primary w-25 py-2">Make a Payment</button>
+    </form>
+    <div class="hidden" id="checkout">
+    </div>
+    <br>
+    <button id="card_button" onclick="card()" class="btn btn-primary w-25 py-2">Switch to Card Billing</button>
+    <button id="nvm_button" onclick="cancel()" class="hidden btn btn-primary w-25 py-2">Cancel</button>
     {{ end }}
     <br>
     <br>
@@ -34,9 +55,57 @@
     <br>
     <form action="/protected" method="POST">
       <input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">      
-      <button style="color: black; background-color: red;" class="btn btn-primary w-25 py-2" name="delete">Delete Account</button>
+      <button style="color: black; background-color: red;" class="btn btn-primary w-25 py-2">Delete Account</button>
     </form>
     </p>
     </div>
+    <script>
+    function card() {
+        var content = document.getElementById("card_button");
+        var content2 = document.getElementById("checkout");
+        var content3 = document.getElementById("nvm_button");
+        var content4 = document.getElementById("crypto_button");
+        content.classList.add("hidden");
+        content4.classList.add("hidden");
+        content2.classList.remove("hidden");
+        content3.classList.remove("hidden");
+    };
+
+    function cancel() {
+        var content = document.getElementById("card_button");
+        var content2 = document.getElementById("checkout");
+        var content3 = document.getElementById("nvm_button");
+        var content4 = document.getElementById("crypto_button");
+        content.classList.remove("hidden");
+        content4.classList.remove("hidden");
+        content2.classList.add("hidden");
+        content3.classList.add("hidden");
+    };
+
+
+    // This is your test publishable API key.
+    const stripe = Stripe("pk_test_51O9xNoGcdL8YMSExrCgpNzGy7XyHsCfcBPDPSiBLygEZubB1yS4SEYy2GCQ601PtYO56ZaYc8XrrIak76sgrduFJ00h3ae9fER");
+ 
+    initialize();
+ 
+    // Create a Checkout Session as soon as the page loads
+    async function initialize() {
+      const response = await fetch("/api/modify-checkout-session", {
+        method: "POST",
+	body: JSON.stringify({
+	  Username: '{{.Username}}'
+	}) 
+      });
+ 
+      const { clientSecret } = await response.json();
+ 
+      const checkout = await stripe.initEmbeddedCheckout({
+        clientSecret,
+      });
+ 
+      // Mount Checkout
+      checkout.mount('#checkout');
+    }
+    </script>
   </main>
 {{ end }}
