@@ -27,23 +27,19 @@ import (
 
 var store = sessions.NewCookieStore([]byte(os.Getenv("SessionKey")))
 
-type resetData struct {
-	IsAuthenticated bool
-	Username        string
-	Captcha         bool
-	Email           string
-	Token           string
-	TemplateTag     string
-}
-
 type sessionData struct {
 	IsAuthenticated bool
 	Username        string
+	Email           string
 	Captcha         bool
 	Stripe          bool
 	CaptchaFail     bool
 	TemplateTag     string
-	Email           string
+	Token           string
+	Crypto          bool
+	Card            bool
+	BillingCycleEnd string
+	Active          bool
 }
 
 func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Request, session *sessions.Session, file string) {
@@ -88,15 +84,30 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 
 	session.Save(req, w)
 
+	fmt.Println(file)
 	var data sessionData
-	// Define a data struct for the template
-	data = sessionData{
-		IsAuthenticated: session.Values["authenticated"].(bool),
-		Username:        session.Values["username"].(string),
-		Captcha:         false,
-		Stripe:          false,
-		TemplateTag:     csrf.Token(req),
-		Email:           session.Values["email"].(string),
+	//add all the things for the protected page
+	if file == "manageUser" {
+		data, err = getUserData(logger, session.Values["username"].(string))
+		if err != nil {
+			logger.Error("Failed to get user data: ", err)
+			http.Redirect(w, req, "/error", http.StatusSeeOther)
+			return
+                }
+
+		//set values from session
+		data.IsAuthenticated = session.Values["authenticated"].(bool)
+		data.TemplateTag = csrf.Token(req)
+	} else {
+	    // Define a data struct for the norm template
+	    data = sessionData{
+		    IsAuthenticated: session.Values["authenticated"].(bool),
+		    Username:        session.Values["username"].(string),
+		    Captcha:         false,
+		    Stripe:          false,
+		    TemplateTag:     csrf.Token(req),
+		    Email:           session.Values["email"].(string),
+	    }
 	}
 
 	//add recaptcha JS to pageif needed
@@ -121,7 +132,6 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
-
 }
 
 func imgHandler(w http.ResponseWriter, req *http.Request) {
@@ -719,12 +729,13 @@ func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 		}
 
 		// Define a data struct for the template
-		data := resetData{
+		data := sessionData{
 			IsAuthenticated: false,
 			Username:        user,
 			Email:           email,
 			Token:           token,
 			Captcha:         true,
+			Stripe:          false,
 			TemplateTag:     csrf.Token(req),
 		}
 

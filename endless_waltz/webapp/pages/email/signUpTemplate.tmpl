@@ -1,4 +1,12 @@
 {{ define "content" }}
 <h1>Welcome to Endless Waltz</h1>
 <h2>You may now sign in to use the messenger.</h2>
+{{ if .Billing == "card" }}
+<h3>Payment Method: Card w/ Stripe</h3>
+<h3>Next Payment: {{.BillingCycleEnd}}</h3>
+{{ end }}
+{{ if .Billing == "crypto" }}
+<h3>Payment Method: Crypto</h3>
+<h3>Next Payment Due: {{.BillingCycleEnd}}</h3>
+{{ end }}
 {{end}}

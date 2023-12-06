@@ -14,6 +14,8 @@ type emailData struct {
 	Username   string
 	TargetUser string
 	Token      string
+	Billing    string
+	BillingCycleEnd string
 }
 
 func templateEmail(logger *logrus.Logger, path string, data emailData) (string, error) {
@@ -43,10 +45,22 @@ func sendSignupEmail(logger *logrus.Logger, username string, targetUser string) 
 	//connect to our server, set up a message and send it
 	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
 
-	//stubbed for now, but determine the billing type, and use it to template email
-	//checkBillingMethod(logger, username)
+	data, err := getUserData(logger, username)
+	if err != nil {
+		return err
+	}
+        var eData emailData
+        if data.Card {
+	    eData.Billing = "card"
+        } else if data.Crypto {
+	    eData.Billing = "crypto"
+	} else {
+	    eData.Billing = ""
+        }
 
-	emailContent, err := templateEmail(logger, "signUpTemplate", emailData{})
+	eData.BillingCycleEnd = data.BillingCycleEnd
+
+	emailContent, err := templateEmail(logger, "signUpTemplate", eData)
 	if err != nil {
 		logger.Error("Unable to template email")
 		return err

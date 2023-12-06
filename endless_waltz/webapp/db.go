@@ -44,7 +44,7 @@ func deleteUser(logger *logrus.Logger, user string) bool {
 	if err == nil {
 		return true
 	} else if err == mongo.ErrNoDocuments {
-		logger.Warn("No creds found, unauthorized")
+		logger.Warn("Unable to delete non-existent user")
 		return false
 	} else {
 		logger.Error("Generic mongo delete error: ", err)
@@ -295,4 +295,59 @@ func verifyUserSignup(logger *logrus.Logger, email string, user string, token st
 	}
 
 	return true
+}
+
+func getUserData(logger *logrus.Logger, user string) (sessionData, error) {
+	//creating context to connect to mongo
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	credential := options.Credential{
+		Username: MongoUser,
+		Password: MongoPass,
+	}
+	//actually connect to mongo
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
+	if err != nil {
+		logger.Error("Could not connect to mongo:", err)
+		return sessionData{}, err
+	}
+
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+			return
+		}
+	}()
+
+	auth_db := client.Database("auth").Collection("keys")
+	filter := bson.M{"User": user}
+
+	// Check if the item exists in the collection
+	var result bson.M
+	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		return sessionData{}, err
+	}
+
+	data := sessionData{
+		Captcha:         false,
+		Stripe:          false,
+		Username:        result["User"].(string),
+		Email:           result["Email"].(string),
+		Active:          result["Active"].(bool),
+		Crypto:          false,
+		Card:            false,
+		BillingCycleEnd: result["billingCycleEnd"].(string),
+	}
+
+	if result["cryptoBilling"] != nil {
+		data.Crypto = true
+	} else if result["cardBilling"] != nil {
+		data.Card = true
+	} else {
+		logger.Warn("Unable to find billing type from db for: ", user)
+	}
+
+	return data, nil
 }

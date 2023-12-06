@@ -7,6 +7,21 @@
     <h1>User Information</h1>
     <hr style="width:50%">
     <h3>Username: {{.Username}}</h3>
+    <h3>Email: {{.Email}}</h3>
+    <h3>Active: {{.Active}}</h3>
+    <br>
+    <br>
+    <br>
+    <h2 style="color:yellow;">Billing Information</h1>
+    <hr style="width:50%">
+    {{ if .Card }}
+    <h3>Payment Method: Card w/ Stripe</h3>
+    <h3>Next Payment: {{.BillingCycleEnd}}</h3>
+    {{ end }}
+    {{ if .Crypto }}
+    <h3>Payment Method: Crypto</h3>
+    <h3>Next Payment Due: {{.BillingCycleEnd}}</h3>
+    {{ end }}
     <br>
     <br>
     <br>
