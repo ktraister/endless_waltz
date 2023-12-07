@@ -5,7 +5,7 @@ metadata:
   labels:
     name: ew-billing
 spec:
-  schedule: "0 8 * * *"
+  schedule: "*/5 * * * *"
   jobTemplate:
     spec:
       template:

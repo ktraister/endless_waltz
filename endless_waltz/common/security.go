@@ -88,13 +88,13 @@ func nextBillingCycle(input string) string {
 	if m < 10 {
 		month = fmt.Sprintf("0%d", m)
 	} else {
-		month = string(m)
+		month = fmt.Sprint(m)
 	}
 
 	if d < 10 {
 		day = fmt.Sprintf("0%d", d)
 	} else {
-		day = string(d)
+		day = fmt.Sprint(d)
 	}
 
 	return fmt.Sprintf("%s-%s-%d", month, day, y)
