@@ -31,6 +31,16 @@ spec:
           image: "ghcr.io/ktraister/ew_webapp:GITHUB_SHA"
           imagePullPolicy: Always
           env:
+            - name: "StripeAPIKey"
+              valueFrom:
+                secretKeyRef:
+                  key: StripeAPIKey
+                  name: ew-config
+            - name: "StripeAPIPubKey"
+              valueFrom:
+                secretKeyRef:
+                  key: StripeAPIPubKey
+                  name: ew-config
             - name: "SessionKey"
               valueFrom:
                 secretKeyRef:

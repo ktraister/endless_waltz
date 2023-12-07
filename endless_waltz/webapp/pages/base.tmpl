@@ -101,12 +101,40 @@
       .bd-mode-toggle .dropdown-menu .active .bi {
         display: block !important;
       }
+
+      .hidden {
+  	display: none;
+      }
+
+      .button-container {
+	display: flex;
+	justify-content: center;
+      }
+
+      .grid-container {
+	  display: inline-grid;
+	  grid-template-columns: auto auto auto;
+	  padding: 10px;
+      }
+
+      .grid-item {
+	  /*background-color: rgba(255, 255, 255, 0.8);*/
+	  border: 1px solid rgba(0, 0, 0, 0.8);
+	  padding: 20px;
+	  font-size: 20px;
+	  text-align: center;
+      }
     </style>
 
     <!-- add script for recaptcha -->
     {{ if .Captcha }}
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     {{ end }}
+
+    {{ if .Stripe }}
+    <script src="https://js.stripe.com/v3/"></script>
+    {{ end }}
+
     
   </head>
   <body class="d-flex h-100 text-center text-bg-dark">

@@ -1,14 +1,7 @@
 {{ define "content" }}
-<h1>Welcome to Endless Waltz</h1>
-<h2>You may now sign in to use the messenger.</h2>
-{{ if (eq .Billing "card") }}
-<h3>Payment Method: Card w/ Stripe</h3>
-<h3>Next Payment: {{.BillingCycleEnd}}</h3>
-{{ end }}
-{{ if (eq .Billing "crypto") }}
-<h3>Payment Method: Crypto</h3>
-<h3>Next Payment Due: {{.BillingCycleEnd}}</h3>
-<br>
+<!-- I can do something here to format it differently for local testing -->
+<h1>Endless Waltz Monthly Crypto Billing</h1>
+<h2>Your account will be suspended in seven days if you do not make a payment</h2>
 <h2>Please use the button below to create a payment when you're ready.</h2>
 <h2>The billing page will be active for 1 hour after pressing the button.</h2>
 <form method="get" action="{{.FormHost}}/api/cryptoPayment" class="inline">
@@ -18,5 +11,5 @@
   <button type="submit" class="btn btn-primary w-50 py-2">
   Make A Payment
   </button>
-{{ end }}
+</form>
 {{end}}

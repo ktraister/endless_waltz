@@ -10,81 +10,34 @@ import (
 )
 
 type emailData struct {
-	FormHost        string
-	Username        string
-	TargetUser      string
-	Token           string
-	Billing         string
-	BillingCycleEnd string
+	FormHost   string
+	Username   string
+	TargetUser string
+	Token      string
+	Billing    string
 }
 
 func templateEmail(logger *logrus.Logger, path string, data emailData) (string, error) {
-	filename := fmt.Sprintf("pages/email/%s.tmpl", path)
+	filename := fmt.Sprintf("email/%s.tmpl", path)
 	logger.Info("templating ", filename)
 	// Parse the template
-	t, err := template.New("").ParseFiles("pages/email/base.tmpl", filename)
+	t, err := template.New("").ParseFiles("email/base.tmpl", filename)
 	if err != nil {
-		logger.Error("failed to parse email template: ", err)
+		logger.Error("failed to parse email template")
 		return "", err
 	}
 
 	var rendered bytes.Buffer
 	err = t.ExecuteTemplate(&rendered, "base", data)
 	if err != nil {
-		logger.Error("Error rendering template: ", err)
+		logger.Error("Error rendering template:", err)
 		return "", err
 	}
 
 	return rendered.String(), nil
 }
 
-func sendSignupEmail(logger *logrus.Logger, username string) error {
-	emailUser := os.Getenv("EmailUser")
-	emailPass := os.Getenv("EmailPass")
-
-	//connect to our server, set up a message and send it
-	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
-
-	data, err := getUserData(logger, username)
-	if err != nil {
-		return err
-	}
-	var eData emailData
-	if data.Card {
-		eData.Billing = "card"
-	} else if data.Crypto {
-		eData.Billing = "crypto"
-	} else {
-		eData.Billing = ""
-	}
-	eData.BillingCycleEnd = data.BillingCycleEnd
-
-	emailContent, err := templateEmail(logger, "signUpTemplate", eData)
-	if err != nil {
-		logger.Error("Unable to template email")
-		return err
-	}
-
-	targetUser := data.Email
-	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
-	from := emailUser
-	to := []string{targetUser}
-	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
-		"Subject: Welcome to Endless Waltz\r\n" +
-		mime +
-		emailContent)
-
-	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
-
-	if err != nil {
-		logger.Error("unable to send email to gmail server")
-		return err
-	}
-
-	return nil
-}
-
-func sendVerifyEmail(logger *logrus.Logger, username string, targetUser string, token string) error {
+func sendCryptoBillingEmail(logger *logrus.Logger, username string, targetUser string, token string) {
 	emailUser := os.Getenv("EmailUser")
 	emailPass := os.Getenv("EmailPass")
 
@@ -103,43 +56,31 @@ func sendVerifyEmail(logger *logrus.Logger, username string, targetUser string, 
 		Token:      token,
 	}
 
-	emailContent, err := templateEmail(logger, "verifyTemplate", emailData)
+	emailContent, err := templateEmail(logger, "billingTemplate", emailData)
 	if err != nil {
-		logger.Error("Unable to template email")
-		return err
+		logger.Error("Unable to template email: ", err)
 	}
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	from := emailUser
 	to := []string{targetUser}
 	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
-		"Subject: Verify Your Email Address\r\n" +
+		"Subject: Monthly Billing\r\n" +
 		mime +
 		emailContent)
 
 	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
 
 	if err != nil {
-		logger.Error("unable to send email to gmail server")
-		return err
+		logger.Error("unable to send email to gmail server: ", err)
 	}
-
-	return nil
 }
 
-func sendResetEmail(logger *logrus.Logger, username string, token string) error {
-	//query the db for the email corresponding to the username
-	//and, yknow, make sure the request isn't a bogus user
-	targetUser, err := prepareUserPassReset(logger, username, token)
-	if err != nil {
-		logger.Warn("bogus reset: ", err)
-		return err
-	}
-
+func sendCryptoBillingReminder(logger *logrus.Logger, username string, targetUser string, token string) {
 	emailUser := os.Getenv("EmailUser")
 	emailPass := os.Getenv("EmailPass")
 
-	//connect to our server
+	//connect to our server, set up a message and send it
 	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
 
 	formHost := "https://endlesswaltz.xyz"
@@ -154,73 +95,92 @@ func sendResetEmail(logger *logrus.Logger, username string, token string) error 
 		Token:      token,
 	}
 
-	emailContent, err := templateEmail(logger, "resetTemplate", emailData)
+	emailContent, err := templateEmail(logger, "billingReminderTemplate", emailData)
 	if err != nil {
-		logger.Error("Unable to template email")
-		return err
+		logger.Error("Unable to template email: ", err)
 	}
 
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	from := emailUser
 	to := []string{targetUser}
 	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
-		"Subject: Reset Your Password\r\n" +
+		"Subject: Monthly Billing Reminder\r\n" +
 		mime +
 		emailContent)
 
 	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
 
 	if err != nil {
-		logger.Error("unable to send email to gmail server")
-		return err
+		logger.Error("unable to send email to gmail server: ", err)
 	}
-
-	return nil
 }
 
-func sendBillingEmail(logger *logrus.Logger, username string) error {
+func sendBillingDisabled(logger *logrus.Logger, btype string, username string, targetUser string, token string) {
 	emailUser := os.Getenv("EmailUser")
 	emailPass := os.Getenv("EmailPass")
 
 	//connect to our server, set up a message and send it
 	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
 
-	data, err := getUserData(logger, username)
+	formHost := "https://endlesswaltz.xyz"
+	if os.Getenv("ENV") == "local" {
+		formHost = "https://localhost"
+	}
+
+	emailData := emailData{
+		FormHost:   formHost,
+		Username:   username,
+		TargetUser: targetUser,
+		Token:      token,
+		Billing:    btype,
+	}
+
+	emailContent, err := templateEmail(logger, "disableTemplate", emailData)
 	if err != nil {
-		return err
-	}
-	var eData emailData
-	if data.Card {
-		eData.Billing = "card"
-	} else if data.Crypto {
-		eData.Billing = "crypto"
-	} else {
-		eData.Billing = ""
+		logger.Error("Unable to template email: ", err)
 	}
 
-	eData.BillingCycleEnd = data.BillingCycleEnd
-
-	emailContent, err := templateEmail(logger, "billingTemplate", eData)
-	if err != nil {
-		logger.Error("Unable to template email")
-		return err
-	}
-
-	targetUser := data.Email
 	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
 	from := emailUser
 	to := []string{targetUser}
 	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
-		"Subject: Your Billing Information Has Been Updated\r\n" +
+		"Subject: Your Account Has Been Disabled\r\n" +
 		mime +
 		emailContent)
 
 	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
 
 	if err != nil {
-		logger.Error("unable to send email to gmail server")
-		return err
+		logger.Error("unable to send email to gmail server: ", err)
 	}
 
-	return nil
+}
+
+// send crypto payment thank you email
+func sendCryptoBillingThanks(logger *logrus.Logger, username string, targetUser string) {
+	emailUser := os.Getenv("EmailUser")
+	emailPass := os.Getenv("EmailPass")
+
+	//connect to our server, set up a message and send it
+	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
+
+	emailContent, err := templateEmail(logger, "acceptedTemplate", emailData{})
+	if err != nil {
+		logger.Error("Unable to template email: ", err)
+	}
+
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	from := emailUser
+	to := []string{targetUser}
+	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
+		"Subject: Your Payment Has Been Accepted\r\n" +
+		mime +
+		emailContent)
+
+	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
+
+	if err != nil {
+		logger.Error("unable to send email to gmail server: ", err)
+	}
+
 }

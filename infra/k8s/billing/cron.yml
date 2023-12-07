@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ew-billing
+  labels:
+    name: ew-billing
+spec:
+  schedule: "*/5 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          imagePullSecrets:
+            - name: ghcrcred
+          serviceAccountName: ew-billing
+          restartPolicy: OnFailure
+          containers:
+            - name: ew-billing
+              image: "ghcr.io/ktraister/ew_billing:GITHUB_SHA"
+              imagePullPolicy: Always
+              securityContext:
+                privileged: true
+              resources:
+                requests:
+                  memory: "64Mi"
+                  cpu: "64m"
+                limits:
+                  memory: "128Mi"
+                  cpu: "128m"
+              env:
+                - name: "MongoURI"
+                  valueFrom:
+                    secretKeyRef:
+                      key:  MongoURI
+                      name: ew-config
+                - name: "MongoUser"
+                  valueFrom:
+                    secretKeyRef:
+                      key:  username
+                      name: mongo-creds
+                - name: "MongoPass"
+                  valueFrom:
+                    secretKeyRef:
+                      key:  password
+                      name: mongo-creds
+                - name: "CoinbaseAPIKey"  
+                  valueFrom:              
+                    secretKeyRef:            
+                      key:  CoinbaseAPIKey
+                      name: ew-config      
+                - name: "StripeAPIKey"  
+                  valueFrom:              
+                    secretKeyRef:            
+                      key:  StripeAPIKey
+                      name: ew-config      
+                - name: "EmailUser"
+                  valueFrom:
+                    secretKeyRef:
+                      key: EmailUser
+                      name: ew-config
+                - name: "EmailPass"
+                  valueFrom:
+                    secretKeyRef:
+                      key: EmailPass
+                      name: ew-config

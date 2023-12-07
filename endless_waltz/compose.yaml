@@ -23,10 +23,13 @@ services:
     build:
       context: random
     environment:
+      ENV: local
       MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
+      CoinbaseAPIKey: ${CoinbaseAPIKey}
+      StripeAPIKey: ${StripeAPIKey}
 
   ew-webapp:
     depends_on:
@@ -45,6 +48,27 @@ services:
       LogLevel: Debug
       EmailUser: ${EmailUser}
       EmailPass: ${EmailPass}
+      StripeAPIKey: ${StripeAPIKey}
+      StripeAPIPubKey: ${StripeAPIPubKey}
+
+  ew-billing:
+    depends_on:
+      mongo:
+        condition: service_started
+    build:
+      context: billing
+    environment:
+      ENV: local
+      MongoURI: mongodb://mongo:27017/
+      MongoUser: adminuser
+      MongoPass: password123
+      LogLevel: Debug
+      StripeAPIKey: ${StripeAPIKey}
+      CoinbaseAPIKey: ${CoinbaseAPIKey}
+      EmailUser: ${EmailUser}
+      EmailPass: ${EmailPass}
+        #entrypoint: "ash -c"
+        #command: "exit 0"
         
   ew-exchange:
     depends_on:
