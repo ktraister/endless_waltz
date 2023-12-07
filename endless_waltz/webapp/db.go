@@ -90,6 +90,7 @@ func switchToCrypto(logger *logrus.Logger, user string) error {
 	if result["cryptoBilling"] != nil && result["cryptoBilling"].(bool) == true {
 		logger.Warn("bogus crypto billing change attempt on user ", user)
 	} else {
+		logger.Debug("Updating user to crypto billing -> ", user)
 		//else lets modify the document after updating stripe
 		//stripe
 		if result["cardBillingId"] == nil {
@@ -131,9 +132,12 @@ func switchToCrypto(logger *logrus.Logger, user string) error {
 			logger.Error("Error setting user crypto billing data: ", err)
 			return err
 		}
+		logger.Debug("UpdatED user to crypto billing -> ", user)
 
 		//send email to the end user
 		sendBillingEmail(logger, user)
+
+		logger.Debug("sent crypto billing email -> ", user)
 	}
 
 	return nil
@@ -171,14 +175,32 @@ func switchToCard(logger *logrus.Logger, session *sessions.Session) error {
 		return err
 	}
 
-	//skip bogus checks to allow user to update their card information
-	//stripe
+	//check the subscription we want to switch to
 	if session.Values["billingId"] == nil {
 		logger.Warn("session billingId doesnt exist for user ", user)
 		return nil
 	}
 
-	sub, err := subscription.Get(result["billingId"].(string), nil)
+	//check the existing database subscription; cancel if exists
+	if result["cardBillingId"] != nil {
+		_, err := subscription.Get(result["cardBillingId"].(string), nil)
+		if err != nil {
+			logger.Error("error finding cardBillingId in stripe for user ", user)
+			return err
+		}
+
+		// Cancel the subscription
+		params := &stripe.SubscriptionCancelParams{
+			Params: stripe.Params{},
+		}
+		_, err = subscription.Cancel(result["cardBillingId"].(string), params)
+		if err != nil {
+			logger.Error("error canceling subscription in stripe for user ", user)
+			return err
+		}
+	}
+
+	sub, err := subscription.Get(session.Values["billingId"].(string), nil)
 	if err != nil {
 		logger.Error("error finding cardBillingId in stripe for user ", user)
 		return err
@@ -189,7 +211,7 @@ func switchToCard(logger *logrus.Logger, session *sessions.Session) error {
 		return nil
 	}
 
-	//db update
+	//db update with new subscription
 	update := bson.M{
 		"$set": bson.M{
 			"cardBilling":   true,
@@ -414,8 +436,23 @@ func verifyUserSignup(logger *logrus.Logger, email string, user string, token st
 		return false
 	}
 
+	var update bson.M
 	//update the item to set the user to active
-	update := bson.D{{"$set", bson.D{{"Active", true}}}}
+	if result["cryptoBilling"] != nil && result["cryptoBilling"] == true {
+		update := bson.M{
+			"$set": bson.M{
+				"Active":           true,
+				"billingEmailSent": true,
+			},
+		}
+	} else {
+		update := bson.M{
+			"$set": bson.M{
+				"Active": true,
+			},
+		}
+	}
+
 	_, err = auth_db.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		logger.Error("Error setting user to active: ", err)

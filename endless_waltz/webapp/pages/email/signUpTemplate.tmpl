@@ -1,12 +1,22 @@
 {{ define "content" }}
 <h1>Welcome to Endless Waltz</h1>
 <h2>You may now sign in to use the messenger.</h2>
-{{ if .Billing == "card" }}
+{{ if (eq .Billing "card") }}
 <h3>Payment Method: Card w/ Stripe</h3>
 <h3>Next Payment: {{.BillingCycleEnd}}</h3>
 {{ end }}
-{{ if .Billing == "crypto" }}
+{{ if (eq .Billing "crypto") }}
 <h3>Payment Method: Crypto</h3>
 <h3>Next Payment Due: {{.BillingCycleEnd}}</h3>
+<br>
+<h2>Please use the button below to create a payment when you're ready.</h2>
+<h2>The billing page will be active for 1 hour after pressing the button.</h2>
+<form method="get" action="{{.FormHost}}/api/cryptoPayment" class="inline">
+  <input type="hidden" name="user" value="{{.Username}}">
+  <input type="hidden" name="email" value="{{.TargetUser}}">
+  <input type="hidden" name="token" value="{{.Token}}">
+  <button type="submit" class="btn btn-primary w-50 py-2">
+  Make A Payment
+  </button>
 {{ end }}
 {{end}}

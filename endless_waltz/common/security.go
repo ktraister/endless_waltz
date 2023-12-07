@@ -12,7 +12,6 @@ import (
 
 var charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWQYZ1234567890"
 var disallowed = "{}!@#$%^&*()~`+="
-var day, month, year int
 
 func generateToken() string {
 	rand.Seed(time.Now().Unix())
@@ -65,20 +64,38 @@ func checkUserInput(input string) bool {
 }
 
 func nextBillingCycle(input string) string {
+	var d, m, y int
 	parts := strings.Split(input, "-")
-	day, _ = strconv.Atoi(parts[1])
-	month, _ = strconv.Atoi(parts[0])
-	year, _ = strconv.Atoi(parts[2])
+	d, _ = strconv.Atoi(parts[1])
+	m, _ = strconv.Atoi(parts[0])
+	y, _ = strconv.Atoi(parts[2])
 
-	if day > 28 {
-		day = 28
+	if d > 28 {
+		d = 28
 	}
-	if month == 12 {
-		month = 1
-		year = year + 1
+	if m == 12 {
+		m = 1
+		fmt.Println(y)
+		y = y + 1
+		fmt.Println(y)
 	} else {
-		month = month + 1
+		m = m + 1
 	}
 
-	return fmt.Sprintf("%d-%d-%d", month, day, year)
+	var month, day string
+
+	//ensure we return date in 01-02-2006 format
+	if m < 10 {
+		month = fmt.Sprintf("0%d", m)
+	} else {
+		month = string(m)
+	}
+
+	if d < 10 {
+		day = fmt.Sprintf("0%d", d)
+	} else {
+		day = string(d)
+	}
+
+	return fmt.Sprintf("%s-%s-%d", month, day, y)
 }

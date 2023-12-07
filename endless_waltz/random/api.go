@@ -120,7 +120,7 @@ func cryptoPaymentHandler(w http.ResponseWriter, req *http.Request) {
 	//create the billing charge
 	//https://docs.cloud.coinbase.com/commerce/docs/accepting-crypto#creating-a-charge
 	//https://docs.cloud.coinbase.com/commerce/reference/createcharge
-	payload := strings.NewReader(fmt.Sprintf(`{"name":"Endless Waltz Monthly Payment","redirect_url":"%s","pricing_type":"fixed_price","local_price":{"amount":"1.00","currency":"USD"}}`, domain))
+	payload := strings.NewReader(fmt.Sprintf(`{"name":"Endless Waltz Monthly Payment","redirect_url":"%s","pricing_type":"fixed_price","local_price":{"amount":"2.99","currency":"USD"}}`, domain))
 	cReq, err := http.NewRequest("POST", "https://api.commerce.coinbase.com/charges", payload)
 	if err != nil {
 		logger.Error("Error creating billing charge: ", err)
@@ -267,7 +267,7 @@ func modifyCheckoutSession(w http.ResponseWriter, req *http.Request) {
 	// WE NEED TO DO SOMETHING TO PASS A USER TO THIS FUNCTION
 	// add params to post in json :)
 	user := u.Username
-	logger.Warn("Incoming user ", user)
+	logger.Debug("Incoming user ", user)
 
 	// Check if the item exists in the collection
 	filter := bson.M{"User": user}
@@ -279,42 +279,49 @@ func modifyCheckoutSession(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	billingDate, err := time.Parse("02-01-2006", result["billingCycleEnd"].(string))
+	layout := "01-02-2006"
+	dateString := result["billingCycleEnd"].(string)
+	billingDate, _ := time.Parse(layout, dateString)
 	today := time.Now()
 	duration := billingDate.Sub(today)
-	daysLeft := int64(duration.Hours() / 24)
+	daysLeft := int64(duration.Hours()/24 + 1)
+
+	//all the denugging
+	logger.Debug("dbResult ", dateString)
+	logger.Debug("billingDate ", billingDate)
+	logger.Debug("daysLeft ", daysLeft)
 
 	var params *stripe.CheckoutSessionParams
 	if daysLeft >= 1 {
-	    params = &stripe.CheckoutSessionParams{
-		    UIMode:    stripe.String("embedded"),
-		    ReturnURL: stripe.String(domain + "/switchToCard?session_id={CHECKOUT_SESSION_ID}"),
-		    LineItems: []*stripe.CheckoutSessionLineItemParams{
-			    &stripe.CheckoutSessionLineItemParams{
-				    // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-				    Price:    stripe.String("price_1OJe1UGcdL8YMSExsJZxn1J1"),
-				    Quantity: stripe.Int64(1),
-			    },
-		    },
-		    Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
-		    SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
-			    TrialPeriodDays: stripe.Int64(daysLeft), // Set the trial period in days
-		    },
-	    }
-        } else {
-	    params = &stripe.CheckoutSessionParams{
-		    UIMode:    stripe.String("embedded"),
-		    ReturnURL: stripe.String(domain + "/switchToCard?session_id={CHECKOUT_SESSION_ID}"),
-		    LineItems: []*stripe.CheckoutSessionLineItemParams{
-			    &stripe.CheckoutSessionLineItemParams{
-				    // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-				    Price:    stripe.String("price_1OJe1UGcdL8YMSExsJZxn1J1"),
-				    Quantity: stripe.Int64(1),
-			    },
-		    },
-		    Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
-	    }
-        }
+		params = &stripe.CheckoutSessionParams{
+			UIMode:    stripe.String("embedded"),
+			ReturnURL: stripe.String(domain + "/switchToCard?session_id={CHECKOUT_SESSION_ID}"),
+			LineItems: []*stripe.CheckoutSessionLineItemParams{
+				&stripe.CheckoutSessionLineItemParams{
+					// Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+					Price:    stripe.String("price_1OJe1UGcdL8YMSExsJZxn1J1"),
+					Quantity: stripe.Int64(1),
+				},
+			},
+			Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+			SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
+				TrialPeriodDays: stripe.Int64(daysLeft), // Set the trial period in days
+			},
+		}
+	} else {
+		params = &stripe.CheckoutSessionParams{
+			UIMode:    stripe.String("embedded"),
+			ReturnURL: stripe.String(domain + "/switchToCard?session_id={CHECKOUT_SESSION_ID}"),
+			LineItems: []*stripe.CheckoutSessionLineItemParams{
+				&stripe.CheckoutSessionLineItemParams{
+					// Provide the exact Price ID (for example, pr_1234) of the product you want to sell
+					Price:    stripe.String("price_1OJe1UGcdL8YMSExsJZxn1J1"),
+					Quantity: stripe.Int64(1),
+				},
+			},
+			Mode: stripe.String(string(stripe.CheckoutSessionModeSubscription)),
+		}
+	}
 
 	s, err := session.New(params)
 	if err != nil {

@@ -24,14 +24,14 @@ func templateEmail(logger *logrus.Logger, path string, data emailData) (string, 
 	// Parse the template
 	t, err := template.New("").ParseFiles("pages/email/base.tmpl", filename)
 	if err != nil {
-		logger.Error("failed to parse email template")
+		logger.Error("failed to parse email template: ", err)
 		return "", err
 	}
 
 	var rendered bytes.Buffer
 	err = t.ExecuteTemplate(&rendered, "base", data)
 	if err != nil {
-		logger.Error("Error rendering template:", err)
+		logger.Error("Error rendering template: ", err)
 		return "", err
 	}
 
