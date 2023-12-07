@@ -384,7 +384,6 @@ func main() {
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Random Server finished starting up!")
-	logger.Info(stripe.Key)
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
