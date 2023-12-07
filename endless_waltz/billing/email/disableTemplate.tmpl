@@ -1,7 +1,11 @@
 {{ define "content" }}
 <!-- I can do something here to format it differently for local testing -->
-<h1>Endless Waltz Monthly Crypto Billing</h1>
+<h1>Endless Waltz Account Disabled</h1>
 <h2>Your account has been disabled for non-payment. </h2>
+{{ if (eq .Billing "card") }}
+<h2>Please login and update your billing details to re-enable your account.</h2>
+{{ end }}
+{{ if (eq .Billing "crypto") }}
 <h2>Please use the button below to create a payment when you are ready to re-enable your account.</h2>
 <h2>The billing page will be active for 1 hour after pressing the button.</h2>
 <form method="get" action="{{.FormHost}}/api/cryptoPayment" class="inline">
@@ -12,4 +16,5 @@
   Make A Payment
   </button>
 </form>
+{{ end }}
 {{end}}

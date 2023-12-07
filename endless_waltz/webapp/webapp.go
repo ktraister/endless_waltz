@@ -33,6 +33,7 @@ type sessionData struct {
 	Email           string
 	Captcha         bool
 	Stripe          bool
+	StripeAPIPubKey string
 	CaptchaFail     bool
 	TemplateTag     string
 	Token           string
@@ -98,7 +99,6 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 		//set values from session
 		data.IsAuthenticated = session.Values["authenticated"].(bool)
 		data.TemplateTag = csrf.Token(req)
-		data.Stripe = true
 	} else {
 		// Define a data struct for the norm template
 		data = sessionData{
@@ -116,9 +116,10 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 		data.Captcha = true
 	}
 
-	//add stripe js where needed
-	if file == "/billing" {
+	//add stripe where needed
+	if file == "/billing" || file == "manageUser" {
 		data.Stripe = true
+		data.StripeAPIPubKey = os.Getenv("StripeAPIPubKey")
 	}
 
 	//add capcha fail if needed
@@ -981,8 +982,7 @@ func main() {
 	MongoPass = os.Getenv("MongoPass")
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
-	//s.Key = os.Getenv("StripeAPIKey")
-	s.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
+	s.Key = os.Getenv("StripeAPIKey")
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("WebApp Server finished starting up!")

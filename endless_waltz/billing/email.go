@@ -14,6 +14,7 @@ type emailData struct {
 	Username   string
 	TargetUser string
 	Token      string
+	Billing    string
 }
 
 func templateEmail(logger *logrus.Logger, path string, data emailData) (string, error) {
@@ -114,7 +115,7 @@ func sendCryptoBillingReminder(logger *logrus.Logger, username string, targetUse
 	}
 }
 
-func sendCryptoBillingDisabled(logger *logrus.Logger, username string, targetUser string, token string) {
+func sendBillingDisabled(logger *logrus.Logger, btype string, username string, targetUser string, token string) {
 	emailUser := os.Getenv("EmailUser")
 	emailPass := os.Getenv("EmailPass")
 
@@ -131,6 +132,7 @@ func sendCryptoBillingDisabled(logger *logrus.Logger, username string, targetUse
 		Username:   username,
 		TargetUser: targetUser,
 		Token:      token,
+		Billing:    btype,
 	}
 
 	emailContent, err := templateEmail(logger, "disableTemplate", emailData)

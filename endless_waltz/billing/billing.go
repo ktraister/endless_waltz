@@ -349,7 +349,7 @@ func cryptoDisableAccount(logger *logrus.Logger) {
 		}
 
 		//send disable email
-		sendCryptoBillingDisabled(logger, result["User"].(string), result["Email"].(string), result["billingToken"].(string))
+		sendBillingDisabled(logger, "crypto", result["User"].(string), result["Email"].(string), result["billingToken"].(string))
 	}
 
 	// Check for errors during cursor iteration
@@ -440,6 +440,7 @@ func stripeSubscriptionChecks(logger *logrus.Logger) {
 					logger.Error("Disable mongo update error: ", err)
 					continue
 				}
+				sendBillingDisabled(logger, "card", result["User"].(string), result["Email"].(string), "")
 			}
 		} else {
 			//account should be enabled
@@ -480,8 +481,7 @@ func main() {
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Billing binary finished starting up!")
 
-	//stripe.Key = os.Getenv("StripeAPIKey")
-	stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
+	stripe.Key = os.Getenv("StripeAPIKey")
 
 	//crypto billing
 	//crypto resolve payments

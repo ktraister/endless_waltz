@@ -48,6 +48,8 @@ services:
       LogLevel: Debug
       EmailUser: ${EmailUser}
       EmailPass: ${EmailPass}
+      StripeAPIKey: ${StripeAPIKey}
+      StripeAPIPubKey: ${StripeAPIPubKey}
 
   ew-billing:
     depends_on:
@@ -61,6 +63,7 @@ services:
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
+      StripeAPIKey: ${StripeAPIKey}
       CoinbaseAPIKey: ${CoinbaseAPIKey}
       EmailUser: ${EmailUser}
       EmailPass: ${EmailPass}

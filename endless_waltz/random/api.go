@@ -380,8 +380,7 @@ func main() {
 	MongoPass = os.Getenv("MongoPass")
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
-	//stripe.Key = os.Getenv("StripeAPIKey")
-	stripe.Key = "sk_test_51O9xNoGcdL8YMSEx9AhtgC768jodZ0DhknQ1KMKLiiXzZQgnxz79ob6JS5qZwrg2cEVVvEimeaXnNMwree7l82hF00zehcsfJc"
+	stripe.Key = os.Getenv("StripeAPIKey")
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Random Server finished starting up!")

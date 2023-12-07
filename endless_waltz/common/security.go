@@ -75,9 +75,7 @@ func nextBillingCycle(input string) string {
 	}
 	if m == 12 {
 		m = 1
-		fmt.Println(y)
 		y = y + 1
-		fmt.Println(y)
 	} else {
 		m = m + 1
 	}
