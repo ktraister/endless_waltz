@@ -85,7 +85,6 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 
 	session.Save(req, w)
 
-	fmt.Println(file)
 	var data sessionData
 	//add all the things for the protected page
 	if file == "manageUser" {
@@ -363,7 +362,6 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 
 	var billingFlag string
 	if session.Values["billing"] != nil {
-		fmt.Println("setting billing from session!")
 		billingFlag = session.Values["billing"].(string)
 	}
 	if billingFlag == "crypto" {

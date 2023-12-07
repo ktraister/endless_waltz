@@ -345,7 +345,7 @@ func retrieveCheckoutSession(w http.ResponseWriter, req *http.Request) {
 
 	session_id := req.URL.Query().Get("session_id")
 	if session_id == "null" {
-		fmt.Println("Null session id, returning {}")
+		logger.Warn("Null session id, returning {}")
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte("{}"))
 	} else {
