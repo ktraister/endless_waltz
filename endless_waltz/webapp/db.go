@@ -439,14 +439,14 @@ func verifyUserSignup(logger *logrus.Logger, email string, user string, token st
 	var update bson.M
 	//update the item to set the user to active
 	if result["cryptoBilling"] != nil && result["cryptoBilling"] == true {
-		update := bson.M{
+		update = bson.M{
 			"$set": bson.M{
 				"Active":           true,
 				"billingEmailSent": true,
 			},
 		}
 	} else {
-		update := bson.M{
+		update = bson.M{
 			"$set": bson.M{
 				"Active": true,
 			},
