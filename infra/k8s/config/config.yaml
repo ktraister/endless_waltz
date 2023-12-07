@@ -7,6 +7,8 @@ data:
   EmailPass: 
   CSRFAuthKey:
   CoinbaseAPIKey:
+  StripeAPIKey:
+  StripeAPIPubKey:
   SESSION_SECRET:
 kind: Secret
 metadata:

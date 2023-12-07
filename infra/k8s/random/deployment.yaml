@@ -51,5 +51,10 @@ spec:
                 secretKeyRef:
                   key:  CoinbaseAPIKey
                   name: ew-config
+            - name: "StripeAPIKey"
+              valueFrom:
+                secretKeyRef:
+                  key:  StripeAPIKey
+                  name: ew-config
           ports:
             - containerPort: 8090
