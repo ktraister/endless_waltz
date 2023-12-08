@@ -102,7 +102,7 @@ func main() {
 			if !rateLimit(c.User(), 1) {
 				return nil, fmt.Errorf("RateLimit")
 			}
-			if checkAuth(c.User(), string(password), logger) {
+			if checkAuth(c.User(), string(password), true, logger) {
 				return nil, nil
 			}
 			return nil, fmt.Errorf("Password incorrect")

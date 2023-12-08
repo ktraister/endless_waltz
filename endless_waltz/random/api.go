@@ -41,7 +41,7 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")

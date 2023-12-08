@@ -558,7 +558,7 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 	password := hex.EncodeToString(hashSum)
 
 	//api_lib checkAuth function
-	if checkAuth(username, password, logger) {
+	if checkAuth(username, password, false, logger) {
 		//create a session for the user
 		session, _ := store.Get(req, "session-name")
 		session.Values["authenticated"] = true
