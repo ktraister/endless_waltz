@@ -119,7 +119,7 @@ func cryptoResolvePayments(logger *logrus.Logger) {
 			updateFilter := bson.M{"_id": result["_id"]}
 			update := bson.M{
 				"$set": bson.M{
-				        "Active":              true,
+					"Active":              true,
 					"billingEmailSent":    false,
 					"billingReminderSent": false,
 					"billingCycleEnd":     nextBillingCycle(result["billingCycleEnd"].(string)),

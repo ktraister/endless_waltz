@@ -54,7 +54,7 @@ func rateLimit(user string, limit int) bool {
 }
 
 // checkAuth needs to get updated to allow users to login with deactive accts
-func checkAuth(user string, passwd string, logger *logrus.Logger) bool {
+func checkAuth(user string, passwd string, active bool, logger *logrus.Logger) bool {
 	//creating context to connect to mongo
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -80,8 +80,12 @@ func checkAuth(user string, passwd string, logger *logrus.Logger) bool {
 
 	// Check if the item exists in the collection
 	logger.Debug(fmt.Sprintf("checking user '%s' with pass '%s'", user, passwd))
-	filter := bson.M{"Passwd": passwd, "User": user, "Active": true}
-	var result bson.M
+	var filter, result bson.M
+	if active {
+		filter = bson.M{"Passwd": passwd, "User": user, "Active": true}
+	} else {
+		filter = bson.M{"Passwd": passwd, "User": user}
+	}
 	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
 	if err == nil {
 		logger.Debug("Found creds in db, authorized")
