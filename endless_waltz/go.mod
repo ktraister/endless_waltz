@@ -8,7 +8,7 @@ require (
 	github.com/gorilla/sessions v1.2.2
 	github.com/gorilla/websocket v1.5.0
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stripe/stripe-go/v76 v76.7.0
+	github.com/stripe/stripe-go/v76 v76.8.0
 	go.mongodb.org/mongo-driver v1.13.0
 	golang.org/x/crypto v0.12.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
