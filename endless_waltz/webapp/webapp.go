@@ -169,7 +169,7 @@ func staticTemplateHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, _ := store.Get(req, "session-name")
+	session, _ := store.Get(req, "_session")
 
 	path := ""
 	if req.URL.Path == "/" {
@@ -189,7 +189,7 @@ func logoutPageHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := store.Get(req, "session-name")
+	session, err := store.Get(req, "_session")
 	if err != nil {
 		logger.Error("Could not get session in logoutPageHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -216,7 +216,7 @@ func billingHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := store.Get(req, "session-name")
+	session, err := store.Get(req, "_session")
 	if err != nil {
 		logger.Error("Could not get session in logoutPageHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -251,7 +251,7 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := store.Get(req, "session-name")
+	session, err := store.Get(req, "_session")
 	if err != nil {
 		logger.Error("Could not get session in logoutPageHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -436,7 +436,7 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := store.Get(req, "session-name")
+	session, err := store.Get(req, "_session")
 	if err != nil {
 		logger.Error("Could not get session in logoutPageHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -560,7 +560,7 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 	//api_lib checkAuth function
 	if checkAuth(username, password, false, logger) {
 		//create a session for the user
-		session, _ := store.Get(req, "session-name")
+		session, _ := store.Get(req, "_session")
 		session.Values["authenticated"] = true
 		session.Values["username"] = username
 		session.Save(req, w)
@@ -816,7 +816,7 @@ func protectedPageHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := store.Get(req, "session-name")
+	session, err := store.Get(req, "_session")
 	if err != nil {
 		logger.Error("Could not get session in protectedPageHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -850,7 +850,7 @@ func protectedHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := store.Get(req, "session-name")
+	session, err := store.Get(req, "_session")
 	if err != nil {
 		logger.Error("Could not get session in protectedHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -897,7 +897,7 @@ func switchToCryptoHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := store.Get(req, "session-name")
+	session, err := store.Get(req, "_session")
 	if err != nil {
 		logger.Error("Could not get session in protectedHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -927,7 +927,7 @@ func switchToCardHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	session, err := store.Get(req, "session-name")
+	session, err := store.Get(req, "_session")
 	if err != nil {
 		logger.Error("Could not get session in protectedHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
@@ -969,7 +969,7 @@ func switchToCardHandler(w http.ResponseWriter, req *http.Request) {
 
 func notFoundHandler(w http.ResponseWriter, req *http.Request) {
 	logger, _ := req.Context().Value("logger").(*logrus.Logger)
-	session, _ := store.Get(req, "session-name")
+	session, _ := store.Get(req, "_session")
 	parseTemplate(logger, w, req, session, "not_found")
 }
 
@@ -1009,9 +1009,8 @@ func main() {
 	router.HandleFunc("/switchToCard", switchToCardHandler).Methods("GET")
 	router.HandleFunc("/downloads", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/unauthorized", staticTemplateHandler).Methods("GET")
-	router.HandleFunc("/how_it_works", staticTemplateHandler).Methods("GET")
-	router.HandleFunc("/privacy", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/privacy_policy", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/cookie_policy", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/terms_and_conditions", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/logout", logoutPageHandler).Methods("GET")
 	router.HandleFunc("/forgotPassword", staticTemplateHandler).Methods("GET")
