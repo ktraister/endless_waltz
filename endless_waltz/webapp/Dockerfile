@@ -1,4 +1,4 @@
-FROM alpine:3.18
+FROM alpine:3.19
 WORKDIR /src
 COPY ./webapp /src/webapp
 COPY ./pages /src/pages
