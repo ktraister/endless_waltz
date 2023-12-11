@@ -12,7 +12,7 @@ require (
 	go.mongodb.org/mongo-driver v1.13.0
 	golang.org/x/crypto v0.12.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa
-	golang.org/x/sync v0.1.0
+	golang.org/x/sync v0.5.0
 )
 
 require (
