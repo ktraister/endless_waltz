@@ -46,6 +46,11 @@ spec:
                 secretKeyRef:
                   key: SessionKey
                   name: ew-config
+            - name: "CSRFAuthKey"
+              valueFrom:
+                secretKeyRef:
+                  key: CSRFAuthKey
+                  name: ew-config
             - name: "CaptchaKey"
               valueFrom:
                 secretKeyRef:
