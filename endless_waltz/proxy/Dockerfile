@@ -1,4 +1,4 @@
-FROM alpine:3.14
+FROM alpine:3.19
 WORKDIR /src
 COPY ./proxy /src/proxy
 RUN chmod +x /src/proxy && apk add gcompat && mkdir /src/keys

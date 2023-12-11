@@ -16,3 +16,11 @@ updates:
     directory: "/endless_waltz/webapp"
     schedule:
       interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/endless_waltz/proxy"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/endless_waltz/billing"
+    schedule:
+      interval: "weekly"
