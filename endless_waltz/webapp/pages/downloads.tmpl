@@ -1,25 +1,37 @@
 {{ define "content" }} 
   <main class="px-3">
     <img class="mb-4" src="/img/ew.png" alt="" width="500" height="300">  
-      <br>
-      <br>
-    <p class="lead" style="font-size:300%">Downloads</p>
+    <br>
+    <br>
+    <br>
+    <p class="h2 mb-3 fw-normal" style="font-size:300%">Downloads</p>
     <p class="lead">Create an account to begin sending messages</p>
     <br>
     <div align=center>
     <hr style="width:50%">
     </div>
     <br>
-    <h2>Windows/Linux Instructions<h2>
+    <h2 class="h2 mb-3 fw-normal">Select Your Operating System</h2>
     <br>
-    <p class="lead">
-    <a href="https://endless-waltz-xyz-downloads.s3.us-east-2.amazonaws.com/ew_messenger.exe" class="btn btn-lg btn-light fw-bold border-white bg-white">Download For Windows</a>
-    <a href="https://endless-waltz-xyz-downloads.s3.us-east-2.amazonaws.com/ew_messenger" class="btn btn-lg btn-light fw-bold border-white bg-white">Download For Linux</a>
-    </p>
+    <div class="button-container">
+      <button class="btn btn-lg btn-light fw-bold border-white bg-white" type="button" id="win_button" onclick="win()">Windows</button>
+      &nbsp;
+      <button class="btn btn-lg btn-light fw-bold border-white bg-white" type="button" id="lin_button" onclick="lin()">Linux</button>
+    </div>
     <br>
-    <p class="lead">After downloading the file, move it to your desktop.</p>
-    <p class="lead">You can then click and run the file.</p>
     <br>
+    <div id="lin" class="hidden">
+      <h2 class="h2 mb-3 fw-normal">Selected: Linux</h2>
+      <p class="lead">Open a terminal and run this one-liner. You will be prompted for your password.</p>
+      <code>curl -s https://endless-waltz-xyz-downloads.s3.us-east-2.amazonaws.com/linux_install.sh  | sudo bash</code>
+      <br>
+    </div>
+    <div id="win" class="hidden">
+      <h2 class="h2 mb-3 fw-normal">Selected: Windows</h2>
+      <p class="lead">Open a PowerShell window with admin rights and run this one-liner</p>
+      <code>Set-ExecutionPolicy -ExecutionPolicy Unrestricted ; . { iwr -useb https://endless-waltz-xyz-downloads.s3.us-east-2.amazonaws.com/win_install.ps1 } | iex</code>
+      <br>
+    </div>
     <div align=center>
     <hr style="width:50%">
     </div>
@@ -32,5 +44,20 @@
     <br>
     <p class="lead">After downloading the ISO, burn it to a USB or CD, and boot into the live environment.</p>
     <br>
+    <script>
+    function win() {
+	var content1 = document.getElementById("win");
+	var content2 = document.getElementById("lin");
+	content1.classList.remove("hidden");
+	content2.classList.add("hidden");
+    };
+    function lin() {
+	var content1 = document.getElementById("lin");
+	var content2 = document.getElementById("win");
+	content1.classList.remove("hidden");
+	content2.classList.add("hidden");
+    };
+    </script>
   </main>
+
 {{ end }}
