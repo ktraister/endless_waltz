@@ -26,6 +26,8 @@ The EW Messenger has six discreet applications:
   - [RandomAPI](../endless_waltz/random/README.md)
   - [Exchange](../endless_waltz/exchange/README.md)
   - [WebApp](../endless_waltz/webapp/README.md)
+  - [Billing](../endless_waltz/billing/README.md)
+  - [Proxy](../endless_waltz/proxy/README.md)
   - [Messenger](https://github.com/ktraister/ew_messenger)
 
 Everything except Messenger lives in this repository and is 
@@ -58,7 +60,6 @@ support development of the applications.
   - [automation](./automation/README.md): docs for the Endless Waltz LiveISO setup
   - [passwd](./passwd/README.md): used to generate password hashes for user that match go output
   - [security](./security/README.md): used to generate password hashes for user that match go output
-  - [cubic](./cubic/README.md): used to generate live ISOs for EW_messenger
 
 ### Context
 Context is important to be able to understand what you read. Therefor, I plan

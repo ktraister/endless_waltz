@@ -4,6 +4,10 @@ the EW Messenger clients. It is served as a single instance in the cloud, and
 depends on the MongoDB database to authenticate users. 
 
 ## Operation
+The exchange acts as a websocket message router for connected clients. Clients
+are tracked using a syncMap of structs that map client names to the appropriate
+connection for message forwarding.
+
 ### On Start
 On startup, the Exchange binary reads in configuration variables from the 
 environment. These variables deal with Mongo and Logging. A goroutine is then
@@ -14,7 +18,8 @@ server is then started on port 8081 with the router mutex.
 ### Routes
 Both routes require credentials to be set using the correct headers.
 Headers "User" and "Passwd" should be set with credentials that are 
-configured in the db "auth" collection. 
+configured in the db "auth" collection. Rate limiting is also implemented 
+on all of the following routes. 
 
 #### /listUsers (GET)
 When this route is hit, it creates a map of unique users from the currently 
