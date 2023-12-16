@@ -7,8 +7,10 @@ This directory is split out into three discreet sections: nginx, bare_metal,
 and k8s. 
 
 ## NGINX
-This directory contains configuration files used for the NGINX service. For 
-more information, consult [the NGINX README.md](./nginx/README.md)
+This directory contains configuration files used for the NGINX service. NGINX
+is used to reverse-proxy the incoming connection to the correct resource and 
+provide general resources, such at the Content Security Policy and HTTPS certs. 
+For more information, consult [the NGINX README.md](./nginx/README.md)
 
 ## Tor
 This directory contains configuration files and the dockerfile for the Tor 
@@ -62,4 +64,3 @@ The POC Infra is currently active. It is true to this diagram:
 The PROD Infra is not yet active. It will be more expensive, but truly HA. 
 This is the current idea of what it will look like:
 ![alt text](../.png/EndlessWaltzProd.png)
-

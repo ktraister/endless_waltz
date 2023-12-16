@@ -2,12 +2,9 @@
 Installation media and live iso instructions
 "Installation Media is not a bug, it's a feature"
 
-
 ## Existing ISO
 The commands here allow us to update the existing iso with a new build of the
 messenger binary
-
--------------------------------------------------------------------------
 
 Download the existing iso from S3. Use `Cubic` to start editing.
 Filename, VolumeID should be set to ew_messenger_$VERSION.iso
@@ -21,14 +18,13 @@ curl https://endless-waltz-xyz-downloads.s3.us-east-2.amazonaws.com/nix_ew_messe
 rm $files
 ```
 
-test and finish creating the ISO. Upload the new!
-
+Proceed with the defaults. Generating the new ISO will depend on the
+computing power of the host machine. Once complete, you will have the
+option (requirement) of testing before finishing generating the ISO.
 
 ## New Setup
 The Commands in this section should only need to be run once. Afterwards,
 we can just re-use the existing LiveISO!
-
--------------------------------------------------------------------------
 
 Let's start out with the live iso `linux-lite-6.4-64bit.iso` to be nice 
 and light
