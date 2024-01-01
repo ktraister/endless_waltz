@@ -10,17 +10,18 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
-.container {
-  position: relative;
-  height: 800px;
-}
-
-.centered-element {
-  margin: 0;
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-}
+      .container {
+	  position: relative;
+	  height: 800px;
+      }
+      .centered-element {
+	  margin: 0;
+	  position: absolute;
+	  top: 50%;
+	  left: 50%;
+	  -ms-transform: translate(-50%, -50%);
+	  transform: translate(-50%, -50%);
+      }
       .column {
 	  flex: 33.33%;
 	  padding: 10px;
@@ -203,7 +204,7 @@
 <br>
 <footer class="footer" style="height:25px; background-color:grey; opacity: 0.5;">
     <div>
-        <p>This website uses only necessary cookies to ensure you get the best experience on our website. By browsing our website, you agree to our <a href="/cookie_policy" style="color:white;">cookie policy</href>.</p>
+        <p>Your privacy is the foundation of our buisness. This website uses only necessary cookies. By using our website, you agree to our <a href="/cookie_policy" style="color:white;">cookie policy</href>.</p>
     </div>
 </footer>
 </div>
