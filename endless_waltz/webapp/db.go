@@ -554,7 +554,7 @@ func getGDPRData(logger *logrus.Logger, user string) (GDPRData, error) {
 	}
 
 	//convert unix time to user-friendly time
-        timeint, err := strconv.ParseInt(result["SignupTime"].(string), 10, 64)
+	timeint, err := strconv.ParseInt(result["SignupTime"].(string), 10, 64)
 	if err != nil {
 		logger.Error("Time conversion error in GDPR: ", err)
 		return GDPRData{}, err
