@@ -1019,6 +1019,8 @@ func main() {
 	router.HandleFunc("/resetPassword", resetPasswordHandler).Methods("GET")
 	router.HandleFunc("/resetPasswordSubmit", resetPasswordSubmitHandler).Methods("POST")
 	router.HandleFunc("/resetPasswordSuccess", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/eula", staticTemplateHandler).Methods("GET")
+
 
 	http.ListenAndServe(":8080", csrf.Protect(CSRFAuthKey)(router))
 }
