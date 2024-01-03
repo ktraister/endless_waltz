@@ -18,7 +18,17 @@ type emailData struct {
 	BillingCycleEnd string
 }
 
-func templateEmail(logger *logrus.Logger, path string, data emailData) (string, error) {
+type GDPRData struct {
+	FormHost        string
+	Username        string
+	Email           string
+	Active          bool
+	BillingCycleEnd string
+	SignUpTime      string
+	Billing         string
+}
+
+func templateEmail(logger *logrus.Logger, path string, data interface{}) (string, error) {
 	filename := fmt.Sprintf("pages/email/%s.tmpl", path)
 	logger.Info("templating ", filename)
 	// Parse the template
@@ -212,6 +222,47 @@ func sendBillingEmail(logger *logrus.Logger, username string) error {
 	to := []string{targetUser}
 	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
 		"Subject: Your Billing Information Has Been Updated\r\n" +
+		mime +
+		emailContent)
+
+	err = smtp.SendMail("smtp.gmail.com:587", auth, from, to, msg)
+
+	if err != nil {
+		logger.Error("unable to send email to gmail server")
+		return err
+	}
+
+	return nil
+}
+
+func sendGDPREmail(logger *logrus.Logger, username string) error {
+	//query the db for data corresponding to the username
+	data, err := getGDPRData(logger, username)
+	if err != nil {
+		return err
+	}
+
+	data.FormHost = "https://endlesswaltz.xyz"
+	if os.Getenv("ENV") == "local" {
+		data.FormHost = "https://localhost"
+	}
+
+	emailUser := os.Getenv("EmailUser")
+	emailPass := os.Getenv("EmailPass")
+
+	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
+	emailContent, err := templateEmail(logger, "GDPRTemplate", data)
+	if err != nil {
+		logger.Error("Unable to template email")
+		return err
+	}
+
+	targetUser := data.Email
+	mime := "MIME-version: 1.0;\nContent-Type: text/html; charset=\"UTF-8\";\n\n"
+	from := emailUser
+	to := []string{targetUser}
+	msg := []byte(fmt.Sprintf("To: %s\r\n", targetUser) +
+		"Subject: GDPR Data Report\r\n" +
 		mime +
 		emailContent)
 

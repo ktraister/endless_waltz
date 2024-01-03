@@ -1,5 +1,5 @@
 {{ define "content" }}
-  <main class="px-3">
+  <main class="px-3 align-items-center">
     <div align=center>
     <img class="mb-4" src="/img/ew.png" alt="" width="500" height="300">  
     <br>
@@ -12,7 +12,7 @@
     <br>
     <br>
     <br>
-    <h2 style="color:#0d6efd;">Billing Information</h1>
+    <h2>Billing Information</h1>
     <hr style="width:50%">
     {{ if .Card }}
     <h3>Payment Method: Card w/ Stripe</h3>
@@ -43,6 +43,18 @@
     <button id="card_button" onclick="card()" class="btn btn-primary w-25 py-2">Switch to Card Billing</button>
     <button id="nvm_button" onclick="cancel()" class="hidden btn btn-primary w-25 py-2">Cancel</button>
     {{ end }}
+    <br>
+    <br>
+    <br>
+    <br>
+    <h2>GDPR</h2>
+    <hr style="width:50%">
+    <p>In compliance with the EU's General Data Protection Regulation act, you can request all information Endless Waltz has about you.</p>
+    <p>Use the below button to request a GDPR data report be sent to your listed email account. Please allow 5 minutes for delivery.</p>
+    <form action="/GDPR" method="POST">
+      <input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">      
+      <button class="btn btn-primary w-25 py-2">Request GDPR Data Report</button>
+    </form>
     <br>
     <br>
     <br>

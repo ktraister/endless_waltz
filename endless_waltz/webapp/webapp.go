@@ -682,6 +682,32 @@ func emailVerifyHandler(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// function should send GDPR report email
+func gdprHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		logger.Error("Could not configure logger in gdprHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	session, err := store.Get(req, "_session")
+	if err != nil {
+		logger.Error("Could not get session in logoutPageHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	//send the GDPR email
+	err = sendGDPREmail(logger, session.Values["username"].(string))
+	if err != nil {
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+	//show the page for user verification success
+	http.Redirect(w, req, "/GDPRSuccess", http.StatusSeeOther)
+}
+
 // this function should handle a post request with "email" payload
 func resetPasswordHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
@@ -1019,6 +1045,9 @@ func main() {
 	router.HandleFunc("/resetPassword", resetPasswordHandler).Methods("GET")
 	router.HandleFunc("/resetPasswordSubmit", resetPasswordSubmitHandler).Methods("POST")
 	router.HandleFunc("/resetPasswordSuccess", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/eula", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/GDPR", gdprHandler).Methods("POST")
+	router.HandleFunc("/GDPRSuccess", staticTemplateHandler).Methods("GET")
 
 	http.ListenAndServe(":8080", csrf.Protect(CSRFAuthKey)(router))
 }
