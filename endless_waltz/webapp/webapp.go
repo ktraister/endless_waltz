@@ -1045,6 +1045,7 @@ func main() {
 	router.HandleFunc("/resetPassword", resetPasswordHandler).Methods("GET")
 	router.HandleFunc("/resetPasswordSubmit", resetPasswordSubmitHandler).Methods("POST")
 	router.HandleFunc("/resetPasswordSuccess", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/eula", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/GDPR", gdprHandler).Methods("POST")
 	router.HandleFunc("/GDPRSuccess", staticTemplateHandler).Methods("GET")
 
