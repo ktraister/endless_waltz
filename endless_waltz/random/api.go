@@ -26,6 +26,7 @@ type User struct {
 	Username string `json:"username"`
 }
 
+// primarily used for authentication and to test system health
 func healthHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
@@ -50,6 +51,32 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 
 	w.Write([]byte("HEALTHY"))
 	logger.Info("Someone hit the health check route...")
+}
+
+// path to tell the  client if the user is basic or premium
+func premiumHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 1)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
+	status := checkSub(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
+	if status == "premium" {
+		w.Write([]byte("premium"))
+	} else if status == "basic" {
+		w.Write([]byte("basic"))
+	} else {
+		http.Error(w, "404 Not Found", http.StatusNotFound)
+	}
 }
 
 func cryptoPaymentHandler(w http.ResponseWriter, req *http.Request) {
@@ -388,6 +415,7 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
 	router.HandleFunc("/api/healthcheck", healthHandler).Methods("GET")
+	router.HandleFunc("/api/premiumCheck", premiumHandler).Methods("GET")
 	router.HandleFunc("/api/cryptoPayment", cryptoPaymentHandler).Methods("GET")
 	router.HandleFunc("/api/create-checkout-session", createCheckoutSession)
 	router.HandleFunc("/api/modify-checkout-session", modifyCheckoutSession)

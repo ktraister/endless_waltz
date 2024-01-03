@@ -15,9 +15,10 @@ so this is the maximum that can be set by all application paths.
     //mongo specific id
     _id: ObjectId('654d20acd11f0aaed34ff843'),
 
-    //account values -- active:false will disallow login
+    //account values -- active:false will disallow login for messenger
     SignupTime: '1699553450',
     Active: true,
+    Premium: true,
 
     //user credentials
     Email: 'kayleigh.traister@gmail.com',
