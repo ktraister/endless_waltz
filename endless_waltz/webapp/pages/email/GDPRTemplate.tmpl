@@ -1,0 +1,18 @@
+{{ define "content" }}
+<h1>Your GDPR Data Report</h1>
+<p>Your privacy is our buisness. To that end, we strive to collect and store as little data as possible from all of our users.<p>
+<p>The summary below contains all non-sensitive information that is saved about you and your user account.</p>
+<hr style="width:50%">
+<h3>Username: {{.Username}}</h3>
+<h3>Email: {{.Email}}</h3>
+<h3>Active: {{.Active}}</h3>
+<h3>SignUp Time: {{.SignUpTime}} UTC</h3>
+{{ if (eq .Billing "card") }}
+<h3>Payment Method: Card w/ Stripe</h3>
+<h3>Next Payment: {{.BillingCycleEnd}}</h3>
+{{ end }}
+{{ if (eq .Billing "crypto") }}
+<h3>Payment Method: Crypto</h3>
+<h3>Next Payment Due: {{.BillingCycleEnd}}</h3>
+{{ end }}
+{{end}}
