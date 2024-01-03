@@ -6,12 +6,17 @@
 	<img class="mb-4" src="/img/Icon.png" alt="" width="72" height="72">
 	<h1 class="h2 mb-3 fw-normal">Create an account</h1>
 	<div class="form-floating">
-	  <input type="text" name="email" class="form-control" id="floatingEmail" placeholder="Email" required>
+	  <input type="text" name="email" class="form-control" id="floatingEmail" placeholder="Email Address" required>
 	  <label for="floatingEmail">Email</label>
     	  <span id="emailError" style="color: red;"></span>
 	  {{ if ne .Email "" }}
     	  <span id="userSubmitError" style="color: red;">Email '{{.Email}}' is already in use.</span>
 	  {{ end }}
+	</div>
+	<div class="form-floating">
+	  <input type="text" name="emailConfirm" class="form-control" id="floatingEmailConfirm" placeholder="Confirm Email Address" required>
+	  <label for="floatingEmailConfirm">Email Confirm</label>
+    	  <span id="emailConfirmError" style="color: red;"></span>
 	</div>
 	<div class="form-floating">
 	  <input type="text" name="username" class="form-control" id="floatingUser" placeholder="Username" required>
@@ -32,8 +37,10 @@
     <script>
     document.querySelector('form').addEventListener('submit', function(event) {
         const email = document.querySelector('#floatingEmail').value;
+        const emailConfirm = document.querySelector('#floatingEmailConfirm').value;
         const username = document.querySelector('#floatingUser').value;
         const emailError = document.querySelector('#emailError');
+        const emailConfirmError = document.querySelector('#emailConfirmError');
         const usernameError = document.querySelector('#usernameError');
 
         //email correctness check
@@ -45,6 +52,13 @@
 
 	} else {
             emailError.textContent = ''; // Clear any previous error message
+        }
+
+	//email confirm check
+	if ( email != emailConfirm ) {
+	    emailConfirmError.textContent = 'Email and confirmation do not match';
+            event.preventDefault(); // Prevent form submission
+	    return
         }
 
 	//username special char check
