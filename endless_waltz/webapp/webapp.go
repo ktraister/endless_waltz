@@ -32,6 +32,7 @@ type sessionData struct {
 	Username        string
 	Email           string
 	Captcha         bool
+	Premium         bool
 	Stripe          bool
 	StripeAPIPubKey string
 	CaptchaFail     bool
@@ -226,7 +227,7 @@ func billingHandler(w http.ResponseWriter, req *http.Request) {
 	// Parse form data
 	err = req.ParseForm()
 	if err != nil {
-		logger.Error("Failed to parse form data in signUpHandler")
+		logger.Error("Failed to parse form data in billingHandler")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -261,7 +262,7 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 	// Parse form data
 	err = req.ParseForm()
 	if err != nil {
-		logger.Error("Failed to parse form data in signUpHandler")
+		logger.Error("Failed to parse form data in registerHandler")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -360,68 +361,85 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 
 	today := time.Now()
 
+	//code to handle premium accounts
 	var billingFlag string
 	if session.Values["billing"] != nil {
 		billingFlag = session.Values["billing"].(string)
-	}
-	if billingFlag == "crypto" {
-		threshold := today.Add(168 * time.Hour).Format("01-02-2006")
+		if billingFlag == "crypto" {
+			threshold := today.Add(168 * time.Hour).Format("01-02-2006")
+			_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
+				"Premium":             true,
+				"Passwd":              password,
+				"SignupTime":          signUpTime,
+				"Active":              false,
+				"Email":               email,
+				"EmailVerifyToken":    emailVerifyToken,
+				"cryptoBilling":       true,
+				"billingCycleEnd":     threshold,
+				"billingEmailSent":    false,
+				"billingReminderSent": false,
+				"billingToken":        generateToken(),
+			})
+			if err != nil {
+				http.Redirect(w, req, "/error", http.StatusSeeOther)
+				logger.Error("Generic mongo error on user signup write: ", err)
+				return
+			}
+		} else if billingFlag == "card" {
+			//need to check as early as possible if these values are nil
+			if session.Values["billingId"] == nil {
+				logger.Debug(fmt.Sprintf("requires session value is nil: %s", session.Values["billingId"]))
+				http.Redirect(w, req, "/billing", http.StatusSeeOther)
+				return
+			}
 
-		_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
-			"Passwd":              password,
-			"SignupTime":          signUpTime,
-			"Active":              false,
-			"Email":               email,
-			"EmailVerifyToken":    emailVerifyToken,
-			"cryptoBilling":       true,
-			"billingCycleEnd":     threshold,
-			"billingEmailSent":    false,
-			"billingReminderSent": false,
-			"billingToken":        generateToken(),
-		})
-		if err != nil {
+			//check billing details are valid if exists
+			billingId := session.Values["billingId"].(string)
+			ok = checkUserInput(billingId)
+			if !ok {
+				logger.Debug("billingId check failed: ", email)
+				http.Redirect(w, req, "/signUp", http.StatusSeeOther)
+				return
+			}
+
+			threshold := nextBillingCycle(today.Format("01-02-2006"))
+
+			_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
+				"Premium":          true,
+				"Passwd":           password,
+				"SignupTime":       signUpTime,
+				"Active":           false,
+				"Email":            email,
+				"EmailVerifyToken": emailVerifyToken,
+				"cardBilling":      true,
+				"cardBillingId":    billingId,
+				"billingCycleEnd":  threshold,
+			})
+			if err != nil {
+				http.Redirect(w, req, "/error", http.StatusSeeOther)
+				logger.Error("Generic mongo error on user signup write: ", err)
+				return
+			}
+		} else {
+			logger.Error("Unrecognized Input")
 			http.Redirect(w, req, "/error", http.StatusSeeOther)
-			logger.Error("Generic mongo error on user signup write: ", err)
 			return
 		}
-	} else if billingFlag == "card" {
-		//need to check as early as possible if these values are nil
-		if session.Values["billingId"] == nil {
-			logger.Debug(fmt.Sprintf("requires session value is nil: %s", session.Values["billingId"]))
-			http.Redirect(w, req, "/billing", http.StatusSeeOther)
-			return
-		}
-
-		//check billing details are valid if exists
-		billingId := session.Values["billingId"].(string)
-		ok = checkUserInput(billingId)
-		if !ok {
-			logger.Debug("billingId check failed: ", email)
-			http.Redirect(w, req, "/signUp", http.StatusSeeOther)
-			return
-		}
-
-		threshold := nextBillingCycle(today.Format("01-02-2006"))
-
+	} else {
+		//code to handle basic accounts
 		_, err = auth_db.InsertOne(ctx, bson.M{"User": username,
+			"Premium":          false,
 			"Passwd":           password,
 			"SignupTime":       signUpTime,
 			"Active":           false,
 			"Email":            email,
 			"EmailVerifyToken": emailVerifyToken,
-			"cardBilling":      true,
-			"cardBillingId":    billingId,
-			"billingCycleEnd":  threshold,
 		})
 		if err != nil {
 			http.Redirect(w, req, "/error", http.StatusSeeOther)
 			logger.Error("Generic mongo error on user signup write: ", err)
 			return
 		}
-	} else {
-		logger.Error("Unrecognized Input")
-		http.Redirect(w, req, "/error", http.StatusSeeOther)
-		return
 	}
 
 	//redirect to main page 5 seconds later using html
@@ -463,6 +481,12 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	ok = isEmailValid(req.FormValue("email"))
 	if !ok {
 		http.Redirect(w, req, "/signUp", http.StatusSeeOther)
+		return
+	}
+
+	//check if email and confirm match
+	if req.FormValue("email") != req.FormValue("confirm_email") {
+		http.Redirect(w, req, "/register", http.StatusSeeOther)
 		return
 	}
 

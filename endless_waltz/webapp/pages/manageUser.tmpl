@@ -14,7 +14,23 @@
     <br>
     <h2>Billing Information</h1>
     <hr style="width:50%">
+    {{ if not .Premium }}
+    <h3>Account Type: Basic</h3>
+    <p>Upgrade at any time to get full EW_Messenger functionality!</p>
+    <br>
+    <form action="/switchToCrypto" method="POST">
+      <input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">      
+      <button id="crypto_button" class="btn btn-primary w-25 py-2">Upgrade to Premium with Crypto Billing</button>
+    </form>
+    <div class="hidden" id="checkout">
+    </div>
+    <br>
+    <button id="card_button" onclick="card()" class="btn btn-primary w-25 py-2">Update to Premium with Card Billing</button>
+    <button id="nvm_button" onclick="cancel()" class="hidden btn btn-primary w-25 py-2">Cancel</button>
+    <br>
+    {{ end }}
     {{ if .Card }}
+    <h3>Account Type: Premium</h3>
     <h3>Payment Method: Card w/ Stripe</h3>
     <h3>Next Payment: {{.BillingCycleEnd}}</h3>
     <br>
@@ -29,6 +45,7 @@
     <button id="nvm_button" onclick="cancel()" class="hidden btn btn-primary w-25 py-2">Cancel</button>
     {{ end }}
     {{ if .Crypto }}
+    <h3>Account Type: Premium</h3>
     <h3>Payment Method: Crypto</h3>
     <h3>Next Payment Due: {{.BillingCycleEnd}}</h3>
     <form action="/api/cryptoPayment" method="GET">
@@ -53,7 +70,7 @@
     <p>Use the below button to request a GDPR data report be sent to your listed email account. Please allow 5 minutes for delivery.</p>
     <form action="/GDPR" method="POST">
       <input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">      
-      <button class="btn btn-primary w-25 py-2">Request GDPR Data Report</button>
+      <button class="btn btn-secondary w-25 py-2">Request GDPR Data Report</button>
     </form>
     <br>
     <br>

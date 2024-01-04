@@ -93,25 +93,24 @@ func switchToCrypto(logger *logrus.Logger, user string) error {
 		logger.Debug("Updating user to crypto billing -> ", user)
 		//else lets modify the document after updating stripe
 		//stripe
-		if result["cardBillingId"] == nil {
-			logger.Warn("database cardBillingId doesnt exist for user ", user)
-			return nil
-		}
+		if result["cardBillingId"] != nil {
+			_, err := subscription.Get(result["cardBillingId"].(string), nil)
+			if err != nil {
+				logger.Error("error finding cardBillingId in stripe for user ", user)
+				return err
+			}
 
-		_, err := subscription.Get(result["cardBillingId"].(string), nil)
-		if err != nil {
-			logger.Error("error finding cardBillingId in stripe for user ", user)
-			return err
-		}
-
-		// Cancel the subscription
-		params := &stripe.SubscriptionCancelParams{
-			Params: stripe.Params{},
-		}
-		_, err = subscription.Cancel(result["cardBillingId"].(string), params)
-		if err != nil {
-			logger.Error("error canceling subscription in stripe for user ", user)
-			return err
+			// Cancel the subscription
+			params := &stripe.SubscriptionCancelParams{
+				Params: stripe.Params{},
+			}
+			_, err = subscription.Cancel(result["cardBillingId"].(string), params)
+			if err != nil {
+				logger.Error("error canceling subscription in stripe for user ", user)
+				return err
+			}
+		} else {
+			logger.Warn("swtichToCrypto - database cardBillingId doesnt exist for user ", user)
 		}
 
 		//db update
@@ -497,14 +496,18 @@ func getUserData(logger *logrus.Logger, user string) (sessionData, error) {
 	}
 
 	data := sessionData{
-		Captcha:         false,
-		Stripe:          false,
-		Username:        result["User"].(string),
-		Email:           result["Email"].(string),
-		Active:          result["Active"].(bool),
-		Crypto:          false,
-		Card:            false,
-		BillingCycleEnd: result["billingCycleEnd"].(string),
+		Captcha:  false,
+		Stripe:   false,
+		Username: result["User"].(string),
+		Email:    result["Email"].(string),
+		Active:   result["Active"].(bool),
+		Premium:  result["Premium"].(bool),
+		Crypto:   false,
+		Card:     false,
+	}
+
+	if result["billingCycleEnd"] != nil {
+		data.BillingCycleEnd = result["billingCycleEnd"].(string)
 	}
 
 	if result["cryptoBilling"] != nil {
@@ -512,9 +515,7 @@ func getUserData(logger *logrus.Logger, user string) (sessionData, error) {
 		data.Token = result["billingToken"].(string)
 	} else if result["cardBilling"] != nil {
 		data.Card = true
-	} else {
-		logger.Warn("Unable to find billing type from db for: ", user)
-	}
+	} 
 
 	return data, nil
 }

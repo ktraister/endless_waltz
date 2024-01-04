@@ -307,16 +307,16 @@ func modifyCheckoutSession(w http.ResponseWriter, req *http.Request) {
 	}
 
 	layout := "01-02-2006"
-	dateString := result["billingCycleEnd"].(string)
-	billingDate, _ := time.Parse(layout, dateString)
-	today := time.Now()
-	duration := billingDate.Sub(today)
-	daysLeft := int64(duration.Hours()/24 + 1)
-
-	//all the denugging
-	logger.Debug("dbResult ", dateString)
-	logger.Debug("billingDate ", billingDate)
-	logger.Debug("daysLeft ", daysLeft)
+	var daysLeft int64
+	if result["billingCycleEnd"] != nil {
+		dateString := result["billingCycleEnd"].(string)
+		billingDate, _ := time.Parse(layout, dateString)
+		today := time.Now()
+		duration := billingDate.Sub(today)
+		daysLeft = int64(duration.Hours()/24 + 1)
+	} else {
+		daysLeft = 0
+	}
 
 	var params *stripe.CheckoutSessionParams
 	if daysLeft >= 1 {
