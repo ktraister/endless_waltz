@@ -315,7 +315,7 @@ func modifyCheckoutSession(w http.ResponseWriter, req *http.Request) {
 		duration := billingDate.Sub(today)
 		daysLeft = int64(duration.Hours()/24 + 1)
 	} else {
-		daysLeft = 0
+		daysLeft = 30
 	}
 
 	var params *stripe.CheckoutSessionParams
