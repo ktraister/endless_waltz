@@ -314,12 +314,15 @@ func modifyCheckoutSession(w http.ResponseWriter, req *http.Request) {
 		today := time.Now()
 		duration := billingDate.Sub(today)
 		daysLeft = int64(duration.Hours()/24 + 1)
+		logger.Debug(fmt.Sprintf("Found billing cycle end for %s: %s", user, dateString))
 	} else {
 		daysLeft = 30
+		logger.Debug("30 days left for user ", user)
 	}
 
 	var params *stripe.CheckoutSessionParams
 	if daysLeft >= 1 {
+		logger.Debug("Stripe Trial TRUE for user ", user)
 		params = &stripe.CheckoutSessionParams{
 			UIMode:    stripe.String("embedded"),
 			ReturnURL: stripe.String(domain + "/switchToCard?session_id={CHECKOUT_SESSION_ID}"),
@@ -336,6 +339,7 @@ func modifyCheckoutSession(w http.ResponseWriter, req *http.Request) {
 			},
 		}
 	} else {
+		logger.Debug("No stripe Trial for user ", user)
 		params = &stripe.CheckoutSessionParams{
 			UIMode:    stripe.String("embedded"),
 			ReturnURL: stripe.String(domain + "/switchToCard?session_id={CHECKOUT_SESSION_ID}"),
