@@ -27,6 +27,7 @@ type Message struct {
 }
 
 var clients = syncmap.Map{}
+var basicLimitMap = syncmap.Map{}
 var broadcast = make(chan Message)
 
 var upgrader = websocket.Upgrader{
@@ -178,11 +179,68 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 func broadcaster(logger *logrus.Logger) {
 	for {
 		message := <-broadcast
+
 		//don't use my relays to send shit to yourself
 		if message.To == message.From {
 			logger.Warn(fmt.Sprintf("Possible abuse from %s: refusing to self send message on relay", message.To))
 			continue
 		}
+
+		limit := 4
+		//perform check if TARGET user has hit basic LIMIT
+		value, ok := basicLimitMap.Load(strings.Split(message.To, "_")[0])
+		if ok {
+			if value.(int) == limit {
+				logger.Warn("TARGET USER ACHIEVED LIMIT")
+				message = Message{From: "SYSTEM", To: message.From, Msg: "Target user limit reached"}
+				clients.Range(func(key, value interface{}) bool {
+					client := key.(*Client)
+					if client.Username == message.To {
+						err := client.Conn.WriteJSON(message)
+						if err != nil {
+							logger.Error("Websocket error: ", err)
+							client.Conn.Close()
+							clients.Delete(key)
+						}
+						return false
+					}
+					return true
+				})
+				continue
+			}
+		}
+
+		//check and ensure a basic SENDING user isn't exceeding their LIMIT (housekeeping)
+		//will need to add another thread to recycle sync map every 24 hrs
+		value, ok = basicLimitMap.Load(message.User)
+		//we didn't find the user, add them and continue
+		if !ok {
+			basicLimitMap.Store(message.User, 1)
+		} else {
+			if value.(int) == limit {
+				logger.Warn("LIMIT ACHIEVED")
+				message = Message{From: "SYSTEM", To: message.From, Msg: "Basic account limit reached"}
+				clients.Range(func(key, value interface{}) bool {
+					client := key.(*Client)
+					if client.Username == message.To {
+						err := client.Conn.WriteJSON(message)
+						if err != nil {
+							logger.Error("Websocket error: ", err)
+							client.Conn.Close()
+							clients.Delete(key)
+						}
+						return false
+					}
+					return true
+				})
+				continue
+			} else {
+				//increment and return
+				r := value.(int) + 1
+				basicLimitMap.Store(message.User, r)
+			}
+		}
+
 		sendFlag := 0
 		clientStr := ""
 		clients.Range(func(key, value interface{}) bool {

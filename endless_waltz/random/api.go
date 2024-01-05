@@ -62,7 +62,7 @@ func premiumHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 1)
+	ok = rateLimit(req.Header.Get("User"), 3)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
@@ -75,7 +75,8 @@ func premiumHandler(w http.ResponseWriter, req *http.Request) {
 	} else if status == "basic" {
 		w.Write([]byte("basic"))
 	} else {
-		http.Error(w, "404 Not Found", http.StatusNotFound)
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
 	}
 }
 
