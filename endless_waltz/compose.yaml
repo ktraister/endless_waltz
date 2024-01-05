@@ -80,7 +80,7 @@ services:
       MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser
       MongoPass: password123
-      LogLevel: Warn
+      LogLevel: Debug
 
   ew-proxy:
     depends_on:

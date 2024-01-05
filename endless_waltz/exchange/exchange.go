@@ -69,6 +69,15 @@ func refreshPremiumUsers(logger *logrus.Logger) {
 	}
 }
 
+func checkPremiumUsers(targetUser string) bool {
+	for _, user := range premiumUsers {
+		if targetUser == user {
+			return true
+		}
+	}
+	return false
+}
+
 func listUsers(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
@@ -222,55 +231,60 @@ func broadcaster(logger *logrus.Logger) {
 
 		limit := 4
 		//perform check if TARGET user has hit basic LIMIT
-		value, ok := basicLimitMap.Load(strings.Split(message.To, "_")[0])
-		if ok {
-			if value.(int) == limit {
-				logger.Warn("TARGET USER ACHIEVED LIMIT")
-				message = Message{From: "SYSTEM", To: message.From, Msg: "Target user limit reached"}
-				clients.Range(func(key, value interface{}) bool {
-					client := key.(*Client)
-					if client.Username == message.To {
-						err := client.Conn.WriteJSON(message)
-						if err != nil {
-							logger.Error("Websocket error: ", err)
-							client.Conn.Close()
-							clients.Delete(key)
+		targetUser := strings.Split(message.To, "_")[0]
+		if !checkPremiumUsers(targetUser) {
+			value, ok := basicLimitMap.Load(targetUser)
+			if ok {
+				if value.(int) == limit {
+					logger.Info("User limit achieved for ", targetUser)
+					message = Message{From: "SYSTEM", To: message.From, Msg: "Target user limit reached"}
+					clients.Range(func(key, value interface{}) bool {
+						client := key.(*Client)
+						if client.Username == message.To {
+							err := client.Conn.WriteJSON(message)
+							if err != nil {
+								logger.Error("Websocket error: ", err)
+								client.Conn.Close()
+								clients.Delete(key)
+							}
+							return false
 						}
-						return false
-					}
-					return true
-				})
-				continue
+						return true
+					})
+					continue
+				}
 			}
 		}
 
 		//check and ensure a basic SENDING user isn't exceeding their LIMIT (housekeeping)
-		value, ok = basicLimitMap.Load(message.User)
-		//we didn't find the user, add them and continue
-		if !ok {
-			basicLimitMap.Store(message.User, 1)
-		} else {
-			if value.(int) == limit {
-				logger.Warn("LIMIT ACHIEVED")
-				message = Message{From: "SYSTEM", To: message.From, Msg: "Basic account limit reached"}
-				clients.Range(func(key, value interface{}) bool {
-					client := key.(*Client)
-					if client.Username == message.To {
-						err := client.Conn.WriteJSON(message)
-						if err != nil {
-							logger.Error("Websocket error: ", err)
-							client.Conn.Close()
-							clients.Delete(key)
-						}
-						return false
-					}
-					return true
-				})
-				continue
+		if !checkPremiumUsers(message.User) {
+			value, ok := basicLimitMap.Load(message.User)
+			//we didn't find the user, add them and continue
+			if !ok {
+				basicLimitMap.Store(message.User, 1)
 			} else {
-				//increment and return
-				r := value.(int) + 1
-				basicLimitMap.Store(message.User, r)
+				if value.(int) == limit {
+					logger.Warn("LIMIT ACHIEVED")
+					message = Message{From: "SYSTEM", To: message.From, Msg: "Basic account limit reached"}
+					clients.Range(func(key, value interface{}) bool {
+						client := key.(*Client)
+						if client.Username == message.To {
+							err := client.Conn.WriteJSON(message)
+							if err != nil {
+								logger.Error("Websocket error: ", err)
+								client.Conn.Close()
+								clients.Delete(key)
+							}
+							return false
+						}
+						return true
+					})
+					continue
+				} else {
+					//increment and return
+					r := value.(int) + 1
+					basicLimitMap.Store(message.User, r)
+				}
 			}
 		}
 

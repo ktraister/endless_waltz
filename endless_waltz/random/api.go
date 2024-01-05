@@ -62,7 +62,7 @@ func premiumHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 3)
+	ok = rateLimit(req.Header.Get("User"), 2)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
