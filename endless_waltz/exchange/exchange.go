@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type Client struct {
@@ -29,10 +30,43 @@ type Message struct {
 var clients = syncmap.Map{}
 var basicLimitMap = syncmap.Map{}
 var broadcast = make(chan Message)
+var cleared = time.Now().Format("01-02-2006")
+var premiumUsers = []string{}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+}
+
+// thread to recycle sync map every 24 hrs (housekeeping)
+func clearLimitMap(logger *logrus.Logger) {
+	for {
+		today := time.Now().Format("01-02-2006")
+
+		if today != cleared {
+			//clear the map
+			basicLimitMap.Range(func(key interface{}, value interface{}) bool {
+				basicLimitMap.Delete(key)
+				return true
+			})
+
+			//set the cleared var
+			cleared = today
+		}
+		time.Sleep(1000 * time.Second)
+	}
+}
+
+// thread to refresh string map of premium users every 10 minutes (housekeeping)
+func refreshPremiumUsers(logger *logrus.Logger) {
+	for {
+		var err error
+		premiumUsers, err = getPremiumUsers(logger)
+		if err != nil {
+			logger.Error("Error refreshing premiumUser map: ", err)
+		}
+		time.Sleep(600 * time.Second)
+	}
 }
 
 func listUsers(w http.ResponseWriter, req *http.Request) {
@@ -211,7 +245,6 @@ func broadcaster(logger *logrus.Logger) {
 		}
 
 		//check and ensure a basic SENDING user isn't exceeding their LIMIT (housekeeping)
-		//will need to add another thread to recycle sync map every 24 hrs
 		value, ok = basicLimitMap.Load(message.User)
 		//we didn't find the user, add them and continue
 		if !ok {
@@ -293,6 +326,8 @@ func main() {
 	logger.Info("Exchange Server finished starting up!")
 
 	go broadcaster(logger)
+	go clearLimitMap(logger)
+	go refreshPremiumUsers(logger)
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
