@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 type Client struct {
@@ -27,11 +28,54 @@ type Message struct {
 }
 
 var clients = syncmap.Map{}
+var basicLimitMap = syncmap.Map{}
 var broadcast = make(chan Message)
+var cleared = time.Now().Format("01-02-2006")
+var premiumUsers = []string{}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+}
+
+// thread to recycle sync map every 24 hrs (housekeeping)
+func clearLimitMap(logger *logrus.Logger) {
+	for {
+		today := time.Now().Format("01-02-2006")
+
+		if today != cleared {
+			//clear the map
+			basicLimitMap.Range(func(key interface{}, value interface{}) bool {
+				basicLimitMap.Delete(key)
+				return true
+			})
+
+			//set the cleared var
+			cleared = today
+		}
+		time.Sleep(1000 * time.Second)
+	}
+}
+
+// thread to refresh string map of premium users every 10 minutes (housekeeping)
+func refreshPremiumUsers(logger *logrus.Logger) {
+	for {
+		var err error
+		premiumUsers, err = getPremiumUsers(logger)
+		if err != nil {
+			logger.Error("Error refreshing premiumUser map: ", err)
+		}
+		time.Sleep(600 * time.Second)
+	}
+}
+
+func checkPremiumUsers(targetUser string) bool {
+	for _, user := range premiumUsers {
+		if targetUser == user {
+			return true
+		}
+	}
+	return false
 }
 
 func listUsers(w http.ResponseWriter, req *http.Request) {
@@ -178,11 +222,72 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 func broadcaster(logger *logrus.Logger) {
 	for {
 		message := <-broadcast
+
 		//don't use my relays to send shit to yourself
 		if message.To == message.From {
 			logger.Warn(fmt.Sprintf("Possible abuse from %s: refusing to self send message on relay", message.To))
 			continue
 		}
+
+		limit := 300
+		//perform check if TARGET user has hit basic LIMIT
+		targetUser := strings.Split(message.To, "_")[0]
+		if !checkPremiumUsers(targetUser) {
+			value, ok := basicLimitMap.Load(targetUser)
+			if ok {
+				if value.(int) == limit {
+					logger.Info("User limit achieved for ", targetUser)
+					message = Message{From: "SYSTEM", To: message.From, Msg: "Target user limit reached"}
+					clients.Range(func(key, value interface{}) bool {
+						client := key.(*Client)
+						if client.Username == message.To {
+							err := client.Conn.WriteJSON(message)
+							if err != nil {
+								logger.Error("Websocket error: ", err)
+								client.Conn.Close()
+								clients.Delete(key)
+							}
+							return false
+						}
+						return true
+					})
+					continue
+				}
+			}
+		}
+
+		//check and ensure a basic SENDING user isn't exceeding their LIMIT (housekeeping)
+		if !checkPremiumUsers(message.User) {
+			value, ok := basicLimitMap.Load(message.User)
+			//we didn't find the user, add them and continue
+			if !ok {
+				basicLimitMap.Store(message.User, 1)
+			} else {
+				if value.(int) == limit {
+					logger.Info("User limit achieved for ", message.User)
+					message = Message{From: "SYSTEM", To: message.From, Msg: "Basic account limit reached"}
+					clients.Range(func(key, value interface{}) bool {
+						client := key.(*Client)
+						if client.Username == message.To {
+							err := client.Conn.WriteJSON(message)
+							if err != nil {
+								logger.Error("Websocket error: ", err)
+								client.Conn.Close()
+								clients.Delete(key)
+							}
+							return false
+						}
+						return true
+					})
+					continue
+				} else {
+					//increment and return
+					r := value.(int) + 1
+					basicLimitMap.Store(message.User, r)
+				}
+			}
+		}
+
 		sendFlag := 0
 		clientStr := ""
 		clients.Range(func(key, value interface{}) bool {
@@ -235,6 +340,8 @@ func main() {
 	logger.Info("Exchange Server finished starting up!")
 
 	go broadcaster(logger)
+	go clearLimitMap(logger)
+	go refreshPremiumUsers(logger)
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))

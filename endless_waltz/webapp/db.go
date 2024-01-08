@@ -40,6 +40,8 @@ func deleteUser(logger *logrus.Logger, user string) bool {
 
 	auth_db := client.Database("auth").Collection("keys")
 
+	//NEED TO CANCEL STRIPE PAYMENT HERE -- OTHERWISE WE'LL CONTINUE TO BILL -- EW_335
+
 	// Check if the item exists in the collection
 	logger.Debug(fmt.Sprintf("deleting user '%s'", user))
 	filter := bson.M{"User": user}
@@ -93,34 +95,43 @@ func switchToCrypto(logger *logrus.Logger, user string) error {
 		logger.Debug("Updating user to crypto billing -> ", user)
 		//else lets modify the document after updating stripe
 		//stripe
-		if result["cardBillingId"] == nil {
-			logger.Warn("database cardBillingId doesnt exist for user ", user)
-			return nil
+		if result["cardBillingId"] != nil {
+			_, err := subscription.Get(result["cardBillingId"].(string), nil)
+			if err != nil {
+				logger.Error("error finding cardBillingId in stripe for user ", user)
+				return err
+			}
+
+			// Cancel the subscription
+			params := &stripe.SubscriptionCancelParams{
+				Params: stripe.Params{},
+			}
+			_, err = subscription.Cancel(result["cardBillingId"].(string), params)
+			if err != nil {
+				logger.Error("error canceling subscription in stripe for user ", user)
+				return err
+			}
+		} else {
+			logger.Warn("swtichToCrypto - database cardBillingId doesnt exist for user ", user)
 		}
 
-		_, err := subscription.Get(result["cardBillingId"].(string), nil)
-		if err != nil {
-			logger.Error("error finding cardBillingId in stripe for user ", user)
-			return err
-		}
-
-		// Cancel the subscription
-		params := &stripe.SubscriptionCancelParams{
-			Params: stripe.Params{},
-		}
-		_, err = subscription.Cancel(result["cardBillingId"].(string), params)
-		if err != nil {
-			logger.Error("error canceling subscription in stripe for user ", user)
-			return err
+		var billingCycleEnd string
+		if result["billingCycleEnd"] != nil {
+			billingCycleEnd = result["billingCycleEnd"].(string)
+		} else {
+			today := time.Now()
+			billingCycleEnd = today.Add(168 * time.Hour).Format("01-02-2006")
 		}
 
 		//db update
 		update := bson.M{
 			"$set": bson.M{
+				"Premium":             true,
 				"cryptoBilling":       true,
 				"billingEmailSent":    false,
 				"billingReminderSent": false,
 				"billingToken":        generateToken(),
+				"billingCycleEnd":     billingCycleEnd,
 			},
 			"$unset": bson.M{
 				"cardBilling":   "",
@@ -211,11 +222,22 @@ func switchToCard(logger *logrus.Logger, session *sessions.Session) error {
 		return nil
 	}
 
+	//CHECK THIS LOGIC
+	var billingCycleEnd string
+	if result["billingCycleEnd"] != nil {
+		billingCycleEnd = result["billingCycleEnd"].(string)
+	} else {
+		today := time.Now()
+		billingCycleEnd = today.Add(720 * time.Hour).Format("01-02-2006")
+	}
+
 	//db update with new subscription
 	update := bson.M{
 		"$set": bson.M{
-			"cardBilling":   true,
-			"cardBillingId": session.Values["billingId"].(string),
+			"Premium":         true,
+			"cardBilling":     true,
+			"cardBillingId":   session.Values["billingId"].(string),
+			"billingCycleEnd": billingCycleEnd,
 		},
 		"$unset": bson.M{
 			"cryptoBilling":       "",
@@ -497,14 +519,18 @@ func getUserData(logger *logrus.Logger, user string) (sessionData, error) {
 	}
 
 	data := sessionData{
-		Captcha:         false,
-		Stripe:          false,
-		Username:        result["User"].(string),
-		Email:           result["Email"].(string),
-		Active:          result["Active"].(bool),
-		Crypto:          false,
-		Card:            false,
-		BillingCycleEnd: result["billingCycleEnd"].(string),
+		Captcha:  false,
+		Stripe:   false,
+		Username: result["User"].(string),
+		Email:    result["Email"].(string),
+		Active:   result["Active"].(bool),
+		Premium:  result["Premium"].(bool),
+		Crypto:   false,
+		Card:     false,
+	}
+
+	if result["billingCycleEnd"] != nil {
+		data.BillingCycleEnd = result["billingCycleEnd"].(string)
 	}
 
 	if result["cryptoBilling"] != nil {
@@ -512,8 +538,6 @@ func getUserData(logger *logrus.Logger, user string) (sessionData, error) {
 		data.Token = result["billingToken"].(string)
 	} else if result["cardBilling"] != nil {
 		data.Card = true
-	} else {
-		logger.Warn("Unable to find billing type from db for: ", user)
 	}
 
 	return data, nil
