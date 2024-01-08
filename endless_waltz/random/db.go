@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -36,9 +35,8 @@ func checkSub(user string, passwd string, logger *logrus.Logger) string {
 	auth_db := client.Database("auth").Collection("keys")
 
 	// Check if the item exists in the collection
-	logger.Debug(fmt.Sprintf("checking user '%s' with pass '%s'", user, passwd))
 	var filter, result bson.M
-	filter = bson.M{"Passwd": passwd, "User": user, "Active": true}
+	filter = bson.M{"User": user, "Active": true}
 	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
 	if err == nil {
 		logger.Debug("Found creds in db, authorized")

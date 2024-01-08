@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 	"html/template"
 	"net/http"
 	"os"
@@ -339,11 +340,13 @@ func registerHandler(w http.ResponseWriter, req *http.Request) {
 
 	auth_db := client.Database("auth").Collection("keys")
 
-	//create our hasher to hash our pass
-	hash := sha512.New()
-	hash.Write([]byte(req.FormValue("password")))
-	hashSum := hash.Sum(nil)
-	password := hex.EncodeToString(hashSum)
+	password, err := bcrypt.
+		GenerateFromPassword([]byte(req.FormValue("password")), bcrypt.DefaultCost)
+	if err != nil {
+		logger.Error("bcrypt password error: ", err)
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
 
 	//set our signUpTime to the unix time.now()
 	signUpTime := fmt.Sprint(time.Now().Unix())
@@ -575,14 +578,8 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//create our hasher to hash our pass
-	hash := sha512.New()
-	hash.Write([]byte(req.FormValue("password")))
-	hashSum := hash.Sum(nil)
-	password := hex.EncodeToString(hashSum)
-
 	//api_lib checkAuth function
-	if checkAuth(username, password, false, logger) {
+	if checkAuth(username, req.FormValue("password"), false, logger) {
 		//create a session for the user
 		session, _ := store.Get(req, "_session")
 		session.Values["authenticated"] = true

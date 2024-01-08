@@ -69,14 +69,21 @@ func premiumHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
 	status := checkSub(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
 	if status == "premium" {
 		w.Write([]byte("premium"))
 	} else if status == "basic" {
 		w.Write([]byte("basic"))
 	} else {
-		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
-		logger.Info("request denied 403 unauthorized")
+		http.Error(w, "500", http.StatusInternalServerError)
+		logger.Info("request denied 500 internal server error")
 	}
 }
 
