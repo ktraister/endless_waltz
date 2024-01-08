@@ -928,10 +928,10 @@ func protectedHandler(w http.ResponseWriter, req *http.Request) {
 	http.Redirect(w, req, "/deleteSuccess", http.StatusSeeOther)
 }
 
-func switchToCryptoHandler(w http.ResponseWriter, req *http.Request) {
+func unsubscribeHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		logger.Error("Could not configure logger in protectedHandler!")
+		logger.Error("Could not configure logger in unsubscribeHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -939,14 +939,53 @@ func switchToCryptoHandler(w http.ResponseWriter, req *http.Request) {
 	// Parse form data
 	err := req.ParseForm()
 	if err != nil {
-		logger.Error("Failed to parse form data in protectedHandler")
+		logger.Error("Failed to parse form data in unsubscribeHandler")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	session, err := store.Get(req, "_session")
 	if err != nil {
-		logger.Error("Could not get session in protectedHandler!")
+		logger.Error("Could not get session in unsubscribeHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	// Check if the user is authenticated
+	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+		http.Redirect(w, req, "/unauthorized", http.StatusSeeOther)
+		return
+	}
+
+	//unsubscribe the user per their request
+	err = unsubscribeUser(logger, session.Values["username"].(string))
+	if err != nil {
+		logger.Error("Unable to unsubscribe user")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+	}
+
+	http.Redirect(w, req, "/unsubscribeSuccess", http.StatusSeeOther)
+}
+
+func switchToCryptoHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		logger.Error("Could not configure logger in switchToCryptoHandler!")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	// Parse form data
+	err := req.ParseForm()
+	if err != nil {
+		logger.Error("Failed to parse form data in switchToCryptoHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
+	session, err := store.Get(req, "_session")
+	if err != nil {
+		logger.Error("Could not get session in switchToCryptoHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -969,14 +1008,14 @@ func switchToCryptoHandler(w http.ResponseWriter, req *http.Request) {
 func switchToCardHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
-		logger.Error("Could not configure logger in protectedHandler!")
+		logger.Error("Could not configure logger in switchToCardHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
 
 	session, err := store.Get(req, "_session")
 	if err != nil {
-		logger.Error("Could not get session in protectedHandler!")
+		logger.Error("Could not get session in switchToCardHandler!")
 		http.Redirect(w, req, "/error", http.StatusSeeOther)
 		return
 	}
@@ -1069,6 +1108,8 @@ func main() {
 	router.HandleFunc("/eula", staticTemplateHandler).Methods("GET")
 	router.HandleFunc("/GDPR", gdprHandler).Methods("POST")
 	router.HandleFunc("/GDPRSuccess", staticTemplateHandler).Methods("GET")
+	router.HandleFunc("/unsubscribe", unsubscribeHandler).Methods("POST")
+	router.HandleFunc("/unsubscribeSuccess", staticTemplateHandler).Methods("GET")
 
 	http.ListenAndServe(":8080", csrf.Protect(CSRFAuthKey)(router))
 }

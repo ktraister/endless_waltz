@@ -40,11 +40,31 @@ func deleteUser(logger *logrus.Logger, user string) bool {
 
 	auth_db := client.Database("auth").Collection("keys")
 
-	//NEED TO CANCEL STRIPE PAYMENT HERE -- OTHERWISE WE'LL CONTINUE TO BILL -- EW_335
+	filter := bson.M{"User": user}
+	logger.Debug(fmt.Sprintf("deleting user stripe subscription if exists"))
+	var result bson.M
+	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		logger.Error("Generic mongo read error: ", err)
+		return false
+	}
+
+	//if exists, cancel it
+	if result["cardBillingId"] != nil {
+		invoiceNow := false
+		params := &stripe.SubscriptionCancelParams{
+			InvoiceNow: &invoiceNow,
+		}
+		_, err := subscription.Cancel(result["cardBillingId"].(string), params)
+		if err != nil {
+			logger.Error("Error deleting stripe sub: ", err)
+		} else {
+			logger.Debug("Successfully deleted stripe sub")
+		}
+	}
 
 	// Check if the item exists in the collection
 	logger.Debug(fmt.Sprintf("deleting user '%s'", user))
-	filter := bson.M{"User": user}
 	_, err = auth_db.DeleteOne(context.TODO(), filter)
 	if err == nil {
 		return true
@@ -601,4 +621,67 @@ func getGDPRData(logger *logrus.Logger, user string) (GDPRData, error) {
 	}
 
 	return data, nil
+}
+
+func unsubscribeUser(logger *logrus.Logger, user string) error {
+	//creating context to connect to mongo
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	credential := options.Credential{
+		Username: MongoUser,
+		Password: MongoPass,
+	}
+	//actually connect to mongo
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
+	if err != nil {
+		logger.Error("Could not connect to mongo:", err)
+		return err
+	}
+	// Defer the close operation to ensure the client is closed when the main function exits
+	defer func() {
+		if err := client.Disconnect(ctx); err != nil {
+			logger.Error("error in deferred mongo cleanup func: ", err)
+		}
+	}()
+
+	auth_db := client.Database("auth").Collection("keys")
+
+	filter := bson.M{"User": user}
+	var result bson.M
+	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		logger.Error("Generic mongo read error: ", err)
+		return err
+	}
+
+	//check if this is bogus
+	if result["cryptoBilling"] == nil && result["cardBilling"] == nil {
+		logger.Warn("bogus unsubscribe attempt on user ", user)
+	} else {
+		logger.Debug("Unsubscribing user -> ", user)
+
+		//db update
+		update := bson.M{
+			"$set": bson.M{
+				"Premium": false,
+			},
+			"$unset": bson.M{
+				"cardBilling":         "",
+				"cardBillingId":       "",
+				"cryptoBilling":       "",
+				"billingEmailSent":    "",
+				"billingReminderSent": "",
+				"billingToken":        "",
+				"billingCycleEnd":     "",
+			},
+		}
+		_, err = auth_db.UpdateOne(context.TODO(), filter, update)
+		if err != nil {
+			logger.Error("Error setting user crypto billing data: ", err)
+			return err
+		}
+		logger.Debug("Unsubscribed user from paid -> ", user)
+	}
+
+	return nil
 }
