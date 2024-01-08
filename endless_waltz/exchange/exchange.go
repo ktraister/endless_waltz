@@ -229,7 +229,7 @@ func broadcaster(logger *logrus.Logger) {
 			continue
 		}
 
-		limit := 4
+		limit := 300
 		//perform check if TARGET user has hit basic LIMIT
 		targetUser := strings.Split(message.To, "_")[0]
 		if !checkPremiumUsers(targetUser) {
@@ -264,7 +264,7 @@ func broadcaster(logger *logrus.Logger) {
 				basicLimitMap.Store(message.User, 1)
 			} else {
 				if value.(int) == limit {
-					logger.Warn("LIMIT ACHIEVED")
+					logger.Info("User limit achieved for ", message.User)
 					message = Message{From: "SYSTEM", To: message.From, Msg: "Basic account limit reached"}
 					clients.Range(func(key, value interface{}) bool {
 						client := key.(*Client)
