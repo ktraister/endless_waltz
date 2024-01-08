@@ -6,8 +6,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/sync/syncmap"
 	"net/http"
 	"time"
@@ -82,14 +84,13 @@ func checkAuth(user string, passwd string, active bool, logger *logrus.Logger) b
 	logger.Debug(fmt.Sprintf("checking user '%s' with pass '%s'", user, passwd))
 	var filter, result bson.M
 	if active {
-		filter = bson.M{"Passwd": passwd, "User": user, "Active": true}
+		filter = bson.M{"User": user, "Active": true}
 	} else {
-		filter = bson.M{"Passwd": passwd, "User": user}
+		filter = bson.M{"User": user}
 	}
 	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
 	if err == nil {
-		logger.Debug("Found creds in db, authorized")
-		return true
+		logger.Debug("Found creds in db, checking hash")
 	} else if err == mongo.ErrNoDocuments {
 		logger.Info("No creds found, unauthorized")
 		return false
@@ -97,6 +98,12 @@ func checkAuth(user string, passwd string, active bool, logger *logrus.Logger) b
 		logger.Error(err)
 		return false
 	}
+
+	dbPass := result["Passwd"].(primitive.Binary).Data
+
+	err = bcrypt.CompareHashAndPassword(
+		[]byte(dbPass), []byte(passwd))
+	return err == nil
 }
 
 // Custom middleware function to inject a logger into the request context
