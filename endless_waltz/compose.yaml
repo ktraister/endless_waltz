@@ -27,7 +27,7 @@ services:
       MongoURI: mongodb://mongo:27017/
       MongoUser: adminuser
       MongoPass: password123
-      ClientVersion: "v0.1.4"
+      ClientVersion: "REPLACEME"
       LogLevel: Debug
       CoinbaseAPIKey: ${CoinbaseAPIKey}
       StripeAPIKey: ${StripeAPIKey}
