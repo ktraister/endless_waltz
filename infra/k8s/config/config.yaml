@@ -9,6 +9,7 @@ data:
   CoinbaseAPIKey:
   StripeAPIKey:
   StripeAPIPubKey:
+  ClientVersion:
   SESSION_SECRET:
 kind: Secret
 metadata:

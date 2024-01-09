@@ -22,6 +22,8 @@ import (
 	"github.com/stripe/stripe-go/v76/checkout/session"
 )
 
+var ClientVersion string
+
 type User struct {
 	Username string `json:"username"`
 }
@@ -51,6 +53,33 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 
 	w.Write([]byte("HEALTHY"))
 	logger.Info("Someone hit the health check route...")
+}
+
+// primarily used for authentication and to test system health
+func clientVersionHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 5)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	w.Write([]byte(ClientVersion))
+	logger.Debug("Someone hit the ClientVersion route...")
 }
 
 // path to tell the  client if the user is basic or premium
@@ -420,6 +449,7 @@ func main() {
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
 	stripe.Key = os.Getenv("StripeAPIKey")
+	ClientVersion = os.Getenv("ClientVersion")
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Random Server finished starting up!")
@@ -428,6 +458,7 @@ func main() {
 	router.Use(LoggerMiddleware(logger))
 	router.HandleFunc("/api/healthcheck", healthHandler).Methods("GET")
 	router.HandleFunc("/api/premiumCheck", premiumHandler).Methods("GET")
+	router.HandleFunc("/api/clientVersionCheck", clientVersionHandler).Methods("GET")
 	router.HandleFunc("/api/cryptoPayment", cryptoPaymentHandler).Methods("GET")
 	router.HandleFunc("/api/create-checkout-session", createCheckoutSession)
 	router.HandleFunc("/api/modify-checkout-session", modifyCheckoutSession)
