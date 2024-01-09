@@ -105,14 +105,89 @@ func premiumHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	status := checkSub(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
+	status := checkSub(req.Header.Get("User"), logger)
 	if status == "premium" {
 		w.Write([]byte("premium"))
 	} else if status == "basic" {
 		w.Write([]byte("basic"))
 	} else {
 		http.Error(w, "500", http.StatusInternalServerError)
-		logger.Info("request denied 500 internal server error")
+		logger.Info("500 internal server error")
+	}
+}
+
+// path to tell the  client what the user friend list is
+func friendsListHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 2)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	friendsList, err := checkFriendsList(req.Header.Get("User"), logger)
+	if err != nil {
+		http.Error(w, "500", http.StatusInternalServerError)
+		logger.Info("500 internal server error")
+		return
+	}
+
+	w.Write([]byte(friendsList))
+}
+
+// path for client to update user friend list
+func updateFriendsListHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	// Parse form data
+	err := req.ParseForm()
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 2)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	logger.Debug("Action -> ", req.PostForm.Get("Action"))
+	logger.Debug("User -> ", req.PostForm.Get("User"))
+
+	ok = updateFriendsList(logger, req.Header.Get("User"), req.PostForm.Get("User"), req.PostForm.Get("Action"))
+	if !ok {
+		http.Error(w, "500", http.StatusInternalServerError)
+		logger.Info("500 internal server error")
+		return
 	}
 }
 
@@ -457,6 +532,8 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
 	router.HandleFunc("/api/healthcheck", healthHandler).Methods("GET")
+	router.HandleFunc("/api/friendsList", friendsListHandler).Methods("GET")
+	router.HandleFunc("/api/updateFriendsList", updateFriendsListHandler).Methods("POST")
 	router.HandleFunc("/api/premiumCheck", premiumHandler).Methods("GET")
 	router.HandleFunc("/api/clientVersionCheck", clientVersionHandler).Methods("GET")
 	router.HandleFunc("/api/cryptoPayment", cryptoPaymentHandler).Methods("GET")
