@@ -116,6 +116,39 @@ func premiumHandler(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// list all users for selection for friends list
+func userListHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 2)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	userList, err := listAllUsers(logger)
+	if err != nil {
+		http.Error(w, "500", http.StatusInternalServerError)
+		logger.Info("500 internal server error")
+		return
+	}
+
+	w.Write([]byte(userList))
+}
+
 // path to tell the  client what the user friend list is
 func friendsListHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
@@ -145,6 +178,8 @@ func friendsListHandler(w http.ResponseWriter, req *http.Request) {
 		logger.Info("500 internal server error")
 		return
 	}
+
+	logger.Debug("Returning friends list -> ", friendsList)
 
 	w.Write([]byte(friendsList))
 }
@@ -180,10 +215,15 @@ func updateFriendsListHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	logger.Debug("Action -> ", req.PostForm.Get("Action"))
-	logger.Debug("User -> ", req.PostForm.Get("User"))
+	if !checkUserInput(req.PostForm.Get("UserList")) {
+		http.Error(w, "400 Unauthorized", http.StatusBadRequest)
+		logger.Info("400 bad request")
+		return
+	}
 
-	ok = updateFriendsList(logger, req.Header.Get("User"), req.PostForm.Get("User"), req.PostForm.Get("Action"))
+	logger.Debug("UserList -> ", req.PostForm.Get("UserList"))
+
+	ok = updateFriendsList(logger, req.Header.Get("User"), req.PostForm.Get("UserList"))
 	if !ok {
 		http.Error(w, "500", http.StatusInternalServerError)
 		logger.Info("500 internal server error")
@@ -532,6 +572,7 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
 	router.HandleFunc("/api/healthcheck", healthHandler).Methods("GET")
+	router.HandleFunc("/api/userList", userListHandler).Methods("GET")
 	router.HandleFunc("/api/friendsList", friendsListHandler).Methods("GET")
 	router.HandleFunc("/api/updateFriendsList", updateFriendsListHandler).Methods("POST")
 	router.HandleFunc("/api/premiumCheck", premiumHandler).Methods("GET")
