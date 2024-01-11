@@ -222,16 +222,17 @@ func updateFriendsListHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 	defer req.Body.Close()
+	bodyString := string(body)
 
-	if !checkUserInput(req.PostForm.Get("UserList")) {
+	if !checkUserInput(bodyString) {
 		http.Error(w, "400 Unauthorized", http.StatusBadRequest)
 		logger.Info("400 bad request")
 		return
 	}
 
-	logger.Debug("Received POST request with body:", string(body))
+	logger.Debug("Received POST request with body:", bodyString)
 
-	ok = updateFriendsList(logger, req.Header.Get("User"), string(body))
+	ok = updateFriendsList(logger, req.Header.Get("User"), bodyString)
 	if !ok {
 		http.Error(w, "500", http.StatusInternalServerError)
 		logger.Info("500 internal server error")
