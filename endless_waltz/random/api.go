@@ -215,15 +215,23 @@ func updateFriendsListHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// Read the request body
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+	defer req.Body.Close()
+
 	if !checkUserInput(req.PostForm.Get("UserList")) {
 		http.Error(w, "400 Unauthorized", http.StatusBadRequest)
 		logger.Info("400 bad request")
 		return
 	}
 
-	logger.Debug("UserList -> ", req.PostForm.Get("UserList"))
+	logger.Debug("Received POST request with body:", string(body))
 
-	ok = updateFriendsList(logger, req.Header.Get("User"), req.PostForm.Get("UserList"))
+	ok = updateFriendsList(logger, req.Header.Get("User"), string(body))
 	if !ok {
 		http.Error(w, "500", http.StatusInternalServerError)
 		logger.Info("500 internal server error")
