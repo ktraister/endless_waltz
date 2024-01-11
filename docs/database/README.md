@@ -19,6 +19,7 @@ so this is the maximum that can be set by all application paths.
     SignupTime: '1699553450',
     Active: true,
     Premium: true,
+    FriendsList: 'item1:item2',
 
     //user credentials
     Email: 'kayleigh.traister@gmail.com',
