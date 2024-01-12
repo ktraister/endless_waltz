@@ -1,8 +1,6 @@
 package main
 
 import (
-	"crypto/sha512"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"net"
@@ -11,15 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 )
-
-func hashPass(password []byte) string {
-	//create our hasher to hash our pass
-	hash := sha512.New()
-	hash.Write(password)
-	hashSum := hash.Sum(nil)
-	hashString := hex.EncodeToString(hashSum)
-	return hashString
-}
 
 func handleConnection(conn net.Conn, config *ssh.ServerConfig, logger *logrus.Logger) {
 	sshConn, chans, reqs, err := ssh.NewServerConn(conn, config)
@@ -96,8 +85,16 @@ func main() {
 
 	logger := createLogger(LogLevel, LogType)
 
+	//specifies global configuration values for SSH algos
+	cipherConfig := ssh.Config{
+		KeyExchanges: []string{"curve25519-sha256", "curve25519-sha256@libssh.org"},
+		Ciphers:      []string{"aes128-gcm@openssh.com", "aes256-gcm@openssh.com", "aes128-ctr", "aes192-ctr", "aes256-ctr"},
+		MACs:         []string{"hmac-sha2-256-etm@openssh.com", "hmac-sha2-512-etm@openssh.com", "hmac-sha2-256", "hmac-sha2-512"},
+	}
+
 	//SSH server configuration
 	sshConfig := &ssh.ServerConfig{
+		Config: cipherConfig,
 		PasswordCallback: func(c ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
 			if !rateLimit(c.User(), 1) {
 				return nil, fmt.Errorf("RateLimit")

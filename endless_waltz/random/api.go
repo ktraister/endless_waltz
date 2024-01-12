@@ -22,6 +22,8 @@ import (
 	"github.com/stripe/stripe-go/v76/checkout/session"
 )
 
+var ClientVersion string
+
 type User struct {
 	Username string `json:"username"`
 }
@@ -53,6 +55,33 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 	logger.Info("Someone hit the health check route...")
 }
 
+// primarily used for authentication and to test system health
+func clientVersionHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 5)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	w.Write([]byte(ClientVersion))
+	logger.Debug("Someone hit the ClientVersion route...")
+}
+
 // path to tell the  client if the user is basic or premium
 func premiumHandler(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
@@ -76,14 +105,138 @@ func premiumHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	status := checkSub(req.Header.Get("User"), req.Header.Get("Passwd"), logger)
+	status := checkSub(req.Header.Get("User"), logger)
 	if status == "premium" {
 		w.Write([]byte("premium"))
 	} else if status == "basic" {
 		w.Write([]byte("basic"))
 	} else {
 		http.Error(w, "500", http.StatusInternalServerError)
-		logger.Info("request denied 500 internal server error")
+		logger.Info("500 internal server error")
+	}
+}
+
+// list all users for selection for friends list
+func userListHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 2)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	userList, err := listAllUsers(logger)
+	if err != nil {
+		http.Error(w, "500", http.StatusInternalServerError)
+		logger.Info("500 internal server error")
+		return
+	}
+
+	w.Write([]byte(userList))
+}
+
+// path to tell the  client what the user friend list is
+func friendsListHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 2)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	friendsList, err := checkFriendsList(req.Header.Get("User"), logger)
+	if err != nil {
+		http.Error(w, "500", http.StatusInternalServerError)
+		logger.Info("500 internal server error")
+		return
+	}
+
+	logger.Debug("Returning friends list -> ", friendsList)
+
+	w.Write([]byte(friendsList))
+}
+
+// path for client to update user friend list
+func updateFriendsListHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	// Parse form data
+	err := req.ParseForm()
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 2)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	// Read the request body
+	body, err := ioutil.ReadAll(req.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+	defer req.Body.Close()
+	bodyString := string(body)
+
+	if !checkUserInput(bodyString) {
+		http.Error(w, "400 Unauthorized", http.StatusBadRequest)
+		logger.Info("400 bad request")
+		return
+	}
+
+	logger.Debug("Received POST request with body:", bodyString)
+
+	ok = updateFriendsList(logger, req.Header.Get("User"), bodyString)
+	if !ok {
+		http.Error(w, "500", http.StatusInternalServerError)
+		logger.Info("500 internal server error")
+		return
 	}
 }
 
@@ -420,6 +573,7 @@ func main() {
 	LogLevel := os.Getenv("LogLevel")
 	LogType := os.Getenv("LogType")
 	stripe.Key = os.Getenv("StripeAPIKey")
+	ClientVersion = os.Getenv("ClientVersion")
 
 	logger := createLogger(LogLevel, LogType)
 	logger.Info("Random Server finished starting up!")
@@ -427,7 +581,11 @@ func main() {
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
 	router.HandleFunc("/api/healthcheck", healthHandler).Methods("GET")
+	router.HandleFunc("/api/userList", userListHandler).Methods("GET")
+	router.HandleFunc("/api/friendsList", friendsListHandler).Methods("GET")
+	router.HandleFunc("/api/updateFriendsList", updateFriendsListHandler).Methods("POST")
 	router.HandleFunc("/api/premiumCheck", premiumHandler).Methods("GET")
+	router.HandleFunc("/api/clientVersionCheck", clientVersionHandler).Methods("GET")
 	router.HandleFunc("/api/cryptoPayment", cryptoPaymentHandler).Methods("GET")
 	router.HandleFunc("/api/create-checkout-session", createCheckoutSession)
 	router.HandleFunc("/api/modify-checkout-session", modifyCheckoutSession)
