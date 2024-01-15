@@ -78,6 +78,33 @@ func checkPremiumUsers(targetUser string) bool {
 	return false
 }
 
+// primarily used for authentication and to test system health
+func healthHandler(w http.ResponseWriter, req *http.Request) {
+	logger, ok := req.Context().Value("logger").(*logrus.Logger)
+	if !ok {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		logger.Error("Could not configure logger!")
+		return
+	}
+
+	ok = rateLimit(req.Header.Get("User"), 5)
+	if !ok {
+		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
+		logger.Info("request denied 429 rate limit")
+		return
+	}
+
+	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	if !ok {
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Info("request denied 403 unauthorized")
+		return
+	}
+
+	w.Write([]byte("HEALTHY"))
+	logger.Info("Someone hit the health check route...")
+}
+
 func listUsers(w http.ResponseWriter, req *http.Request) {
 	logger, ok := req.Context().Value("logger").(*logrus.Logger)
 	if !ok {
@@ -345,6 +372,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.Use(LoggerMiddleware(logger))
+	router.HandleFunc("/ws/healthcheck", healthHandler).Methods("GET")
 	router.HandleFunc("/ws/listUsers", listUsers).Methods("GET")
 	router.HandleFunc("/ws", serveWs)
 	http.ListenAndServe(":8081", router)
