@@ -7,9 +7,14 @@ The purpose of this is to create a set of scripts to build a cluster on any host
 HOST SETUP:
 --------------------------
 ## install k8s
-get your new cluster set up:
+get your new cluster set up, start with a master node:
 ```
-./k3setup.sh
+./k3setup.sh master
+```
+
+then, on N number of nodes, run the node installer with output from the master:
+```
+./k3setup.sh node "10.0.0.10" "fu...ck::server:lo...ol"
 ```
 
 By default, k8s hosts traefik on port 443 for the cluster. 
@@ -22,8 +27,3 @@ vim /etc/systemd/system/k3s.service
 ## Firewall
 As of today, the only ports that should be exposed through the firewall are 
 80TCP/443TCP. 8080TCP is plaintext only for the TOR router.
-
-When Bouncing HeavyArms:
--------------------------
- - fixup ssh config on Deathscythe
- - fixup kubeconfig on Deathscythe
