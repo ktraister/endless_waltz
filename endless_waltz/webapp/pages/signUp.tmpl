@@ -4,7 +4,8 @@
       <form method="POST" action="/signUp">
 	<input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">
 	<img class="mb-4" src="/img/Icon.png" alt="" width="72" height="72">
-	<h1 class="h2 mb-3 fw-normal">Create an account</h1>
+	<h1 class="h1 mb-3 fw-normal">Create an account</h1>
+	<br>
 	<div class="form-floating">
 	  <input type="text" name="email" class="form-control" id="floatingEmail" placeholder="Email Address" required>
 	  <label for="floatingEmail">Email</label>
@@ -18,6 +19,11 @@
 	  <label for="floatingEmailConfirm">Email Confirm</label>
     	  <span id="emailConfirmError" style="color: red;"></span>
 	</div>
+	<br>
+	<br>
+	<h3 class="h3 mb-3 fw-normal">Username Requirements</h3>
+	<p class="mb-3 fw-normal">Choose a unique username.</p>
+	<p class="mb-3 fw-normal">Avoid profanity, threatening language, and hate speech;<br>or your account will be deleted and your platform usage restricted.</p>
 	<div class="form-floating">
 	  <input type="text" name="username" class="form-control" id="floatingUser" placeholder="Username" required>
 	  <label for="floatingUser">Username</label>
