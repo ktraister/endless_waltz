@@ -4,7 +4,10 @@
       <form method="POST" action="/register">
 	<input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">
 	<img class="mb-4" src="/img/Icon.png" alt="" width="72" height="72">
-	<h1 class="h2 mb-3 fw-normal">Set Your Password</h1>
+	<h1 class="h1 mb-3 fw-normal">Set Your Password</h1>
+	<br>
+        <h3 class="h3 mb-3 fw-normal">Password Requirements</h3>                                        
+        <p class="mb-3 fw-normal">Password must be at least 8 characters, including<br>1 upper case character, 1 lower case, 1 number, and 1 special character</p> 
 	<div class="form-floating" id="password">
 	  <input type="password" name="password" class="form-control" id="floatingPassword" placeholder="Password" required>
 	  <label for="floatingPassword">Password</label>
@@ -17,13 +20,13 @@
 	</div>
 	<br>
 	<br>
-	  <br>
-	  {{ if .CaptchaFail }}
-	  <span id="captchaSubmitError" style="color: red;">Captcha check failed - please try again</span>
-	  <br>
-	  <br>
-	  {{ end }}
-	  <div class="g-recaptcha" data-sitekey="6LcQtnsoAAAAAB2DskA6q-uUKpzbyEFvAQ0Kjzcm"></div>
+	<br>
+	{{ if .CaptchaFail }}
+	<span id="captchaSubmitError" style="color: red;">Captcha check failed - please try again</span>
+	<br>
+	<br>
+	{{ end }}
+	<div class="g-recaptcha" data-sitekey="6LcQtnsoAAAAAB2DskA6q-uUKpzbyEFvAQ0Kjzcm"></div>
 	  <br>
 	  <p style="font-size: 10px;">By clicking "Sign Up", you agree with the <a href="/privacy_policy">privacy policy</a> and <a href="/terms_and_conditions">terms and conditions</a>.</p>
 	  <button class="btn btn-primary w-50 py-2" type="submit" value="SignUp">Sign Up</button>
@@ -34,6 +37,7 @@
     </div>
     <script>
     document.querySelector('form').addEventListener('submit', function(event) {
+        const passText = "Password did not meet length and complexity requirements"
         const password = document.querySelector('#floatingPassword').value;
         const Cpassword = document.querySelector('#floatingConfirm').value;
         const passwordError = document.querySelector('#passwordError');
