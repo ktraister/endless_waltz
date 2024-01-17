@@ -32,7 +32,7 @@ Pick and choose what you need to deploy for each unique part
 kubectl create secret docker-registry ghcrcred \
   --docker-server=ghcr.io \
   --docker-username=ktraister \
-  --docker-password= \
+  --docker-password= $GH_PAT\
   --docker-email=kayleigh.traister@gmail.com
 ```
 
@@ -44,6 +44,11 @@ cd config && echo "edit" && kubectl apply -f .
 #deploy mongo
 ```
 cd mongo && kubectl apply -f .
+```
+
+#deploy billing
+```
+cd billing && kubectl apply -f .
 ```
 
 #deploy random
@@ -64,6 +69,11 @@ cd exchange && kubectl apply -f .
 #deploy nginx
 ```
 cd nginx && kubectl apply -f .
+```
+
+#deploy proxy
+```
+cd proxy && kubectl apply -f .
 ```
 
 #deploy tor

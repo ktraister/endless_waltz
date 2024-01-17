@@ -8,6 +8,9 @@ https://certbot.eff.org/instructions?ws=other&os=ubuntufocal&tab=wildcard
 ## AWS Route53 specific docs
 https://certbot-dns-route53.readthedocs.io/en/stable/
 
+## Prereqs
+You need to install the `certbot` package and `sudo pip3 install certbot-dns-route53`
+
 ## Operation
 Because certbot requires sudo, you'll have to configure the access keys for the
 AWS account for the root user.

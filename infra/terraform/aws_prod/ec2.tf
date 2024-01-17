@@ -19,7 +19,7 @@ resource "aws_instance" "ultron_cluster" {
   ami             = data.aws_ami.ubuntu.id
   instance_type   = "t3.medium"
   subnet_id       = module.vpc.public_subnets[count.index]
-  security_groups = [aws_security_group.ultron_cluster.id]
+  vpc_security_group_ids = [aws_security_group.ultron_cluster.id]
   key_name        = "aws"
 
   tags = {
@@ -66,6 +66,15 @@ resource "aws_vpc_security_group_ingress_rule" "allow_443" {
   from_port         = 443
   ip_protocol       = "tcp"
   to_port           = 443
+}
+
+resource "aws_security_group_rule" "allow_intracluster_traffic" {
+  security_group_id = aws_security_group.ultron_cluster.id
+  source_security_group_id = aws_security_group.ultron_cluster.id
+  type              = "ingress"
+  protocol          = "all"
+  to_port           = 0
+  from_port         = 0
 }
 
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic" {

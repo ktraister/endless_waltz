@@ -26,7 +26,7 @@ fi
 
 if [[ $1 == "master" ]]; then
 	#setup master k3s node
-	curl -sfL https://get.k3s.io | sh -s - --docker
+	curl -sfL https://get.k3s.io | sh -s - 
 	systemctl enable k3s
 
 	echo k3s master token:
