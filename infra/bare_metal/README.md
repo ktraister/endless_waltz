@@ -19,6 +19,7 @@ then, on N number of nodes, run the node installer with output from the master:
 
 By default, k8s hosts traefik on port 443 for the cluster. 
 If the cluster is to host the web stack, you'll need to disable traefik on k3s:
+This should only be done on the master!
 ```
 vim /etc/systemd/system/k3s.service
 #append --disable=traefik to the systemd run cmd

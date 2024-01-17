@@ -15,12 +15,12 @@ data "aws_ami" "ubuntu" {
 }
 
 resource "aws_instance" "ultron_cluster" {
-  count         = var.instance_count
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.medium"
-  subnet_id = module.vpc.public_subnets[count.index]
-  security_groups = [ aws_security_group.ultron_cluster.id ]
-  key_name = "aws"
+  count           = var.instance_count
+  ami             = data.aws_ami.ubuntu.id
+  instance_type   = "t3.medium"
+  subnet_id       = module.vpc.public_subnets[count.index]
+  security_groups = [aws_security_group.ultron_cluster.id]
+  key_name        = "aws"
 
   tags = {
     Name = "Ultron_cluster-${count.index}"
