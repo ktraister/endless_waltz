@@ -68,6 +68,14 @@ resource "aws_vpc_security_group_ingress_rule" "allow_443" {
   to_port           = 443
 }
 
+resource "aws_vpc_security_group_ingress_rule" "allow_8080" {
+  security_group_id = aws_security_group.ultron_cluster.id
+  cidr_ipv4         = "0.0.0.0/0"
+  from_port         = 8080
+  ip_protocol       = "tcp"
+  to_port           = 8080
+}
+
 resource "aws_security_group_rule" "allow_intracluster_traffic" {
   security_group_id = aws_security_group.ultron_cluster.id
   source_security_group_id = aws_security_group.ultron_cluster.id
