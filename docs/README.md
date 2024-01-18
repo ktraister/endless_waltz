@@ -8,15 +8,14 @@ LAST UPDATED: 11 October 23
 ## Naming Conventions
 The project gets its name from the movie Gundam Wing: Endless Waltz, and hosts
 are named to reflect this. The environment contains:
-  - Shenlong: PROD GCP Cloud server hosting k3s 
-  - HeavyArms: AWS Cloud server hosting k3s for dev infra work
   - DeathScythe: My laptop :) 
+  - Ultron: AWS prod Cluster hosting K3s primary (Altron)
+  - Epion: AWS prod Singular hosting K3s secondary
   - *Zero: former physical machine, hosting dev and prod infra*
+  - *HeavyArms: former AWS Cloud server hosting k3s for dev infra work*
+  - *Shenlong: Defunct free GCP Cloud server hosting init k3s*
   - *Sandrock: Available*
   - *Wing: Available*
-  - *Epion: Available*
-  - *Altron: Available*
-  - *Sandrock: Available*
   - *Talgeese: Available*
   - *Mercurius: Available*
   - *Vayeate: Available*
