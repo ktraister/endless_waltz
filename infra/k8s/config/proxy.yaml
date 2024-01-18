@@ -3,5 +3,5 @@ kind: Secret
 metadata:
   name: proxy-config
 data: 
-  private_key: illegal
+  private_key: Zm9vCg==
 

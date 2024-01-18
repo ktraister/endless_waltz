@@ -27,6 +27,8 @@ SVC SETUP:
 This is the process for a new dev namespace with all the trimmings.
 Pick and choose what you need to deploy for each unique part
 
+ON BOTH CLUSTERS:
+
 #set up pull secret
 ```
 kubectl create secret docker-registry ghcrcred \
@@ -36,10 +38,12 @@ kubectl create secret docker-registry ghcrcred \
   --docker-email=kayleigh.traister@gmail.com
 ```
 
-#setup common config secret
+#setup common config secrets
 ```
 cd config && echo "edit" && kubectl apply -f .
 ```
+
+ON PRIMARY CLUSTER:
 
 #deploy mongo
 ```
@@ -71,22 +75,35 @@ cd exchange && kubectl apply -f .
 cd nginx && kubectl apply -f .
 ```
 
-#deploy proxy
-```
-cd proxy && kubectl apply -f .
-```
-
 #deploy tor
 ```
 cd tor && kubectl apply -f .
 ```
 
-#expose load balancer ports
+#expose load balancer (NGINX) ports
 ```
 kubectl expose deployment nginx --type=LoadBalancer --name=nginx-lb
+```
+
+#expose mongo service ports
+```
+kubectl expose deployment mongo --type=LoadBalancer --name=mongo-lb --port 27017
+```
+
+ON SECONDARY CLUSTER:
+
+#setup proxy config secrets
+```
+cd config && echo "edit" && kubectl apply -f .
+```
+
+#deploy proxy
+```
+cd proxy && kubectl apply -f .
 ```
 
 #expose proxy service ports
 ```
 kubectl expose deployment ew-proxy --type=LoadBalancer --name=proxy-lb
 ```
+
