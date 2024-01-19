@@ -19,6 +19,26 @@ jobs:
           cd ./endless_waltz/common
           go test -v
 
+  util:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-go@v3
+
+      - name: Go Build and Test
+        run: | 
+          export GOOS=linux
+          export GOARCH=amd64
+          export CGO_ENABLED=0
+          cd ./endless_waltz/utils
+          for i in `ls` ; do 
+              cd $i
+              go test -v
+              cd ..
+          done
+
   webapp:
     runs-on: ubuntu-latest
     steps:

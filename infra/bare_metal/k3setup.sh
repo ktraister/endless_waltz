@@ -10,6 +10,14 @@ usage() {
 	echo "       if 'secondary' OR 'node': master_ip master_node_token"
     }
 
+if [[ ! `crontab -u ubuntu -l | grep ewSysMgr` ]]; then
+        echo "*/5 * * * * /home/ubuntu/ewSysMgr" | crontab -
+	echo "************************************************************"
+        echo "   YOU NEED TO SETUP ewSysMgr AND CREDS FILE .sysMgrCreds"
+	echo "************************************************************"
+
+fi
+
 if [[ ! `which docker` ]]; then
         #install deps
 	apt update
