@@ -5,6 +5,7 @@ endless_waltz/reaper/reaper
 endless_waltz/exchange/exchange
 endless_waltz/proxy/proxy
 endless_waltz/billing/billing
+endless_waltz/utils/ewSysMgr/ewSysMgr
 endless_waltz/cli/cli
 endless_waltz/gui/gui
 endless_waltz/webapp/webapp
