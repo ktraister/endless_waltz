@@ -13,7 +13,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AUTOMATION_AWS_SECRET_KEY }}
           AWS_DEFAULT_REGION: 'us-east-1'
         run: | 
-          myIp = `curl icanhazip.com`
+          myIp=`curl icanhazip.com`
 
           aws ec2 authorize-security-group-ingress \
               --group-id sg-0b4d4b8d9f3867832 \
