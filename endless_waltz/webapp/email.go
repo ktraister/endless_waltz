@@ -65,6 +65,7 @@ func sendSignupEmail(logger *logrus.Logger, username string) error {
 		return err
 	}
 	var eData emailData
+	eData.FormHost = formHost
 	if data.Card {
 		eData.Billing = "card"
 	} else if data.Crypto {
