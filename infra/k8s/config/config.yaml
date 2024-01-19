@@ -1,16 +1,16 @@
 apiVersion: v1
 data:
-  MongoURI: 
-  CaptchaKey: 
-  SessionKey: 
-  EmailUser: 
-  EmailPass: 
-  CSRFAuthKey:
-  CoinbaseAPIKey:
-  StripeAPIKey:
-  StripeAPIPubKey:
-  ClientVersion:
-  SESSION_SECRET:
+  MongoURI: Zm9vCg==
+  CaptchaKey: Zm9vCg==
+  SessionKey: Zm9vCg==
+  EmailUser: Zm9vCg==
+  EmailPass: Zm9vCg==
+  CSRFAuthKey: Zm9vCg==
+  CoinbaseAPIKey: Zm9vCg==
+  StripeAPIKey: Zm9vCg==
+  StripeAPIPubKey: Zm9vCg==
+  ClientVersion: Zm9vCg==
+  SESSION_SECRET: Zm9vCg==
 kind: Secret
 metadata:
   name: ew-config
