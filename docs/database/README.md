@@ -53,6 +53,9 @@ db.keys.updateOne( { User: "zero53" }, { $set: { "cryptoBilling": true, billingC
 Currently, Mongo is served within K8s using a persistent volume claim to 
 persist data. The service files used can be found in `../../infra/k8s/mongodb/`
 
+In the future, I'd like to move to an operator that lives in the K3s cluster and allows for easy service configuration and operation.
+This will be undertaken in https://github.com/ktraister/endless_waltz/issues/351
+
 ## Troubleshooting
 This script allows you to get a mongo shell even if the port for the service 
 is not exposed outside the k8s host. `troubleshoot_mongo.sh`
