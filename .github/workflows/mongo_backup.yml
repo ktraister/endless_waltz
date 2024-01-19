@@ -11,11 +11,26 @@ jobs:
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AUTOMATION_AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AUTOMATION_AWS_SECRET_KEY }}
-          AWS_DEFAULT_REGION: 'us-east-1'
+          AWS_DEFAULT_REGION: 'us-east-2'
         run: | 
+          myIp=`curl icanhazip.com`
+
+          aws ec2 authorize-security-group-ingress \
+              --group-id sg-0b4d4b8d9f3867832 \
+              --protocol tcp \
+              --port 6443 \
+              --cidr "$myIp/32"
+
           echo "${{ secrets.ULTRON_KUBECONFIG }}" > ./config.yaml
           export KUBECONFIG=./config.yaml
           mongoContainer=`kubectl get pods | grep mongo | tr -s ' ' | cut -d ' ' -f 1`
           kubectl exec $mongoContainer -- /usr/bin/mongodump --archive --authenticationDatabase admin -u ${{ secrets.MONGO_USER }} -p ${{ secrets.MONGO_PASS }} > db.dump
-
           aws s3 cp db.dump s3://endlesswaltz-backups
+          rm -rfv ./config.yaml
+
+          aws ec2 revoke-security-group-ingress \
+              --group-id sg-0b4d4b8d9f3867832 \
+              --protocol tcp \
+              --port 6443 \
+              --cidr "$myIp/32"
+
