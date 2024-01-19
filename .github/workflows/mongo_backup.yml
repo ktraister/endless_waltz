@@ -15,15 +15,11 @@ jobs:
         run: | 
           myIp=`curl icanhazip.com`
 
-          echo "MYIP -> $myIp"
-
           aws ec2 authorize-security-group-ingress \
               --group-id sg-0b4d4b8d9f3867832 \
               --protocol tcp \
               --port 6443 \
               --cidr "$myIp/32"
-
-          echo "AWS EXIT CODE --> $?"
 
           echo "${{ secrets.ULTRON_KUBECONFIG }}" > ./config.yaml
           export KUBECONFIG=./config.yaml
@@ -35,6 +31,6 @@ jobs:
           aws ec2 revoke-security-group-ingress \
               --group-id sg-0b4d4b8d9f3867832 \
               --protocol tcp \
-              --port 22 \
+              --port 6443 \
               --cidr "$myIp/32"
 
