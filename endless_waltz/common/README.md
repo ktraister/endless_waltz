@@ -50,3 +50,4 @@ Helper function that returns the next month-day-year date that the billing
 cycle will end based on input string. This function takes extra care to 
 ensure that the date is returned in the specific 2-2-4 digit format so as 
 not to break time marshalling in the application. 
+
