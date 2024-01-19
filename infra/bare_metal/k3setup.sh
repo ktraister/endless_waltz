@@ -6,8 +6,8 @@ if [[ `whoami` != "root" ]]; then
 fi
 
 usage() {
-        echo "Usage: k3setup.sh [master/node]"
-	echo "       if node: master_ip master_node_token"
+        echo "Usage: k3setup.sh [master/secondary/node]"
+	echo "       if 'secondary' OR 'node': master_ip master_node_token"
     }
 
 if [[ ! `which docker` ]]; then
@@ -28,7 +28,6 @@ if [[ $1 == "master" ]]; then
 	#setup master k3s node
 	curl -sfL https://get.k3s.io | sh -s - 
 	systemctl enable k3s
-
 	echo k3s master token:
 	echo "----------------------------------------------------------------------------------------------------"
 	cat /etc/rancher/k3s/k3s.yaml
@@ -38,7 +37,15 @@ if [[ $1 == "master" ]]; then
 	echo "----------------------------------------------------------------------------------------------------"
 	cat /var/lib/rancher/k3s/server/node-token
 	echo "----------------------------------------------------------------------------------------------------"
-
+elif [[ $1 == "secondary" ]]; then
+        echo "THIS IS NOT YET SUPPORTED"
+	exit 128
+        if [[ -z $2 ]] || [[ -z $3 ]]; then
+	    usage
+	    exit 2
+        fi
+        curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="server" K3S_URL="https://$2:6443" K3S_TOKEN="$3" sh -
+	systemctl enable k3s
 elif [[ $1 == "node" ]]; then
         if [[ -z $2 ]] || [[ -z $3 ]]; then
 	    usage

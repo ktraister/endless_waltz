@@ -52,6 +52,11 @@ func sendSignupEmail(logger *logrus.Logger, username string) error {
 	emailUser := os.Getenv("EmailUser")
 	emailPass := os.Getenv("EmailPass")
 
+	formHost := "https://endlesswaltz.xyz"
+	if os.Getenv("ENV") == "local" {
+		formHost = "https://localhost"
+	}
+
 	//connect to our server, set up a message and send it
 	auth := smtp.PlainAuth("", emailUser, emailPass, "smtp.gmail.com")
 
