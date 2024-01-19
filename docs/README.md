@@ -3,7 +3,7 @@ This directory contains all of the documentation for the Endless Waltz
 messenger. Individual services are split out into seperate directories, while 
 common things are given their own directories. 
 
-LAST UPDATED: 11 October 23
+LAST UPDATED: 19 January 24
 
 ## Naming Conventions
 The project gets its name from the movie Gundam Wing: Endless Waltz, and hosts
@@ -36,6 +36,12 @@ EW_Messenger lives in ktraister/ew_messenger, and is written in GoLang.
 Random, Exchange, and Webapp share common functions within the 
 `common` directory. Functionality is documented in the [common README](../endless_waltz/common/README.md)
 
+### Utilities
+Some utilites exist for use in the infrastructure or other locations to 
+support the Endless Waltz ecosystem. These are also written in GoLang. 
+
+  - [ewSysMgr](../endless_waltz/utils/ewSysMgr/README.md)
+
 For more information, read the individual READMEs for the appropriate service.
 
 ## Infrastructure
@@ -57,8 +63,8 @@ support development of the applications.
   - [CertBot](./CertBot/README.md): docs for TLS Certs using CertBot
   - [LiveISO](./LiveISO/README.md): docs for the Endless Waltz LiveISO setup
   - [automation](./automation/README.md): docs for the Endless Waltz LiveISO setup
-  - [passwd](./passwd/README.md): used to generate password hashes for user that match go output
-  - [security](./security/README.md): used to generate password hashes for user that match go output
+  - [security](./security/README.md): docs around Endless Waltz security posture
+  - [database](./database/README.md): docs around Endless Waltz database interaction and operation
 
 ### Context
 Context is important to be able to understand what you read. Therefor, I plan

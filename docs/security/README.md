@@ -29,8 +29,13 @@ on password resets (all inputs, all forms).
 ### User Security
 To ensure a certain level of security, password complexity requirements are
 enforced on Server/Client side by Go/JS. This is enforced on reset as well.
+User passwords are stored in the database using Bcrypt, a secure modern
+hashing algorithm
 
 ### CSRF
 CSRF was possible with the old webapp implementation. Addressed in issue #199.
+This was addressed using the Gorilla CSRF package
 
 ## NGINX
+Adds all the 'allowed-' headers for the CSP. Implements headers required by 
+the applications and website operation. 

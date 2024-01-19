@@ -17,6 +17,10 @@ then, on N number of nodes, run the node installer with output from the master:
 ./k3setup.sh node "10.0.0.10" "fu...ck::server:lo...ol"
 ```
 
+Before or after this step, you may need to build and install the `ewSysMgr`
+binary for system monitoring and alerting. Review [this document](../../endless_waltz/utils/ewSysMgr/README.MD)
+for specifications. The cron job should be taken care of by the install script :)
+
 By default, k8s hosts traefik on port 443 for the cluster. 
 If the cluster is to host the web stack, you'll need to disable traefik on k3s:
 This should only be done on the master!
