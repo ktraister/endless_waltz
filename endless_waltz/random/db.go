@@ -96,6 +96,11 @@ func checkFriendsList(user string, logger *logrus.Logger) (string, error) {
 		return "", err
 	}
 
+	if result["FriendsList"] == nil {
+	        logger.Debug("you have no friends ha ha")
+	        return "", nil
+        }
+
 	return result["FriendsList"].(string), nil
 }
 
