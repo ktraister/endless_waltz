@@ -18,3 +18,7 @@ container.
 / # cat /var/lib/tor/endlesswaltz/hostname
 g74rg24wiyj3ut4rdakz6cvrvvnncwvgyyyibn6y465d6y5em6husfqd.onion
 ```
+
+Due to recent updates to support the prod k8s cluster, this wont
+work on the localhost. Honestly, I don't want the local Tor relay
+to be live, so this works out. 
