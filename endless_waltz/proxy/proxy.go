@@ -118,7 +118,7 @@ func main() {
 	sshConfig.AddHostKey(private)
 
 	//SSH server listener
-	addy := "0.0.0.0:2222"
+	addy := "0.0.0.0:443"
 	listener, err := net.Listen("tcp", addy)
 	if err != nil {
 		logger.Error("Error creating listener: ", err)
