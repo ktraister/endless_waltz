@@ -96,7 +96,7 @@ func main() {
 	sshConfig := &ssh.ServerConfig{
 		Config: cipherConfig,
 		PasswordCallback: func(c ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
-			if !rateLimit(c.User(), 1) {
+			if !rateLimit(c.RemoteAddr().String(), 1) {
 				return nil, fmt.Errorf("RateLimit")
 			}
 			if checkAuth(c.User(), string(password), true, logger) {
