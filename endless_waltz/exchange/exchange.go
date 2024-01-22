@@ -214,9 +214,6 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 func receiver(user string, client *Client, logger *logrus.Logger) {
 	for {
-		// read in a message
-		// readMessage returns messageType, message, err
-		// messageType: 1-> Text Message, 2 -> Binary Message
 		_, p, err := client.Conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err) {
@@ -226,6 +223,8 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 			logger.Error(err)
 			continue
 		}
+
+		//decrypt incoming msgs if possible
 
 		m := &Message{}
 
@@ -268,6 +267,8 @@ func broadcaster(logger *logrus.Logger) {
 					clients.Range(func(key, value interface{}) bool {
 						client := key.(*Client)
 						if client.Username == message.To {
+                                                        //add client tunnel encryption here
+
 							err := client.Conn.WriteJSON(message)
 							if err != nil {
 								logger.Error("Websocket error: ", err)
