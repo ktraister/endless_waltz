@@ -6,8 +6,8 @@ metadata:
     app: ew-proxy
 spec:
   ports:
-    - port: 2222
-      targetPort: 2222
+    - port: 443
+      targetPort: 443
       protocol: TCP
       name: socks
   selector:

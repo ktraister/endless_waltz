@@ -94,6 +94,11 @@ cd tor && kubectl apply -f .
 kubectl expose deployment nginx --type=LoadBalancer --name=nginx-lb
 ```
 
+#patch the NGINX service 
+```
+kubectl patch svc nginx-lb -p '{"spec":{"externalTrafficPolicy":"Local"}}'
+```
+
 #expose mongo service ports
 ```
 kubectl expose deployment mongo --type=LoadBalancer --name=mongo-lb --port 27017
@@ -116,3 +121,7 @@ cd proxy && kubectl apply -f .
 kubectl expose deployment ew-proxy --type=LoadBalancer --name=proxy-lb
 ```
 
+#patch the proxy service 
+```
+kubectl patch svc proxy-lb -p '{"spec":{"externalTrafficPolicy":"Local"}}'
+```

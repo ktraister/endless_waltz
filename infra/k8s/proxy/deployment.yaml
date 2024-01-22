@@ -51,7 +51,7 @@ spec:
             mountPath: "/src/keys"
             readOnly: true
           ports:
-            - containerPort: 2222
+            - containerPort: 443
       volumes:
       - name: keys
         secret:
