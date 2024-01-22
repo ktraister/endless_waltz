@@ -8,6 +8,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/syncmap"
+        "go.dedis.ch/kyber/v3"
+        "go.dedis.ch/kyber/v3/encrypt/ecies"
+        "go.dedis.ch/kyber/v3/group/edwards25519"
 	"net/http"
 	"os"
 	"strings"
@@ -17,6 +20,8 @@ import (
 type Client struct {
 	Conn     *websocket.Conn
 	Username string
+	remotePubKey  kyber.Point
+        localPrivKey  kyber.Scalar
 }
 
 type Message struct {
@@ -213,6 +218,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 }
 
 func receiver(user string, client *Client, logger *logrus.Logger) {
+	decrypt := false
 	for {
 		_, p, err := client.Conn.ReadMessage()
 		if err != nil {
@@ -224,15 +230,34 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 			continue
 		}
 
-		//decrypt incoming msgs if possible
-
 		m := &Message{}
+		qPrivKey := suite.Scalar()
+		if !decrypt {
+			//decrypt incoming msgs if possible
+			for _, key := range kyberLocalPrivKeys {
+				err = qPubKey.UnmarshalBinary([]byte(key))
+				if err != nil {
+					continue
+				}
 
-		err = json.Unmarshal(p, m)
-		if err != nil {
-			logger.Error("error while unmarshaling chat", err)
-			continue
-		}
+				err = json.Unmarshal(p, m)
+				if err != nil {
+					logger.Error("error while unmarshaling chat", err)
+					continue
+				} else {
+					//set 
+					client.LocalPrivKey = qPrivKey
+					decrypt = true
+					break
+				}
+			}
+		} else {
+			err = json.Unmarshal(p, m)
+			if err != nil {
+				logger.Error("error while unmarshaling chat", err)
+				continue
+			} 
+                }
 
 		if m.Type == "startup" {
 			// do mapping on startup
