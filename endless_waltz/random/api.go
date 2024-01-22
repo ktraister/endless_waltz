@@ -37,7 +37,9 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 5)
+	//setting warning for debugging testing
+	logger.Warn(req.Header.Get("X-Forwarded-For"))
+	ok = rateLimit(req.Header.Get("X-Forwarded-For"), 5)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
@@ -64,7 +66,7 @@ func clientVersionHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 5)
+	ok = rateLimit(req.Header.Get("X-Forwarded-For"), 5)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
@@ -91,7 +93,7 @@ func premiumHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 2)
+	ok = rateLimit(req.Header.Get("X-Forwarded-For"), 2)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
@@ -125,7 +127,7 @@ func userListHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 2)
+	ok = rateLimit(req.Header.Get("X-Forwarded-For"), 2)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
@@ -158,7 +160,7 @@ func friendsListHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 2)
+	ok = rateLimit(req.Header.Get("X-Forwarded-For"), 2)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
@@ -201,7 +203,7 @@ func updateFriendsListHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 2)
+	ok = rateLimit(req.Header.Get("X-Forwarded-For"), 2)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
@@ -248,7 +250,7 @@ func cryptoPaymentHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.FormValue("user"), 1)
+	ok = rateLimit(req.Header.Get("X-Forwarded-For"), 1)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
