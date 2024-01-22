@@ -571,7 +571,7 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.FormValue("username"), 1)
+	ok = rateLimit(req.FormValue("X-Forwarded-For"), 1)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")

@@ -87,7 +87,7 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 5)
+	ok = rateLimit(req.Header.Get("X-Forwarded-For"), 5)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
@@ -113,7 +113,7 @@ func listUsers(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = rateLimit(req.Header.Get("User"), 2)
+	ok = rateLimit(req.Header.Get("X-Forwarded-For"), 2)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")
@@ -162,7 +162,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 	user := strings.Split(r.Header.Get("User"), "_")[0]
 
-	ok = rateLimit(user, 3)
+	ok = rateLimit("X-Forwarded-For", 3)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
 		logger.Info("request denied 429 rate limit")

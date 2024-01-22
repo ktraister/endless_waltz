@@ -38,7 +38,6 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//setting warning for debugging testing
-	logger.Warn(req.Header.Get("X-Forwarded-For"))
 	ok = rateLimit(req.Header.Get("X-Forwarded-For"), 5)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
