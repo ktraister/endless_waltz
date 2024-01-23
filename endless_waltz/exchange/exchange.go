@@ -34,9 +34,10 @@ type Message struct {
 }
 
 var suite = edwards25519.NewBlakeSHA256Ed25519()
-var kyberLocalPrivKeys = []string{"9f7b2daf3912f377024de9c303335ac2f1e51dba8e7192c71ad0abd29a646a03",
-	"1631a424d9ea41c2a1bb9477ec1172450ad93448cc94f496bc7409577968db0a",
-	"12e893e566d89155399bb8918e51e711732870b3e0178f994c64960a8409b70d",
+var kyberLocalPrivKeys = [][]byte{
+	[]byte{239, 39, 193, 18, 213, 224, 165, 143, 30, 142, 130, 6, 32, 102, 130, 128, 135, 173, 106, 242, 164, 67, 149, 15, 180, 215, 157, 214, 232, 132, 68, 13},
+	[]byte{29, 67, 217, 75, 43, 165, 42, 190, 138, 54, 177, 53, 242, 239, 137, 111, 16, 152, 139, 70, 179, 88, 232, 221, 175, 221, 106, 177, 151, 13, 249, 0},
+	[]byte{55, 6, 28, 243, 101, 94, 0, 150, 210, 151, 242, 101, 236, 2, 167, 38, 215, 43, 248, 217, 12, 238, 32, 174, 137, 236, 56, 97, 53, 179, 231, 12},
 }
 
 var clients = syncmap.Map{}
@@ -227,40 +228,54 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 func receiver(user string, client *Client, logger *logrus.Logger) {
 	decrypt := false
 	for {
+		logger.Debug("Inside receiver, waiting for message...")
 		_, b, err := client.Conn.ReadMessage()
 		if err != nil {
+			logger.Error(err)
 			if websocket.IsUnexpectedCloseError(err) {
 				client.Conn.Close()
 				break
 			}
-			logger.Error(err)
 			continue
 		}
 
+		logger.Debug("Incoming string -> ", string(b))
 		decodedBytes, err := base64.StdEncoding.DecodeString(string(b))
 		if err != nil {
-			fmt.Println("Error decoding base64:", err)
+			logger.Error("Error decoding base64:", err)
 			continue
 		}
+		logger.Debug("Incoming decoded string -> ", string(decodedBytes))
 
 		var plainText []byte
+		m := &Message{}
 		qPrivKey := suite.Scalar()
 		if !decrypt {
 			//decrypt incoming msgs if possible
 			for _, key := range kyberLocalPrivKeys {
-				err = qPrivKey.UnmarshalBinary([]byte(key))
+				logger.Debug("Attempting decrypt with key -> ", key)
+				err = qPrivKey.UnmarshalBinary(key)
 				if err != nil {
+					logger.Warn(err)
 					continue
 				}
 
 				plainText, err = ecies.Decrypt(suite, qPrivKey, decodedBytes, suite.Hash)
 				if err != nil {
+					logger.Warn(err)
 					continue
 				} else {
-					//set
-					client.localPrivKey = qPrivKey
-					decrypt = true
-					break
+					logger.Debug("plainText in !decrypt -> ", string(plainText))
+
+					err = json.Unmarshal(plainText, m)
+					if err != nil {
+						logger.Error(err)
+						continue
+					} else {
+						client.localPrivKey = qPrivKey
+						decrypt = true
+						break
+					}
 				}
 			}
 			if !decrypt {
@@ -269,9 +284,9 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 			}
 		} else {
 			plainText, err = ecies.Decrypt(suite, client.localPrivKey, decodedBytes, suite.Hash)
+			logger.Debug("plainText in else -> ", plainText)
 		}
 
-		m := &Message{}
 		err = json.Unmarshal(plainText, m)
 		if err != nil {
 			logger.Error("error while unmarshaling chat", err)
@@ -281,6 +296,20 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 		if m.Type == "startup" {
 			// do mapping on startup
 			client.Username = m.User
+			qPubKey := suite.Scalar()
+			recvPubKeyBytes, err := base64.StdEncoding.DecodeString(m.Msg)
+			if err != nil {
+				logger.Error("Unable to base64 Decode pubkey sent by client: ", err)
+				client.Conn.Close()
+				return
+			}
+
+			err = qPubKey.UnmarshalBinary(recvPubKeyBytes)
+			if err != nil {
+				logger.Error("Unable to unmarshall pubkey sent by client: ", err)
+				client.Conn.Close()
+				return
+			}
 			logger.Info("client successfully mapped", &client, client)
 		} else {
 			logger.Debug("received message, broadcasting: ", m)
