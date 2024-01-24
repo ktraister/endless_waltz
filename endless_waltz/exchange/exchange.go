@@ -271,7 +271,19 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 					if err != nil {
 						logger.Error(err)
 						message := Message{From: "SYSTEM", To: m.From, Msg: "RESET"}
-						err := client.Conn.WriteJSON(message)
+						b, err := json.Marshal(message)
+						if err != nil {
+							logger.Error("JSON Marshal error: ", err)
+							continue
+						}
+						cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+						if err != nil {
+							logger.Error("encryption error: ", err)
+							client.Conn.Close()
+							continue
+						}
+						cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+						err = client.Conn.WriteMessage(1, cipherTextStr)
 						if err != nil {
 							logger.Error("Websocket error: ", err)
 							client.Conn.Close()
@@ -324,12 +336,17 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 
 			//send code for websocket data with tunnel
 			message := fmt.Sprintf("%s", Message{From: "SYSTEM", To: m.From, Msg: "GO"})
-			cipherText, err := ecies.Encrypt(suite, client.remotePubKey, []byte(message), suite.Hash)
-			if err != nil {           
+			b, err := json.Marshal(message)
+			if err != nil {
+				logger.Error("JSON Marshal error: ", err)
+				return
+			}
+			cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+			if err != nil {
 				logger.Error("encryption error: ", err)
 				client.Conn.Close()
-				return         
-			}                         
+				return
+			}
 			cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
 			err = client.Conn.WriteMessage(1, cipherTextStr)
 			if err != nil {
@@ -366,9 +383,18 @@ func broadcaster(logger *logrus.Logger) {
 					clients.Range(func(key, value interface{}) bool {
 						client := key.(*Client)
 						if client.Username == message.To {
-							//add client tunnel encryption here
-
-							err := client.Conn.WriteJSON(message)
+							b, err := json.Marshal(message)
+							if err != nil {
+								logger.Error("JSON Marshal error: ", err)
+								return false
+							}
+							cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+							if err != nil {
+								logger.Error("encryption error: ", err)
+								return false
+							}
+							cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+							err = client.Conn.WriteMessage(1, cipherTextStr)
 							if err != nil {
 								logger.Error("Websocket error: ", err)
 								client.Conn.Close()
@@ -396,7 +422,18 @@ func broadcaster(logger *logrus.Logger) {
 					clients.Range(func(key, value interface{}) bool {
 						client := key.(*Client)
 						if client.Username == message.To {
-							err := client.Conn.WriteJSON(message)
+							b, err := json.Marshal(message)
+							if err != nil {
+								logger.Error(err)
+								return false
+							}
+							cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+							if err != nil {
+								logger.Error("encryption error: ", err)
+								return false
+							}
+							cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+							err = client.Conn.WriteMessage(1, cipherTextStr)
 							if err != nil {
 								logger.Error("Websocket error: ", err)
 								client.Conn.Close()
@@ -422,16 +459,18 @@ func broadcaster(logger *logrus.Logger) {
 			// send message only to involved users
 			if client.Username == message.To {
 				logger.Debug(fmt.Sprintf("Sending message '%s' to client '%s'", message, client.Username))
-				//add encryption/base64 heere
-
-				outgoing := []byte(fmt.Sprintf("%s", message))
-				cipherText, err := ecies.Encrypt(suite, client.remotePubKey, outgoing, suite.Hash)
+				b, err := json.Marshal(message)
 				if err != nil {
-					return true
+					logger.Error(err)
+					return false
 				}
-				cipherTextStr := base64.StdEncoding.EncodeToString(cipherText)
-
-				err = client.Conn.WriteJSON(cipherTextStr)
+				cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+				if err != nil {
+					logger.Error("encryption error: ", err)
+					return false
+				}
+				cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+				err = client.Conn.WriteMessage(1, cipherTextStr)
 				if err != nil {
 					logger.Error("Websocket error: ", err)
 					client.Conn.Close()
@@ -452,7 +491,18 @@ func broadcaster(logger *logrus.Logger) {
 				if client.Username == message.From {
 					logger.Debug(fmt.Sprintf("Sending blackhole message to client '%s'", client.Username))
 					message = Message{From: "SYSTEM", To: message.From, Msg: "User not found"}
-					err := client.Conn.WriteJSON(message)
+					b, err := json.Marshal(message)
+					if err != nil {
+						logger.Error(err)
+						return false
+					}
+					cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+					if err != nil {
+						logger.Error("encryption error: ", err)
+						return false
+					}
+					cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+					err = client.Conn.WriteMessage(1, cipherTextStr)
 					if err != nil {
 						logger.Error("Websocket error: ", err)
 						client.Conn.Close()
