@@ -82,6 +82,7 @@ services:
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
+      KyberLocalPrivKeys: "6oDJxDWefIP81NhcQToLRPx6LEapd50IlrFhjj4qpAU=,4rYyEI4ALUA8bU912euoB96npD5aVLWjI6BKTvh+lgI=,Sf4zgY048NNOpM2b5yz3NrjkXbYs/W+OSyUK2lPUxQc="
 
   ew-proxy:
     depends_on:

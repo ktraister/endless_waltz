@@ -34,12 +34,7 @@ type Message struct {
 }
 
 var suite = edwards25519.NewBlakeSHA256Ed25519()
-var kyberLocalPrivKeys = [][]byte{
-	[]byte{239, 39, 193, 18, 213, 224, 165, 143, 30, 142, 130, 6, 32, 102, 130, 128, 135, 173, 106, 242, 164, 67, 149, 15, 180, 215, 157, 214, 232, 132, 68, 13},
-	[]byte{29, 67, 217, 75, 43, 165, 42, 190, 138, 54, 177, 53, 242, 239, 137, 111, 16, 152, 139, 70, 179, 88, 232, 221, 175, 221, 106, 177, 151, 13, 249, 0},
-	[]byte{55, 6, 28, 243, 101, 94, 0, 150, 210, 151, 242, 101, 236, 2, 167, 38, 215, 43, 248, 217, 12, 238, 32, 174, 137, 236, 56, 97, 53, 179, 231, 12},
-}
-
+var kyberLocalPrivKeys [][]byte
 var clients = syncmap.Map{}
 var basicLimitMap = syncmap.Map{}
 var broadcast = make(chan Message)
@@ -49,6 +44,18 @@ var premiumUsers = []string{}
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+}
+
+func translatePrivKeys(input string) ([][]byte, error) {
+	var tmp [][]byte
+	for _, v := range strings.Split(input, ",") {
+		decodedBytes, err := base64.StdEncoding.DecodeString(v)
+		if err != nil {
+			return [][]byte{}, err
+		}
+		tmp = append(tmp, decodedBytes)
+	}
+	return tmp, nil
 }
 
 // thread to recycle sync map every 24 hrs (housekeeping)
@@ -523,6 +530,14 @@ func main() {
 	LogType := os.Getenv("LogType")
 
 	logger := createLogger(LogLevel, LogType)
+
+	var err error
+	kyberLocalPrivKeys, err = translatePrivKeys(os.Getenv("KyberLocalPrivKeys"))
+	if err != nil {
+		logger.Error("Error translating Kyber Tunnel PrivKeys: ")
+		return
+	}
+
 	logger.Info("Exchange Server finished starting up!")
 
 	go broadcaster(logger)

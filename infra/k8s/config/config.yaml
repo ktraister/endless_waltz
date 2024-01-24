@@ -10,6 +10,7 @@ data:
   StripeAPIKey: Zm9vCg==
   StripeAPIPubKey: Zm9vCg==
   ClientVersion: Zm9vCg==
+  KyberLocalPrivKeys: Zm9vCg==
   SESSION_SECRET: Zm9vCg==
 kind: Secret
 metadata:
