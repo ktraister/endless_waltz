@@ -270,6 +270,12 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 					err = json.Unmarshal(plainText, m)
 					if err != nil {
 						logger.Error(err)
+						message := Message{From: "SYSTEM", To: m.From, Msg: "RESET"}
+						err := client.Conn.WriteJSON(message)
+						if err != nil {
+							logger.Error("Websocket error: ", err)
+							client.Conn.Close()
+						}
 						continue
 					} else {
 						client.localPrivKey = qPrivKey
@@ -296,7 +302,10 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 		if m.Type == "startup" {
 			// do mapping on startup
 			client.Username = m.User
-			qPubKey := suite.Scalar()
+			logger.Info("client successfully mapped", &client, client)
+
+			//recieve code for websocket data with tunnel
+			qPubKey := suite.Point()
 			recvPubKeyBytes, err := base64.StdEncoding.DecodeString(m.Msg)
 			if err != nil {
 				logger.Error("Unable to base64 Decode pubkey sent by client: ", err)
@@ -310,7 +319,24 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 				client.Conn.Close()
 				return
 			}
-			logger.Info("client successfully mapped", &client, client)
+			//end recieve code
+			client.remotePubKey = qPubKey
+
+			//send code for websocket data with tunnel
+			message := fmt.Sprintf("%s", Message{From: "SYSTEM", To: m.From, Msg: "GO"})
+			cipherText, err := ecies.Encrypt(suite, client.remotePubKey, []byte(message), suite.Hash)
+			if err != nil {           
+				logger.Error("encryption error: ", err)
+				client.Conn.Close()
+				return         
+			}                         
+			cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+			err = client.Conn.WriteMessage(1, cipherTextStr)
+			if err != nil {
+				logger.Error("Websocket error: ", err)
+				client.Conn.Close()
+			}
+			//end send code
 		} else {
 			logger.Debug("received message, broadcasting: ", m)
 			broadcast <- *m
