@@ -1,11 +1,15 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/sirupsen/logrus"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/encrypt/ecies"
+	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/syncmap"
 	"net/http"
@@ -15,8 +19,10 @@ import (
 )
 
 type Client struct {
-	Conn     *websocket.Conn
-	Username string
+	Conn         *websocket.Conn
+	Username     string
+	remotePubKey kyber.Point
+	localPrivKey kyber.Scalar
 }
 
 type Message struct {
@@ -27,6 +33,8 @@ type Message struct {
 	Msg  string `json:"msg,omitempty"`
 }
 
+var suite = edwards25519.NewBlakeSHA256Ed25519()
+var kyberLocalPrivKeys [][]byte
 var clients = syncmap.Map{}
 var basicLimitMap = syncmap.Map{}
 var broadcast = make(chan Message)
@@ -36,6 +44,18 @@ var premiumUsers = []string{}
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+}
+
+func translatePrivKeys(input string) ([][]byte, error) {
+	var tmp [][]byte
+	for _, v := range strings.Split(input, ",") {
+		decodedBytes, err := base64.StdEncoding.DecodeString(v)
+		if err != nil {
+			return [][]byte{}, err
+		}
+		tmp = append(tmp, decodedBytes)
+	}
+	return tmp, nil
 }
 
 // thread to recycle sync map every 24 hrs (housekeeping)
@@ -213,23 +233,86 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 }
 
 func receiver(user string, client *Client, logger *logrus.Logger) {
+	decrypt := false
 	for {
-		// read in a message
-		// readMessage returns messageType, message, err
-		// messageType: 1-> Text Message, 2 -> Binary Message
-		_, p, err := client.Conn.ReadMessage()
+		logger.Debug("Inside receiver, waiting for message...")
+		_, b, err := client.Conn.ReadMessage()
 		if err != nil {
+			logger.Error(err)
 			if websocket.IsUnexpectedCloseError(err) {
 				client.Conn.Close()
 				break
 			}
-			logger.Error(err)
 			continue
 		}
 
-		m := &Message{}
+		logger.Debug("Incoming string -> ", string(b))
+		decodedBytes, err := base64.StdEncoding.DecodeString(string(b))
+		if err != nil {
+			logger.Error("Error decoding base64:", err)
+			continue
+		}
+		logger.Debug("Incoming decoded string -> ", string(decodedBytes))
 
-		err = json.Unmarshal(p, m)
+		var plainText []byte
+		m := &Message{}
+		qPrivKey := suite.Scalar()
+		if !decrypt {
+			//decrypt incoming msgs if possible
+			for _, key := range kyberLocalPrivKeys {
+				logger.Debug("Attempting decrypt with key -> ", key)
+				err = qPrivKey.UnmarshalBinary(key)
+				if err != nil {
+					logger.Warn(err)
+					continue
+				}
+
+				plainText, err = ecies.Decrypt(suite, qPrivKey, decodedBytes, suite.Hash)
+				if err != nil {
+					logger.Warn(err)
+					continue
+				} else {
+					logger.Debug("plainText in !decrypt -> ", string(plainText))
+
+					err = json.Unmarshal(plainText, m)
+					if err != nil {
+						logger.Error(err)
+						message := Message{From: "SYSTEM", To: m.From, Msg: "RESET"}
+						b, err := json.Marshal(message)
+						if err != nil {
+							logger.Error("JSON Marshal error: ", err)
+							continue
+						}
+						cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+						if err != nil {
+							logger.Error("encryption error: ", err)
+							client.Conn.Close()
+							continue
+						}
+						cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+						err = client.Conn.WriteMessage(1, cipherTextStr)
+						if err != nil {
+							logger.Error("Websocket error: ", err)
+							client.Conn.Close()
+						}
+						continue
+					} else {
+						client.localPrivKey = qPrivKey
+						decrypt = true
+						break
+					}
+				}
+			}
+			if !decrypt {
+				logger.Warn("Unable to decrypt incoming msg with available privkeys")
+				break
+			}
+		} else {
+			plainText, err = ecies.Decrypt(suite, client.localPrivKey, decodedBytes, suite.Hash)
+			logger.Debug("plainText in else -> ", plainText)
+		}
+
+		err = json.Unmarshal(plainText, m)
 		if err != nil {
 			logger.Error("error while unmarshaling chat", err)
 			continue
@@ -239,6 +322,45 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 			// do mapping on startup
 			client.Username = m.User
 			logger.Info("client successfully mapped", &client, client)
+
+			//recieve code for websocket data with tunnel
+			qPubKey := suite.Point()
+			recvPubKeyBytes, err := base64.StdEncoding.DecodeString(m.Msg)
+			if err != nil {
+				logger.Error("Unable to base64 Decode pubkey sent by client: ", err)
+				client.Conn.Close()
+				return
+			}
+
+			err = qPubKey.UnmarshalBinary(recvPubKeyBytes)
+			if err != nil {
+				logger.Error("Unable to unmarshall pubkey sent by client: ", err)
+				client.Conn.Close()
+				return
+			}
+			//end recieve code
+			client.remotePubKey = qPubKey
+
+			//send code for websocket data with tunnel
+			message := fmt.Sprintf("%s", Message{From: "SYSTEM", To: m.From, Msg: "GO"})
+			b, err := json.Marshal(message)
+			if err != nil {
+				logger.Error("JSON Marshal error: ", err)
+				return
+			}
+			cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+			if err != nil {
+				logger.Error("encryption error: ", err)
+				client.Conn.Close()
+				return
+			}
+			cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+			err = client.Conn.WriteMessage(1, cipherTextStr)
+			if err != nil {
+				logger.Error("Websocket error: ", err)
+				client.Conn.Close()
+			}
+			//end send code
 		} else {
 			logger.Debug("received message, broadcasting: ", m)
 			broadcast <- *m
@@ -257,7 +379,7 @@ func broadcaster(logger *logrus.Logger) {
 		}
 
 		limit := 300
-		//perform check if TARGET user has hit basic LIMIT
+		//perform check if TARGET user has hit basic LIMIT (housekeeping)
 		targetUser := strings.Split(message.To, "_")[0]
 		if !checkPremiumUsers(targetUser) {
 			value, ok := basicLimitMap.Load(targetUser)
@@ -268,7 +390,18 @@ func broadcaster(logger *logrus.Logger) {
 					clients.Range(func(key, value interface{}) bool {
 						client := key.(*Client)
 						if client.Username == message.To {
-							err := client.Conn.WriteJSON(message)
+							b, err := json.Marshal(message)
+							if err != nil {
+								logger.Error("JSON Marshal error: ", err)
+								return false
+							}
+							cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+							if err != nil {
+								logger.Error("encryption error: ", err)
+								return false
+							}
+							cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+							err = client.Conn.WriteMessage(1, cipherTextStr)
 							if err != nil {
 								logger.Error("Websocket error: ", err)
 								client.Conn.Close()
@@ -296,7 +429,18 @@ func broadcaster(logger *logrus.Logger) {
 					clients.Range(func(key, value interface{}) bool {
 						client := key.(*Client)
 						if client.Username == message.To {
-							err := client.Conn.WriteJSON(message)
+							b, err := json.Marshal(message)
+							if err != nil {
+								logger.Error(err)
+								return false
+							}
+							cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+							if err != nil {
+								logger.Error("encryption error: ", err)
+								return false
+							}
+							cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+							err = client.Conn.WriteMessage(1, cipherTextStr)
 							if err != nil {
 								logger.Error("Websocket error: ", err)
 								client.Conn.Close()
@@ -322,7 +466,18 @@ func broadcaster(logger *logrus.Logger) {
 			// send message only to involved users
 			if client.Username == message.To {
 				logger.Debug(fmt.Sprintf("Sending message '%s' to client '%s'", message, client.Username))
-				err := client.Conn.WriteJSON(message)
+				b, err := json.Marshal(message)
+				if err != nil {
+					logger.Error(err)
+					return false
+				}
+				cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+				if err != nil {
+					logger.Error("encryption error: ", err)
+					return false
+				}
+				cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+				err = client.Conn.WriteMessage(1, cipherTextStr)
 				if err != nil {
 					logger.Error("Websocket error: ", err)
 					client.Conn.Close()
@@ -343,7 +498,18 @@ func broadcaster(logger *logrus.Logger) {
 				if client.Username == message.From {
 					logger.Debug(fmt.Sprintf("Sending blackhole message to client '%s'", client.Username))
 					message = Message{From: "SYSTEM", To: message.From, Msg: "User not found"}
-					err := client.Conn.WriteJSON(message)
+					b, err := json.Marshal(message)
+					if err != nil {
+						logger.Error(err)
+						return false
+					}
+					cipherText, err := ecies.Encrypt(suite, client.remotePubKey, b, suite.Hash)
+					if err != nil {
+						logger.Error("encryption error: ", err)
+						return false
+					}
+					cipherTextStr := []byte(base64.StdEncoding.EncodeToString(cipherText))
+					err = client.Conn.WriteMessage(1, cipherTextStr)
 					if err != nil {
 						logger.Error("Websocket error: ", err)
 						client.Conn.Close()
@@ -364,6 +530,14 @@ func main() {
 	LogType := os.Getenv("LogType")
 
 	logger := createLogger(LogLevel, LogType)
+
+	var err error
+	kyberLocalPrivKeys, err = translatePrivKeys(os.Getenv("KyberLocalPrivKeys"))
+	if err != nil {
+		logger.Fatal("Error translating Kyber Tunnel PrivKeys: ")
+		return
+	}
+
 	logger.Info("Exchange Server finished starting up!")
 
 	go broadcaster(logger)

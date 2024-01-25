@@ -52,7 +52,7 @@ This should not be allowed. Inbound access should be limited at the firewall
 Allowed Ports:
   80 - NGINX HTTPS redirect
  443 - NGINX HTTPS
-2222 - EW-Proxy 
+ 443 - EW-Proxy 
 ```
 
 ## Architecture
