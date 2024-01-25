@@ -305,7 +305,7 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 			}
 			if !decrypt {
 				logger.Warn("Unable to decrypt incoming msg with available privkeys")
-				continue
+				break
 			}
 		} else {
 			plainText, err = ecies.Decrypt(suite, client.localPrivKey, decodedBytes, suite.Hash)
@@ -534,7 +534,7 @@ func main() {
 	var err error
 	kyberLocalPrivKeys, err = translatePrivKeys(os.Getenv("KyberLocalPrivKeys"))
 	if err != nil {
-		logger.Error("Error translating Kyber Tunnel PrivKeys: ")
+		logger.Fatal("Error translating Kyber Tunnel PrivKeys: ")
 		return
 	}
 
