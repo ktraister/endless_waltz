@@ -523,19 +523,24 @@ func signUpHandler(w http.ResponseWriter, req *http.Request) {
 	//extensible for other db checks into the future
 	//check database to ensure username/email ! already exists
 	//removed email check for now. Have as many accts as you want
-	filters := []primitive.M{bson.M{"User": username}} //REMOVE EMAIL CHECK FOR NOW, bson.M{"Email": req.FormValue("email")}}
+	filters := []primitive.M{bson.M{"User": username}, bson.M{"Email": req.FormValue("email")}}
 
 	//run our extensible DB checks
 	for i, filter := range filters {
 		var result bson.M
 		err := auth_db.FindOne(ctx, filter).Decode(&result)
 		if err != mongo.ErrNoDocuments {
+			session.Values["username"] = ""
+			session.Values["email"] = ""
 			switch i {
 			case 0:
-				logger.Debug("username in use: ", username)
+				logger.Warn("username in use: ", username)
+				session.Values["username"] = username
 			case 1:
-				logger.Debug("email in use: ", req.FormValue("email"))
+				logger.Warn("email in use: ", req.FormValue("email"))
+				session.Values["email"] = req.FormValue("email")
 			}
+			session.Save(req, w)
 			http.Redirect(w, req, "/signUp", http.StatusFound)
 			return
 		}

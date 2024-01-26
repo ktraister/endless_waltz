@@ -6,31 +6,30 @@
 	<img class="mb-4" src="/img/Icon.png" alt="" width="72" height="72">
 	<h1 class="h1 mb-3 fw-normal">Create an account</h1>
 	<br>
+	<p class="lead">Choose an email for correspondance. We will never send you spam.</p>
+	{{ if ne .Email "" }}
+	<span id="userSubmitError" style="color: red;">Email '{{.Email}}' is already in use.</span>
+	{{ end }}
 	<div class="form-floating">
 	  <input type="text" name="email" class="form-control" id="floatingEmail" placeholder="Email Address" required>
 	  <label for="floatingEmail">Email</label>
-    	  <span id="emailError" style="color: red;"></span>
-	  {{ if ne .Email "" }}
-    	  <span id="userSubmitError" style="color: red;">Email '{{.Email}}' is already in use.</span>
-	  {{ end }}
 	</div>
 	<div class="form-floating">
 	  <input type="text" name="confirm_email" class="form-control" id="floatingEmailConfirm" placeholder="Confirm Email Address" required>
 	  <label for="floatingEmailConfirm">Email Confirm</label>
     	  <span id="emailConfirmError" style="color: red;"></span>
+	  <span id="emailError" style="color: red;"></span>
 	</div>
 	<br>
 	<br>
-	<h3 class="h3 mb-3 fw-normal">Username Requirements</h3>
-	<p class="mb-3 fw-normal">Choose a unique username.</p>
-	<p class="mb-3 fw-normal">Avoid profanity, threatening language, and hate speech;<br>or your account will be deleted and your platform usage restricted.</p>
+	<p class="lead">Choose a unique username.</p>
+	{{ if ne .Username "" }}
+	<span id="userSubmitError" style="color: red;">Username '{{.Username}}' is already in use.</span>
+	{{ end }}
 	<div class="form-floating">
 	  <input type="text" name="username" class="form-control" id="floatingUser" placeholder="Username" required>
 	  <label for="floatingUser">Username</label>
     	  <span id="usernameError" style="color: red;"></span>
-	  {{ if ne .Username "" }}
-    	  <span id="userSubmitError" style="color: red;">Username '{{.Username}}' is already in use.</span>
-	  {{ end }}
 	</div>
 	<br>
 	<br>
