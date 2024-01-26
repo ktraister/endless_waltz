@@ -43,6 +43,7 @@ type sessionData struct {
 	Card            bool
 	BillingCycleEnd string
 	Active          bool
+	Error           string
 }
 
 func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Request, session *sessions.Session, file string) {
@@ -126,6 +127,11 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 	//add capcha fail if needed
 	if session.Values["CaptchaFail"] == true {
 		data.CaptchaFail = true
+	}
+
+	//add error for login page if needed 
+	if session.Values["Error"] != nil && session.Values["Error"] != "" {
+		data.Error = session.Values["Error"].(string)
 	}
 
 	// Execute the template with the data and write it to the response
@@ -566,12 +572,21 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	session, err := store.Get(req, "_session")
+	if err != nil {
+		logger.Error("Failed to get session data in loginHandler")
+		http.Redirect(w, req, "/error", http.StatusSeeOther)
+		return
+	}
+
 	// Get username and password from the form
 	username := strings.ToLower(req.FormValue("username"))
 
 	//check for special characters in username
 	ok = checkUserInput(req.FormValue("username"))
 	if !ok {
+		session.Values["Error"] = "Illegal characters in username"
+		session.Save(req, w)
 		http.Redirect(w, req, "/login", http.StatusSeeOther)
 		return
 	}
@@ -586,14 +601,14 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 	//api_lib checkAuth function
 	if checkAuth(username, req.FormValue("password"), false, logger) {
 		//create a session for the user
-		session, _ := store.Get(req, "_session")
 		session.Values["authenticated"] = true
 		session.Values["username"] = username
 		session.Save(req, w)
-
 		//redirect to protected page
 		http.Redirect(w, req, "/protected", http.StatusSeeOther)
 	} else {
+		session.Values["Error"] = "Invalid username & password combination"
+		session.Save(req, w)
 		//redirect to the login page
 		http.Redirect(w, req, "/login", http.StatusSeeOther)
 	}

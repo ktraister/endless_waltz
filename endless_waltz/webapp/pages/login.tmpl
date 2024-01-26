@@ -4,6 +4,10 @@
   <form method="POST" action="/login">
     <img class="mb-4" src="/img/Icon.png" alt="" width="72" height="72">
     <h1 class="h3 mb-3 fw-normal">Sign in, please</h1>
+    {{ if ne .Error "" }}
+    <span id="submitError" style="color: red;">Login Error: {{.Error}}</span>
+    <br>
+    {{ end }}
     <input type="hidden" name="gorilla.csrf.Token" value="{{.TemplateTag}}">
     <div class="form-floating">
       <input type="text" name="username" class="form-control" id="floatingUser" placeholder="Username">
