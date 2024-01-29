@@ -129,7 +129,7 @@ func parseTemplate(logger *logrus.Logger, w http.ResponseWriter, req *http.Reque
 		data.CaptchaFail = true
 	}
 
-	//add error for login page if needed 
+	//add error for login page if needed
 	if session.Values["Error"] != nil && session.Values["Error"] != "" {
 		data.Error = session.Values["Error"].(string)
 	}
