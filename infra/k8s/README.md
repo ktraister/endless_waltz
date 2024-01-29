@@ -125,3 +125,12 @@ kubectl expose deployment ew-proxy --type=LoadBalancer --name=proxy-lb
 ```
 kubectl patch svc proxy-lb -p '{"spec":{"externalTrafficPolicy":"Local"}}'
 ```
+
+FUTURE CLUSTER SCALING
+----------------------
+In "The Future", we'll need to scale our k3s clusters. We can scale in SMALL
+increments by bringing up new hosts and joining them to our current k3s 
+clusters. 
+
+For LARGER scaling, we will have to move to EKS or autoscaling groups of k3s 
+hosts. If we get to this point, we'll be best off moving to EKS. 
