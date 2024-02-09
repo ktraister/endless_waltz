@@ -99,7 +99,7 @@ func main() {
 			if !rateLimit(c.RemoteAddr().String(), 1) {
 				return nil, fmt.Errorf("RateLimit")
 			}
-			if checkAuth(c.User(), string(password), true, logger) {
+			if checkPlainAuth(c.User(), string(password), logger) {
 				return nil, nil
 			}
 			return nil, fmt.Errorf("Password incorrect")

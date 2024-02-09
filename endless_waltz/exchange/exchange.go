@@ -99,7 +99,7 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkKyberAuth(req.Header.Get("Auth"), logger)
+	_, ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -125,7 +125,7 @@ func listUsers(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkKyberAuth(req.Header.Get("Auth"), logger)
+	_, ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -172,28 +172,20 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok = checkKyberAuth(r.Header.Get("Auth"), logger)
+	user, ok := checkKyberAuth(r.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
 		return
 	}
 
-	authString, err := decryptString(r.Header.Get("Auth"), kyberLocalPrivKeys)
-	if err != nil {
-		//this should be an internal error, not an unauthorized
-		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
-		logger.Error(err)
-		return
-	}
-	user := strings.Split(authString, ":")[0]
-
 	// Ensure client not already connected!
 	// Bad things happen :)
 	bounceFlag := false
+        userCk := fmt.Sprintf("%s_server", user) 
 	clients.Range(func(key, value interface{}) bool {
 		client := key.(*Client)
-		if client.Username == user {
+		if client.Username == userCk {
 			logger.Warn(fmt.Sprintf("Client %s is already connected, bouncing", client.Username))
 			bounceFlag = true
 			return false

@@ -108,11 +108,11 @@ func decryptString(inString string, privKeyMap []kyber.Scalar) (string, error) {
 }
 
 // checkAuth needs to get updated to allow users to login with deactive accts
-func checkKyberAuth(auth string, logger *logrus.Logger) bool {
+func checkKyberAuth(auth string, logger *logrus.Logger) (string, bool) {
 	plainText, err := decryptString(auth, kyberLocalPrivKeys)
 	if err != nil {
 		logger.Error(err)
-		return false
+		return "", false
 	}
 
 	pair := strings.Split(plainText, ":")
@@ -130,7 +130,7 @@ func checkKyberAuth(auth string, logger *logrus.Logger) bool {
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(MongoURI).SetAuth(credential))
 	if err != nil {
 		logger.Error(err)
-		return false
+		return "", false
 	}
 
 	// Defer the close operation to ensure the client is closed when the main function exits
@@ -151,17 +151,17 @@ func checkKyberAuth(auth string, logger *logrus.Logger) bool {
 		logger.Debug("Found creds in db, checking hash")
 	} else if err == mongo.ErrNoDocuments {
 		logger.Info("No creds found, unauthorized")
-		return false
+		return "", false
 	} else {
 		logger.Error(err)
-		return false
+		return  "", false
 	}
 
 	dbPass := result["Passwd"].(primitive.Binary).Data
 
 	err = bcrypt.CompareHashAndPassword(
 		[]byte(dbPass), []byte(passwd))
-	return err == nil
+	return user, err == nil
 }
 
 //checkPlainAuth is only used for the web application login -- kyber isnt supported there
