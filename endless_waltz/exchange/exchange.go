@@ -9,7 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/encrypt/ecies"
-	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"golang.org/x/exp/slices"
 	"golang.org/x/sync/syncmap"
 	"net/http"
@@ -33,8 +32,6 @@ type Message struct {
 	Msg  string `json:"msg,omitempty"`
 }
 
-var suite = edwards25519.NewBlakeSHA256Ed25519()
-var kyberLocalPrivKeys [][]byte
 var clients = syncmap.Map{}
 var basicLimitMap = syncmap.Map{}
 var broadcast = make(chan Message)
@@ -44,18 +41,6 @@ var premiumUsers = []string{}
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-}
-
-func translatePrivKeys(input string) ([][]byte, error) {
-	var tmp [][]byte
-	for _, v := range strings.Split(input, ",") {
-		decodedBytes, err := base64.StdEncoding.DecodeString(v)
-		if err != nil {
-			return [][]byte{}, err
-		}
-		tmp = append(tmp, decodedBytes)
-	}
-	return tmp, nil
 }
 
 // thread to recycle sync map every 24 hrs (housekeeping)
@@ -114,7 +99,7 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -140,7 +125,7 @@ func listUsers(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -180,8 +165,6 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user := strings.Split(r.Header.Get("User"), "_")[0]
-
 	ok = rateLimit("X-Forwarded-For", 3)
 	if !ok {
 		http.Error(w, "429 Rate Limit", http.StatusTooManyRequests)
@@ -189,19 +172,28 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok = checkAuth(user, r.Header.Get("Passwd"), true, logger)
+	ok = checkKyberAuth(r.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
 		return
 	}
 
+	authString, err := decryptString(r.Header.Get("Auth"), kyberLocalPrivKeys)
+	if err != nil {
+		//this should be an internal error, not an unauthorized
+		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
+		logger.Error(err)
+		return
+	}
+	user := strings.Split(authString, ":")[0]
+
 	// Ensure client not already connected!
 	// Bad things happen :)
 	bounceFlag := false
 	clients.Range(func(key, value interface{}) bool {
 		client := key.(*Client)
-		if client.Username == r.Header.Get("User") {
+		if client.Username == user {
 			logger.Warn(fmt.Sprintf("Client %s is already connected, bouncing", client.Username))
 			bounceFlag = true
 			return false
@@ -256,18 +248,12 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 
 		var plainText []byte
 		m := &Message{}
-		qPrivKey := suite.Scalar()
 		if !decrypt {
 			//decrypt incoming msgs if possible
 			for _, key := range kyberLocalPrivKeys {
 				logger.Debug("Attempting decrypt with key -> ", key)
-				err = qPrivKey.UnmarshalBinary(key)
-				if err != nil {
-					logger.Warn(err)
-					continue
-				}
 
-				plainText, err = ecies.Decrypt(suite, qPrivKey, decodedBytes, suite.Hash)
+				plainText, err = ecies.Decrypt(suite, key, decodedBytes, suite.Hash)
 				if err != nil {
 					logger.Warn(err)
 					continue
@@ -297,7 +283,7 @@ func receiver(user string, client *Client, logger *logrus.Logger) {
 						}
 						continue
 					} else {
-						client.localPrivKey = qPrivKey
+						client.localPrivKey = key
 						decrypt = true
 						break
 					}

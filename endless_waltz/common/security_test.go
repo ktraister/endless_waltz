@@ -21,9 +21,9 @@ func TestIsEmailValid(t *testing.T) {
 		t.Errorf("incorrect Email passed valid check: %s", "no")
 	}
 	/*
-	    if isEmailValid("fuck@you") {
-		t.Errorf("incorrect Email passed valid check: %s", "fuck@you")
-	    }
+		    if isEmailValid("fuck@you") {
+			t.Errorf("incorrect Email passed valid check: %s", "fuck@you")
+		    }
 	*/
 }
 

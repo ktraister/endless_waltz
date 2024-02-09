@@ -45,7 +45,7 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -72,7 +72,7 @@ func clientVersionHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -99,7 +99,7 @@ func premiumHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -133,7 +133,7 @@ func userListHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -166,7 +166,7 @@ func friendsListHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -209,7 +209,7 @@ func updateFriendsListHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	ok = checkAuth(req.Header.Get("User"), req.Header.Get("Passwd"), true, logger)
+	ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)
 		logger.Info("request denied 403 unauthorized")
@@ -577,6 +577,14 @@ func main() {
 	ClientVersion = os.Getenv("ClientVersion")
 
 	logger := createLogger(LogLevel, LogType)
+
+	var err error
+	kyberLocalPrivKeys, err = translatePrivKeys(os.Getenv("KyberLocalPrivKeys"))
+	if err != nil {
+		logger.Fatal("Error translating Kyber PrivKeys: ")
+		return
+	}
+
 	logger.Info("Random Server finished starting up!")
 
 	router := mux.NewRouter()
