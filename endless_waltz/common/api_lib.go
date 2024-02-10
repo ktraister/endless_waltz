@@ -154,7 +154,7 @@ func checkKyberAuth(auth string, logger *logrus.Logger) (string, bool) {
 		return "", false
 	} else {
 		logger.Error(err)
-		return  "", false
+		return "", false
 	}
 
 	dbPass := result["Passwd"].(primitive.Binary).Data
