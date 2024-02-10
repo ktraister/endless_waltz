@@ -45,6 +45,7 @@ func healthHandler(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	logger.Debug("Got auth header --> ", req.Header.Get("Auth"))
 	_, ok = checkKyberAuth(req.Header.Get("Auth"), logger)
 	if !ok {
 		http.Error(w, "403 Unauthorized", http.StatusUnauthorized)

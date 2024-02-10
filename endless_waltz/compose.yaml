@@ -31,7 +31,7 @@ services:
       LogLevel: Debug
       CoinbaseAPIKey: ${CoinbaseAPIKey}
       StripeAPIKey: ${StripeAPIKey}
-      KyberLocalPrivKeys: "6oDJxDWefIP81NhcQToLRPx6LEapd50IlrFhjj4qpAU=,4rYyEI4ALUA8bU912euoB96npD5aVLWjI6BKTvh+lgI=,Sf4zgY048NNOpM2b5yz3NrjkXbYs/W+OSyUK2lPUxQc="
+      KyberLocalPrivKeys: "CwpgaD5deuX5h2LStQPylJ3kquZtIZ83JEpGfb76Mw8=,7yqdJwN4BDsIbOKZdY39yjUUgj3KbCK77Hq3x2VwFQk=,F5xmWDJuXsSD8s7xc2FNzXyrd58GVSocmRbcl/aWPwE="
 
   ew-webapp:
     depends_on:
@@ -83,7 +83,7 @@ services:
       MongoUser: adminuser
       MongoPass: password123
       LogLevel: Debug
-      KyberLocalPrivKeys: "6oDJxDWefIP81NhcQToLRPx6LEapd50IlrFhjj4qpAU=,4rYyEI4ALUA8bU912euoB96npD5aVLWjI6BKTvh+lgI=,Sf4zgY048NNOpM2b5yz3NrjkXbYs/W+OSyUK2lPUxQc="
+      KyberLocalPrivKeys: "CwpgaD5deuX5h2LStQPylJ3kquZtIZ83JEpGfb76Mw8=,7yqdJwN4BDsIbOKZdY39yjUUgj3KbCK77Hq3x2VwFQk=,F5xmWDJuXsSD8s7xc2FNzXyrd58GVSocmRbcl/aWPwE="
 
   ew-proxy:
     depends_on:

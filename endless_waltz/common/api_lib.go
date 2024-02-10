@@ -62,21 +62,28 @@ func rateLimit(user string, limit int) bool {
 	}
 }
 
+//creating a new qPrivKey in the loop solved a maddening issue
 func translatePrivKeys(input string) ([]kyber.Scalar, error) {
-	qPrivKey := suite.Scalar()
-	var tmp []kyber.Scalar
+	tmp := []kyber.Scalar{}
 	for _, v := range strings.Split(input, ",") {
+		fmt.Println("Decoding privKey string ", v)
 		decodedBytes, err := base64.StdEncoding.DecodeString(v)
 		if err != nil {
 			return []kyber.Scalar{}, err
 		}
+
+		qPrivKey := suite.Scalar()
 		err = qPrivKey.UnmarshalBinary(decodedBytes)
 		if err != nil {
 			return []kyber.Scalar{}, err
 		}
+		fmt.Println("Appending Privkey ", qPrivKey)
 
 		tmp = append(tmp, qPrivKey)
+		fmt.Println("TMP SLICE ", tmp)
 	}
+
+	fmt.Println("Returning privkey map ", tmp)
 	return tmp, nil
 }
 
@@ -95,11 +102,15 @@ func decryptString(inString string, privKeyMap []kyber.Scalar) (string, error) {
 		return "", err
 	}
 
+	fmt.Sprintf("decoded incoming bytes -->  %d", decodedBytes)
+
 	for _, key := range privKeyMap {
 		plainText, err := ecies.Decrypt(suite, key, decodedBytes, suite.Hash)
 		if err != nil {
+			fmt.Println("Could not decrypt msg with key ", key)
 			continue
 		} else {
+			fmt.Println("decrypted msg with key %d", key)
 			return string(plainText), nil
 		}
 	}

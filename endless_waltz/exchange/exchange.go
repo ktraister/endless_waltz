@@ -182,10 +182,9 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	// Ensure client not already connected!
 	// Bad things happen :)
 	bounceFlag := false
-	userCk := fmt.Sprintf("%s_server", user)
 	clients.Range(func(key, value interface{}) bool {
 		client := key.(*Client)
-		if client.Username == userCk {
+		if client.Username == user {
 			logger.Warn(fmt.Sprintf("Client %s is already connected, bouncing", client.Username))
 			bounceFlag = true
 			return false
