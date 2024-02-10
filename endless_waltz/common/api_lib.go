@@ -110,7 +110,7 @@ func decryptString(inString string, privKeyMap []kyber.Scalar) (string, error) {
 			fmt.Println("Could not decrypt msg with key ", key)
 			continue
 		} else {
-			fmt.Println("decrypted msg with key %d", key)
+			fmt.Println("decrypted msg with key ", key)
 			return string(plainText), nil
 		}
 	}
