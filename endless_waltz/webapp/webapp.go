@@ -599,7 +599,7 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 	}
 
 	//api_lib checkAuth function
-	if checkAuth(username, req.FormValue("password"), false, logger) {
+	if checkPlainAuth(username, req.FormValue("password"), false, logger) {
 		//create a session for the user
 		session.Values["authenticated"] = true
 		session.Values["username"] = username
