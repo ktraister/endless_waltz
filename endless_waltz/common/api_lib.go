@@ -176,7 +176,7 @@ func checkKyberAuth(auth string, logger *logrus.Logger) (string, bool) {
 }
 
 //checkPlainAuth is only used for the web application login -- kyber isnt supported there
-func checkPlainAuth(user string, passwd string, logger *logrus.Logger) bool {
+func checkPlainAuth(user string, passwd string, active bool, logger *logrus.Logger) bool {
 	//creating context to connect to mongo
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -203,7 +203,11 @@ func checkPlainAuth(user string, passwd string, logger *logrus.Logger) bool {
 	// Check if the item exists in the collection
 	logger.Debug(fmt.Sprintf("checking user '%s' with pass '%s'", user, passwd))
 	var filter, result bson.M
-	filter = bson.M{"User": user}
+	if active {
+		filter = bson.M{"User": user, "Active": true}
+	} else {
+		filter = bson.M{"User": user}
+	}
 	err = auth_db.FindOne(context.TODO(), filter).Decode(&result)
 	if err == nil {
 		logger.Debug("Found creds in db, checking hash")
